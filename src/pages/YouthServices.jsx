@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import KPICard from '../components/KPICard'
 import SectionHeader from '../components/SectionHeader'
-import { CLUBS, DISTRICT_TOTALS, ZONE_TOTALS } from '../data/district3192'
+import { CLUBS } from '../data/realData'
 
 // ─── helpers ───────────────────────────────────────────────────────────────────
 const ROTARY_BLUE = '#003DA5'
@@ -19,8 +19,8 @@ function shortName(name) {
 
 // ─── sub-components ────────────────────────────────────────────────────────────
 
-function ZoneProgressBar({ label, zoneVal, districtVal, color }) {
-  const pct = districtVal > 0 ? Math.min(100, (zoneVal / districtVal) * 100) : 0
+function ClubProgressBar({ label, clubVal, totalVal, color }) {
+  const pct = totalVal > 0 ? Math.min(100, (clubVal / totalVal) * 100) : 0
   const barColors = {
     blue: 'bg-blue-500',
     gold: 'bg-yellow-400',
@@ -38,7 +38,7 @@ function ZoneProgressBar({ label, zoneVal, districtVal, color }) {
       <div className="flex justify-between items-center mb-1">
         <span className="text-sm font-medium text-slate-700">{label}</span>
         <span className={`text-sm font-bold ${textColors[color]}`}>
-          {zoneVal} <span className="text-slate-400 font-normal">/ {districtVal}</span>
+          {clubVal} <span className="text-slate-400 font-normal">/ {totalVal} total</span>
         </span>
       </div>
       <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
@@ -48,14 +48,14 @@ function ZoneProgressBar({ label, zoneVal, districtVal, color }) {
         />
       </div>
       <div className="text-xs text-slate-400 mt-0.5 text-right">
-        {pct.toFixed(1)}% of district
+        {pct.toFixed(1)}% of all clubs
       </div>
     </div>
   )
 }
 
-// ─── Custom Tooltip for sponsorship bar chart ───────────────────────────────
-function SponsorshipTooltip({ active, payload, label }) {
+// ─── Custom Tooltip ─────────────────────────────────────────────────────────
+function NewGenTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
     <div className="bg-white border border-slate-200 rounded-lg shadow-lg p-3 text-xs">
@@ -73,38 +73,13 @@ function SponsorshipTooltip({ active, payload, label }) {
 
 // ─── main page ─────────────────────────────────────────────────────────────────
 export default function YouthServices() {
-  const user = JSON.parse(sessionStorage.getItem('ag_user') || '{}')
-  const isAll = user.zone === 'ALL'
-
-  const clubs = useMemo(
-    () => (isAll ? CLUBS : CLUBS.filter((c) => c.zone === user.zone)),
-    [isAll, user.zone]
-  )
-
-  const totals = useMemo(
-    () => (isAll ? DISTRICT_TOTALS : ZONE_TOTALS[user.zone]),
-    [isAll, user.zone]
-  )
-
-  const distTotals = DISTRICT_TOTALS
-
-  // KPI values — sum from clubs if zone-specific, else use aggregates
-  const kpi = useMemo(() => {
-    if (isAll) {
-      return {
-        newRotaryClubs: distTotals.newRotaryClubs,
-        newRotaract: distTotals.newRotaract,
-        newInteract: distTotals.newInteract,
-        rcc: distTotals.rcc,
-      }
-    }
-    return {
-      newRotaryClubs: totals.newRotaryClubs,
-      newRotaract: totals.newRotaract,
-      newInteract: totals.newInteract,
-      rcc: totals.rcc,
-    }
-  }, [isAll, totals, distTotals])
+  // ─ Aggregate KPI values from all clubs ──────────────────────────────────────
+  const kpi = useMemo(() => ({
+    newGenerationService: CLUBS.reduce((s, c) => s + (c.newGenerationService || 0), 0),
+    vocationalService:    CLUBS.reduce((s, c) => s + (c.vocationalService    || 0), 0),
+    internationalService: CLUBS.reduce((s, c) => s + (c.internationalService || 0), 0),
+    totalProjects:        CLUBS.reduce((s, c) => s + (c.totalProjects        || 0), 0),
+  }), [])
 
   // ─ Table expansion state ───────────────────────────────────────────────────
   const [expandedRows, setExpandedRows] = useState(new Set())
@@ -115,149 +90,117 @@ export default function YouthServices() {
       return next
     })
 
-  // ─ Chart data — only clubs with sponsorships ──────────────────────────────
+  // ─ Chart data — new generation service count per club ─────────────────────
   const chartData = useMemo(
     () =>
-      clubs
+      CLUBS
         .map((c) => ({
           name: shortName(c.name),
           fullName: c.name,
-          rotaract: c.sponsored.newRotaractClubs.length,
-          interact: c.sponsored.newInteractClubs.length,
-          rcc: c.sponsored.sponsoredRCC.length,
+          newGeneration: c.newGenerationService || 0,
+          vocational:    c.vocationalService    || 0,
+          international: c.internationalService || 0,
         }))
-        .filter((d) => d.rotaract + d.interact + d.rcc > 0),
-    [clubs]
+        .filter((d) => d.newGeneration + d.vocational + d.international > 0),
+    []
   )
 
   // ─ Table rows ─────────────────────────────────────────────────────────────
   const tableRows = useMemo(
     () =>
-      clubs.map((c) => ({
-        id: c.id,
+      CLUBS.map((c) => ({
+        id:   c.id,
         name: c.name,
-        newRotaryClubs: c.sponsored.newRotaryClubs,
-        newRotaract: c.sponsored.newRotaractClubs,
-        newInteract: c.sponsored.newInteractClubs,
-        rcc: c.sponsored.sponsoredRCC,
-        total:
-          c.sponsored.newRotaryClubs.length +
-          c.sponsored.newRotaractClubs.length +
-          c.sponsored.newInteractClubs.length +
-          c.sponsored.sponsoredRCC.length,
+        newGenerationService: c.newGenerationService || 0,
+        vocationalService:    c.vocationalService    || 0,
+        internationalService: c.internationalService || 0,
+        totalProjects:        c.totalProjects        || 0,
+        members:              c.members              || 0,
       })),
-    [clubs]
+    []
   )
 
   const tableTotals = useMemo(
     () => ({
-      newRotaryClubs: tableRows.reduce((s, r) => s + r.newRotaryClubs.length, 0),
-      newRotaract: tableRows.reduce((s, r) => s + r.newRotaract.length, 0),
-      newInteract: tableRows.reduce((s, r) => s + r.newInteract.length, 0),
-      rcc: tableRows.reduce((s, r) => s + r.rcc.length, 0),
-      total: tableRows.reduce((s, r) => s + r.total, 0),
+      newGenerationService: tableRows.reduce((s, r) => s + r.newGenerationService, 0),
+      vocationalService:    tableRows.reduce((s, r) => s + r.vocationalService,    0),
+      internationalService: tableRows.reduce((s, r) => s + r.internationalService, 0),
+      totalProjects:        tableRows.reduce((s, r) => s + r.totalProjects,        0),
     }),
     [tableRows]
   )
 
-  // ─ Sponsor detail cards ────────────────────────────────────────────────────
-  const sponsorClubs = useMemo(
-    () => clubs.filter((c) => {
-      const s = c.sponsored
-      return (
-        s.newRotaryClubs.length +
-        s.newRotaractClubs.length +
-        s.newInteractClubs.length +
-        s.sponsoredRCC.length > 0
-      )
-    }),
-    [clubs]
+  // ─ Clubs with new generation service activity ─────────────────────────────
+  const activeClubs = useMemo(
+    () => CLUBS.filter((c) => (c.newGenerationService || 0) > 0),
+    []
   )
-
-  const zoneSuffix = isAll ? '' : ` in Zone ${user.zone}`
 
   return (
     <div className="space-y-8">
       {/* ── Section Header ── */}
       <SectionHeader
-        title="Youth Services & Sponsored Organizations"
-        subtitle={`Rotaract, Interact & Rural Community Corps${zoneSuffix}`}
+        title="Youth & New Generation Services"
+        subtitle="New generation service activities across all 4 clubs — Rotary Year 2025-26"
         icon={Star}
       />
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <KPICard
-          title="New Rotary Clubs Sponsored"
-          value={fmt(kpi.newRotaryClubs)}
-          subtitle={isAll ? 'District total' : `of ${distTotals.newRotaryClubs} district total`}
-          icon={Globe}
-          color="blue"
-        />
-        <KPICard
-          title="New Rotaract Clubs"
-          value={fmt(kpi.newRotaract)}
-          subtitle={isAll ? 'District total' : `of ${distTotals.newRotaract} district total`}
-          icon={Users}
+          title="New Generation Service"
+          value={fmt(kpi.newGenerationService)}
+          subtitle={`across ${CLUBS.length} clubs`}
+          icon={Star}
           color="gold"
         />
         <KPICard
-          title="New Interact Clubs"
-          value={fmt(kpi.newInteract)}
-          subtitle={isAll ? 'District total' : `of ${distTotals.newInteract} district total`}
-          icon={BookOpen}
+          title="Vocational Service"
+          value={fmt(kpi.vocationalService)}
+          subtitle={`across ${CLUBS.length} clubs`}
+          icon={Users}
+          color="blue"
+        />
+        <KPICard
+          title="International Service"
+          value={fmt(kpi.internationalService)}
+          subtitle={`across ${CLUBS.length} clubs`}
+          icon={Globe}
           color="green"
         />
         <KPICard
-          title="Sponsored RCC"
-          value={fmt(kpi.rcc)}
-          subtitle={isAll ? 'District total' : `of ${distTotals.rcc} district total`}
-          icon={Home}
+          title="Total Projects"
+          value={fmt(kpi.totalProjects)}
+          subtitle="all service categories"
+          icon={BookOpen}
           color="purple"
         />
       </div>
 
-      {/* ── Zone vs District comparison ── */}
-      {!isAll && (
-        <div className="bg-white rounded-xl border border-slate-200 p-6">
-          <h3 className="text-base font-semibold text-slate-800 mb-4">
-            Zone {user.zone} vs District — Sponsorship Share
-          </h3>
-          <ZoneProgressBar
-            label="New Rotaract Clubs"
-            zoneVal={kpi.newRotaract}
-            districtVal={distTotals.newRotaract}
+      {/* ── Per-Club New Generation Service Bars ── */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <h3 className="text-base font-semibold text-slate-800 mb-4">
+          Per-Club New Generation Service Count
+        </h3>
+        {CLUBS.map((club) => (
+          <ClubProgressBar
+            key={club.id}
+            label={club.name}
+            clubVal={club.newGenerationService || 0}
+            totalVal={kpi.newGenerationService || 1}
             color="gold"
           />
-          <ZoneProgressBar
-            label="New Interact Clubs"
-            zoneVal={kpi.newInteract}
-            districtVal={distTotals.newInteract}
-            color="green"
-          />
-          <ZoneProgressBar
-            label="Sponsored RCC"
-            zoneVal={kpi.rcc}
-            districtVal={distTotals.rcc}
-            color="purple"
-          />
-          <ZoneProgressBar
-            label="New Rotary Clubs"
-            zoneVal={kpi.newRotaryClubs}
-            districtVal={distTotals.newRotaryClubs}
-            color="blue"
-          />
-        </div>
-      )}
+        ))}
+      </div>
 
-      {/* ── Sponsorship Breakdown Chart ── */}
+      {/* ── Service Breakdown Chart ── */}
       {chartData.length > 0 && (
         <div className="bg-white rounded-xl border border-slate-200 p-6">
           <h3 className="text-base font-semibold text-slate-800 mb-1">
-            Per-Club Sponsorship Breakdown
+            Per-Club Service Breakdown
           </h3>
           <p className="text-xs text-slate-500 mb-4">
-            Only clubs that sponsored at least one organization are shown
+            New generation, vocational and international service activities per club
           </p>
           <ResponsiveContainer width="100%" height={260}>
             <BarChart data={chartData} margin={{ top: 4, right: 20, left: 0, bottom: 40 }}>
@@ -271,22 +214,22 @@ export default function YouthServices() {
                 height={60}
               />
               <YAxis tick={{ fontSize: 11, fill: '#64748b' }} allowDecimals={false} />
-              <Tooltip content={<SponsorshipTooltip />} />
+              <Tooltip content={<NewGenTooltip />} />
               <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
-              <Bar dataKey="rotaract" name="Rotaract" fill={ROTARY_BLUE} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="interact" name="Interact" fill={ROTARY_GOLD} radius={[3, 3, 0, 0]} />
-              <Bar dataKey="rcc" name="RCC" fill="#9333ea" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="newGeneration" name="New Generation" fill={ROTARY_GOLD}   radius={[3, 3, 0, 0]} />
+              <Bar dataKey="vocational"    name="Vocational"     fill={ROTARY_BLUE}   radius={[3, 3, 0, 0]} />
+              <Bar dataKey="international" name="International"  fill="#9333ea"       radius={[3, 3, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       )}
 
-      {/* ── Club-wise Sponsorship Table ── */}
+      {/* ── Club-wise Service Table ── */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800">Club-wise Sponsored Organizations</h3>
+          <h3 className="text-base font-semibold text-slate-800">Club-wise Service Activity</h3>
           <p className="text-xs text-slate-500 mt-0.5">
-            Click a row to expand and see individual organization names
+            Service category counts per club · Rotary Year 2025-26
           </p>
         </div>
         <div className="overflow-x-auto">
@@ -294,119 +237,87 @@ export default function YouthServices() {
             <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide">
               <tr>
                 <th className="px-4 py-3 text-left font-semibold">Club Name</th>
-                <th className="px-4 py-3 text-center font-semibold">New Rotary</th>
-                <th className="px-4 py-3 text-center font-semibold">Rotaract</th>
-                <th className="px-4 py-3 text-center font-semibold">Interact</th>
-                <th className="px-4 py-3 text-center font-semibold">RCC</th>
-                <th className="px-4 py-3 text-center font-semibold">Total</th>
+                <th className="px-4 py-3 text-center font-semibold">New Generation</th>
+                <th className="px-4 py-3 text-center font-semibold">Vocational</th>
+                <th className="px-4 py-3 text-center font-semibold">International</th>
+                <th className="px-4 py-3 text-center font-semibold">Total Projects</th>
+                <th className="px-4 py-3 text-center font-semibold">Members</th>
               </tr>
             </thead>
             <tbody>
               {tableRows.map((row) => {
-                const isZero = row.total === 0
-                const isExpanded = expandedRows.has(row.id)
+                const isZero = row.newGenerationService + row.vocationalService + row.internationalService === 0
                 return (
-                  <>
-                    <tr
-                      key={row.id}
-                      onClick={() => !isZero && toggleRow(row.id)}
-                      className={`border-t border-slate-100 transition-colors ${
-                        isZero
-                          ? 'bg-slate-50 text-slate-400 cursor-default'
-                          : 'hover:bg-blue-50 cursor-pointer'
-                      } ${isExpanded ? 'bg-blue-50' : ''}`}
-                    >
-                      <td className="px-4 py-2.5 font-medium">
-                        <div className="flex items-center gap-2">
-                          {!isZero && (
-                            <span className="text-blue-400 text-xs">{isExpanded ? '▼' : '▶'}</span>
-                          )}
-                          <span className={isZero ? 'text-slate-400' : 'text-slate-800'}>
-                            {row.name}
-                          </span>
-                        </div>
-                      </td>
-                      <CellCount val={row.newRotaryClubs.length} isZero={isZero} />
-                      <CellCount val={row.newRotaract.length} isZero={isZero} />
-                      <CellCount val={row.newInteract.length} isZero={isZero} />
-                      <CellCount val={row.rcc.length} isZero={isZero} />
-                      <td className={`px-4 py-2.5 text-center font-bold ${isZero ? 'text-slate-300' : 'text-slate-800'}`}>
-                        {row.total || '—'}
-                      </td>
-                    </tr>
-                    {isExpanded && !isZero && (
-                      <tr key={`${row.id}-expand`} className="bg-blue-50 border-t border-blue-100">
-                        <td colSpan={6} className="px-6 py-3">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-                            {row.newRotaryClubs.length > 0 && (
-                              <ExpandCell label="New Rotary Clubs" names={row.newRotaryClubs} color="blue" />
-                            )}
-                            {row.newRotaract.length > 0 && (
-                              <ExpandCell label="Rotaract Clubs" names={row.newRotaract} color="yellow" />
-                            )}
-                            {row.newInteract.length > 0 && (
-                              <ExpandCell label="Interact Clubs" names={row.newInteract} color="green" />
-                            )}
-                            {row.rcc.length > 0 && (
-                              <ExpandCell label="RCC Villages" names={row.rcc} color="purple" />
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    )}
-                  </>
+                  <tr
+                    key={row.id}
+                    className={`border-t border-slate-100 transition-colors ${
+                      isZero
+                        ? 'bg-slate-50 text-slate-400 cursor-default'
+                        : 'hover:bg-blue-50'
+                    }`}
+                  >
+                    <td className="px-4 py-2.5 font-medium">
+                      <span className={isZero ? 'text-slate-400' : 'text-slate-800'}>
+                        {row.name}
+                      </span>
+                    </td>
+                    <CellCount val={row.newGenerationService} isZero={isZero} />
+                    <CellCount val={row.vocationalService}    isZero={isZero} />
+                    <CellCount val={row.internationalService} isZero={isZero} />
+                    <td className={`px-4 py-2.5 text-center font-bold ${isZero ? 'text-slate-300' : 'text-slate-800'}`}>
+                      {row.totalProjects || '—'}
+                    </td>
+                    <td className="px-4 py-2.5 text-center text-slate-600">
+                      {row.members}
+                    </td>
+                  </tr>
                 )
               })}
               {/* Totals row */}
               <tr className="border-t-2 border-slate-300 bg-slate-50 font-bold text-slate-800">
-                <td className="px-4 py-3">District Total</td>
-                <td className="px-4 py-3 text-center">{tableTotals.newRotaryClubs}</td>
-                <td className="px-4 py-3 text-center">{tableTotals.newRotaract}</td>
-                <td className="px-4 py-3 text-center">{tableTotals.newInteract}</td>
-                <td className="px-4 py-3 text-center">{tableTotals.rcc}</td>
-                <td className="px-4 py-3 text-center">{tableTotals.total}</td>
+                <td className="px-4 py-3">All Clubs Total</td>
+                <td className="px-4 py-3 text-center">{tableTotals.newGenerationService}</td>
+                <td className="px-4 py-3 text-center">{tableTotals.vocationalService}</td>
+                <td className="px-4 py-3 text-center">{tableTotals.internationalService}</td>
+                <td className="px-4 py-3 text-center">{tableTotals.totalProjects}</td>
+                <td className="px-4 py-3 text-center">
+                  {CLUBS.reduce((s, c) => s + (c.members || 0), 0)}
+                </td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* ── Sponsor Detail Cards ── */}
-      {sponsorClubs.length > 0 && (
+      {/* ── Club Detail Cards for active clubs ── */}
+      {activeClubs.length > 0 && (
         <div>
-          <h3 className="text-base font-semibold text-slate-800 mb-3">Sponsorship Detail by Club</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {sponsorClubs.map((club) => {
-              const s = club.sponsored
-              return (
+          <h3 className="text-base font-semibold text-slate-800 mb-3">
+            New Generation Service Detail by Club
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+            {CLUBS.map((club) => (
+              <div
+                key={club.id}
+                className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+              >
                 <div
-                  key={club.id}
-                  className="bg-white rounded-xl border border-slate-200 overflow-hidden"
+                  className="px-4 py-3 text-white text-sm font-semibold"
+                  style={{ backgroundColor: ROTARY_BLUE }}
                 >
-                  <div
-                    className="px-4 py-3 text-white text-sm font-semibold"
-                    style={{ backgroundColor: ROTARY_BLUE }}
-                  >
-                    {club.name}
-                    <span className="ml-2 text-xs text-blue-200 font-normal">Zone {club.zone}</span>
-                  </div>
-                  <div className="p-4 space-y-3">
-                    {s.newRotaryClubs.length > 0 && (
-                      <PillGroup label="New Rotary Clubs" items={s.newRotaryClubs} color="blue" />
-                    )}
-                    {s.newRotaractClubs.length > 0 && (
-                      <PillGroup label="Rotaract Clubs" items={s.newRotaractClubs} color="gold" />
-                    )}
-                    {s.newInteractClubs.length > 0 && (
-                      <PillGroup label="Interact Clubs" items={s.newInteractClubs} color="green" />
-                    )}
-                    {s.sponsoredRCC.length > 0 && (
-                      <PillGroup label="RCC Villages" items={s.sponsoredRCC} color="purple" />
-                    )}
+                  {club.name}
+                </div>
+                <div className="p-4 space-y-2 text-sm">
+                  <StatRow label="New Generation"  value={club.newGenerationService || 0} color="gold"   />
+                  <StatRow label="Vocational"       value={club.vocationalService    || 0} color="blue"   />
+                  <StatRow label="International"    value={club.internationalService || 0} color="purple" />
+                  <StatRow label="Total Projects"   value={club.totalProjects        || 0} color="green"  />
+                  <div className="pt-2 border-t border-slate-100 text-xs text-slate-500">
+                    {club.members} members · {club.meetings} meetings
                   </div>
                 </div>
-              )
-            })}
+              </div>
+            ))}
           </div>
         </div>
       )}
@@ -424,48 +335,19 @@ function CellCount({ val, isZero }) {
   )
 }
 
-function ExpandCell({ label, names, color }) {
-  const bg = {
-    blue: 'bg-blue-100 text-blue-800',
-    yellow: 'bg-yellow-100 text-yellow-800',
-    green: 'bg-green-100 text-green-800',
-    purple: 'bg-purple-100 text-purple-800',
+function StatRow({ label, value, color }) {
+  const textColors = {
+    blue:   'text-blue-700',
+    gold:   'text-yellow-700',
+    green:  'text-green-700',
+    purple: 'text-purple-700',
   }
   return (
-    <div>
-      <p className="font-semibold text-slate-600 mb-1">{label}</p>
-      <p className={`text-xs px-2 py-1 rounded ${bg[color]}`}>{names.join(', ')}</p>
-    </div>
-  )
-}
-
-function PillGroup({ label, items, color }) {
-  const pill = {
-    blue: 'bg-blue-100 text-blue-800 border border-blue-200',
-    gold: 'bg-yellow-100 text-yellow-800 border border-yellow-200',
-    green: 'bg-green-100 text-green-800 border border-green-200',
-    purple: 'bg-purple-100 text-purple-800 border border-purple-200',
-  }
-  const dot = {
-    blue: 'bg-blue-500',
-    gold: 'bg-yellow-500',
-    green: 'bg-green-500',
-    purple: 'bg-purple-500',
-  }
-  return (
-    <div>
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <span className={`w-2 h-2 rounded-full ${dot[color]}`} />
-        <span className="text-xs font-medium text-slate-600">{label}</span>
-        <span className="text-xs text-slate-400">({items.length})</span>
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {items.map((item) => (
-          <span key={item} className={`px-2 py-0.5 rounded-full text-xs font-medium ${pill[color]}`}>
-            {item}
-          </span>
-        ))}
-      </div>
+    <div className="flex justify-between items-center">
+      <span className="text-slate-600">{label}</span>
+      <span className={`font-bold ${value > 0 ? textColors[color] : 'text-slate-300'}`}>
+        {value > 0 ? value : '—'}
+      </span>
     </div>
   )
 }

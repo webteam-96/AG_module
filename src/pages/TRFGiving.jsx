@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import KPICard from '../components/KPICard'
 import SectionHeader from '../components/SectionHeader'
-import { ZONES, ZONE_TOTALS, DISTRICT_TOTALS, CLUBS, getZoneClubs, getZoneInfo } from '../data/district3192'
+import { CLUBS, AG_TOTALS, AG_NAME } from '../data/realData'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const ROTARY_BLUE  = '#003DA5'
@@ -14,13 +14,14 @@ const POLIO_PURPLE = '#7C3AED'
 const OTHER_GREEN  = '#059669'
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
-const fmtUSD = (v) =>
-  v ? `$${Number(v).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'
+const fmtINR = (v) =>
+  v ? `₹${Number(v).toLocaleString('en-IN', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : '—'
 
-const fmtUSDShort = (v) => {
-  if (!v) return '$0'
-  if (v >= 1000) return `$${(v / 1000).toFixed(1)}k`
-  return `$${v.toFixed(0)}`
+const fmtINRShort = (v) => {
+  if (!v) return '₹0'
+  if (v >= 100000) return `₹${(v / 100000).toFixed(1)}L`
+  if (v >= 1000) return `₹${(v / 1000).toFixed(1)}k`
+  return `₹${v.toFixed(0)}`
 }
 
 const truncate = (str, n = 14) => (str.length > n ? str.slice(0, n - 1) + '…' : str)
@@ -35,44 +36,41 @@ function CustomBarTooltip({ active, payload, label }) {
       {payload.map((p) => (
         <div key={p.dataKey} className="flex justify-between gap-4 mb-1">
           <span style={{ color: p.fill }} className="font-medium">{p.name}</span>
-          <span className="text-slate-700">{fmtUSD(p.value)}</span>
+          <span className="text-slate-700">{fmtINR(p.value)}</span>
         </div>
       ))}
       <div className="border-t border-slate-200 mt-2 pt-2 flex justify-between font-bold">
         <span className="text-slate-700">Total</span>
-        <span className="text-slate-900">{fmtUSD(total)}</span>
+        <span className="text-slate-900">{fmtINR(total)}</span>
       </div>
     </div>
   )
 }
 
-// ─── Zone Banner ─────────────────────────────────────────────────────────────
-function ZoneBanner({ zoneTotal, districtTotal, zoneName }) {
-  const pct = districtTotal > 0 ? ((zoneTotal / districtTotal) * 100).toFixed(1) : 0
+// ─── AG Banner ────────────────────────────────────────────────────────────────
+function AgBanner({ clubsTotal, agName }) {
   return (
     <div
       className="rounded-2xl p-6 text-white mb-6 relative overflow-hidden"
       style={{ background: `linear-gradient(135deg, ${ROTARY_BLUE} 0%, #0052CC 50%, ${ROTARY_GOLD} 100%)` }}
     >
-      {/* decorative circle */}
+      {/* decorative circles */}
       <div className="absolute -right-8 -top-8 w-40 h-40 rounded-full opacity-10 bg-white" />
       <div className="absolute -right-4 bottom-4 w-24 h-24 rounded-full opacity-10 bg-white" />
 
       <div className="relative z-10">
-        <p className="text-sm font-medium text-blue-100 mb-1">Zone Contribution</p>
+        <p className="text-sm font-medium text-blue-100 mb-1">My Clubs TRF Summary</p>
         <div className="flex items-end gap-4 mb-3">
-          <span className="text-5xl font-extrabold tracking-tight">{pct}%</span>
+          <span className="text-5xl font-extrabold tracking-tight">{fmtINR(clubsTotal)}</span>
           <div className="mb-1">
-            <p className="text-lg font-semibold">{zoneName} of District Total</p>
-            <p className="text-blue-100 text-sm">
-              {fmtUSD(zoneTotal)} of {fmtUSD(districtTotal)} district-wide
-            </p>
+            <p className="text-lg font-semibold">Total TRF Giving</p>
+            <p className="text-blue-100 text-sm">AG: {agName} · {CLUBS.length} clubs</p>
           </div>
         </div>
         <div className="bg-white bg-opacity-20 rounded-full h-3 w-full max-w-md">
           <div
             className="h-3 rounded-full transition-all duration-700"
-            style={{ width: `${Math.min(pct, 100)}%`, background: ROTARY_GOLD }}
+            style={{ width: '100%', background: ROTARY_GOLD }}
           />
         </div>
         <p className="text-xs text-blue-100 mt-2">Rotary Year 2025–26 · as of 19 March 2026</p>
@@ -86,15 +84,15 @@ const MEDALS = ['🥇', '🥈', '🥉']
 
 function Leaderboard({ clubs }) {
   const ranked = [...clubs]
-    .filter((c) => c.trf.total > 0)
-    .sort((a, b) => b.trf.total - a.trf.total)
+    .filter((c) => c.trf.totalINR > 0)
+    .sort((a, b) => b.trf.totalINR - a.trf.totalINR)
     .slice(0, 10)
 
   if (!ranked.length)
     return (
       <div className="flex flex-col items-center justify-center py-10 text-slate-400">
         <BarChart2 size={32} className="mb-2 opacity-40" />
-        <p className="text-sm">No TRF giving recorded for this zone yet.</p>
+        <p className="text-sm">No TRF giving recorded for these clubs yet.</p>
       </div>
     )
 
@@ -107,9 +105,9 @@ function Leaderboard({ clubs }) {
           </span>
           <div className="flex-1 min-w-0">
             <p className="font-medium text-slate-800 text-sm truncate">{club.name}</p>
-            <p className="text-xs text-slate-400">{club.trf.donors} donors</p>
+            <p className="text-xs text-slate-400">{club.members} members</p>
           </div>
-          <span className="text-sm font-bold text-blue-700">{fmtUSD(club.trf.total)}</span>
+          <span className="text-sm font-bold text-blue-700">{fmtINR(club.trf.totalINR)}</span>
         </li>
       ))}
     </ol>
@@ -119,15 +117,15 @@ function Leaderboard({ clubs }) {
 // ─── Stacked Bar Chart ────────────────────────────────────────────────────────
 function TRFStackedBarChart({ clubs }) {
   const data = clubs
-    .filter((c) => c.trf.total > 0)
-    .sort((a, b) => b.trf.total - a.trf.total)
+    .filter((c) => c.trf.totalINR > 0)
+    .sort((a, b) => b.trf.totalINR - a.trf.totalINR)
     .map((c) => ({
       name: truncate(c.name, 13),
       fullName: c.name,
-      'Annual Fund': c.trf.annualFund,
-      PolioPlus: c.trf.polioPlus,
-      'Other Funds': c.trf.otherFunds,
+      'Annual Fund': c.trf.annualINR,
+      PolioPlus: c.trf.polioINR,
       Endowment: c.trf.endowment,
+      'Other Funds': c.trf.others,
     }))
 
   if (!data.length)
@@ -150,9 +148,9 @@ function TRFStackedBarChart({ clubs }) {
           height={70}
         />
         <YAxis
-          tickFormatter={fmtUSDShort}
+          tickFormatter={fmtINRShort}
           tick={{ fontSize: 11, fill: '#64748b' }}
-          width={52}
+          width={60}
         />
         <Tooltip content={<CustomBarTooltip />} />
         <Legend
@@ -161,44 +159,50 @@ function TRFStackedBarChart({ clubs }) {
         />
         <Bar dataKey="Annual Fund" stackId="trf" fill={ROTARY_BLUE} radius={[0, 0, 0, 0]} />
         <Bar dataKey="PolioPlus"   stackId="trf" fill={POLIO_PURPLE} />
-        <Bar dataKey="Other Funds" stackId="trf" fill={OTHER_GREEN} />
-        <Bar dataKey="Endowment"   stackId="trf" fill={ROTARY_GOLD} radius={[4, 4, 0, 0]} />
+        <Bar dataKey="Endowment"   stackId="trf" fill={ROTARY_GOLD} />
+        <Bar dataKey="Other Funds" stackId="trf" fill={OTHER_GREEN} radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   )
 }
 
-// ─── Zone vs District Comparison ──────────────────────────────────────────────
-function ZoneVsDistrictBar({ zoneTotal, districtTotal, label }) {
-  const pct = districtTotal > 0 ? Math.min((zoneTotal / districtTotal) * 100, 100) : 0
+// ─── Club vs AG Total Comparison ──────────────────────────────────────────────
+function ClubVsAgBar({ clubs, agTotal }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5">
       <h3 className="text-sm font-semibold text-slate-600 mb-4 uppercase tracking-wider">
-        Zone vs District — TRF Comparison
+        My Clubs TRF Summary — Per-Club Contribution
       </h3>
       <div className="space-y-3">
-        {/* Zone bar */}
+        {clubs
+          .filter((c) => c.trf.totalINR > 0)
+          .sort((a, b) => b.trf.totalINR - a.trf.totalINR)
+          .map((club) => {
+            const pct = agTotal > 0 ? Math.min((club.trf.totalINR / agTotal) * 100, 100) : 0
+            return (
+              <div key={club.id}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className="font-medium text-slate-700">{club.name}</span>
+                  <span className="font-bold text-blue-700">{fmtINR(club.trf.totalINR)}</span>
+                </div>
+                <div className="bg-slate-100 rounded-full h-4">
+                  <div
+                    className="h-4 rounded-full flex items-center justify-end pr-2 transition-all duration-700"
+                    style={{ width: `${pct}%`, background: ROTARY_BLUE, minWidth: pct > 0 ? 32 : 0 }}
+                  >
+                    {pct >= 8 && (
+                      <span className="text-white text-[10px] font-bold">{pct.toFixed(1)}%</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        {/* AG Total bar (always 100%) */}
         <div>
           <div className="flex justify-between text-xs mb-1">
-            <span className="font-medium text-slate-700">{label} Giving</span>
-            <span className="font-bold text-blue-700">{fmtUSD(zoneTotal)}</span>
-          </div>
-          <div className="bg-slate-100 rounded-full h-4">
-            <div
-              className="h-4 rounded-full flex items-center justify-end pr-2 transition-all duration-700"
-              style={{ width: `${pct}%`, background: ROTARY_BLUE, minWidth: pct > 0 ? 32 : 0 }}
-            >
-              {pct >= 8 && (
-                <span className="text-white text-[10px] font-bold">{pct.toFixed(1)}%</span>
-              )}
-            </div>
-          </div>
-        </div>
-        {/* District bar (always 100%) */}
-        <div>
-          <div className="flex justify-between text-xs mb-1">
-            <span className="font-medium text-slate-700">District Total</span>
-            <span className="font-bold text-amber-600">{fmtUSD(districtTotal)}</span>
+            <span className="font-medium text-slate-700">AG Total (All Clubs)</span>
+            <span className="font-bold text-amber-600">{fmtINR(agTotal)}</span>
           </div>
           <div className="bg-slate-100 rounded-full h-4">
             <div
@@ -211,7 +215,7 @@ function ZoneVsDistrictBar({ zoneTotal, districtTotal, label }) {
         </div>
       </div>
       <p className="text-xs text-slate-400 mt-4 text-right">
-        {label} contributes {pct.toFixed(2)}% of district total giving
+        Combined giving across {CLUBS.length} clubs
       </p>
     </div>
   )
@@ -219,14 +223,12 @@ function ZoneVsDistrictBar({ zoneTotal, districtTotal, label }) {
 
 // ─── Detailed Table ───────────────────────────────────────────────────────────
 const SORT_FIELDS = {
-  name:       (c) => c.name,
-  annual:     (c) => c.trf.annualFund,
-  polio:      (c) => c.trf.polioPlus,
-  other:      (c) => c.trf.otherFunds,
-  endowment:  (c) => c.trf.endowment,
-  total:      (c) => c.trf.total,
-  donors:     (c) => c.trf.donors,
-  newDonors:  (c) => c.trf.newDonors,
+  name:      (c) => c.name,
+  annual:    (c) => c.trf.annualINR,
+  polio:     (c) => c.trf.polioINR,
+  endowment: (c) => c.trf.endowment,
+  other:     (c) => c.trf.others,
+  total:     (c) => c.trf.totalINR,
 }
 
 function SortIcon({ field, sortBy, asc }) {
@@ -234,7 +236,7 @@ function SortIcon({ field, sortBy, asc }) {
   return <span className="text-blue-600 ml-1">{asc ? '↑' : '↓'}</span>
 }
 
-function TRFTable({ clubs, totals }) {
+function TRFTable({ clubs }) {
   const [sortBy, setSortBy] = useState('total')
   const [asc, setAsc] = useState(false)
 
@@ -262,15 +264,12 @@ function TRFTable({ clubs, totals }) {
     </th>
   )
 
-  // Compute zone totals from clubs array
   const sumOf = (key) => clubs.reduce((s, c) => s + (c.trf[key] || 0), 0)
-  const totalAnnual   = sumOf('annualFund')
-  const totalPolio    = sumOf('polioPlus')
-  const totalOther    = sumOf('otherFunds')
+  const totalAnnual   = sumOf('annualINR')
+  const totalPolio    = sumOf('polioINR')
   const totalEndow    = sumOf('endowment')
-  const totalGiving   = sumOf('total')
-  const totalDonors   = sumOf('donors')
-  const totalNewDonors = sumOf('newDonors')
+  const totalOther    = sumOf('others')
+  const totalGiving   = sumOf('totalINR')
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden">
@@ -278,40 +277,34 @@ function TRFTable({ clubs, totals }) {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 sticky top-0 z-10 border-b border-slate-200">
             <tr>
-              {th('Club Name',   'name',      'min-w-[160px]')}
-              {th('Annual Fund', 'annual',    'text-right')}
-              {th('PolioPlus',   'polio',     'text-right')}
-              {th('Other Funds', 'other',     'text-right')}
-              {th('Endowment',   'endowment', 'text-right')}
-              {th('Total',       'total',     'text-right')}
-              {th('Donors',      'donors',    'text-right')}
-              {th('New Donors',  'newDonors', 'text-right')}
+              {th('Club Name',    'name',      'min-w-[160px]')}
+              {th('Annual Fund',  'annual',    'text-right')}
+              {th('PolioPlus',    'polio',     'text-right')}
+              {th('Endowment',    'endowment', 'text-right')}
+              {th('Other Funds',  'other',     'text-right')}
+              {th('Total (INR)',  'total',     'text-right')}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {sorted.map((club) => (
               <tr key={club.id} className="hover:bg-blue-50/40 transition-colors">
                 <td className="px-3 py-2.5 font-medium text-slate-800">{club.name}</td>
-                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtUSD(club.trf.annualFund)}</td>
-                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtUSD(club.trf.polioPlus)}</td>
-                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtUSD(club.trf.otherFunds)}</td>
-                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtUSD(club.trf.endowment)}</td>
-                <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-blue-700">{fmtUSD(club.trf.total)}</td>
-                <td className="px-3 py-2.5 text-right text-slate-600">{club.trf.donors || '—'}</td>
-                <td className="px-3 py-2.5 text-right text-slate-600">{club.trf.newDonors || '—'}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtINR(club.trf.annualINR)}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtINR(club.trf.polioINR)}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtINR(club.trf.endowment)}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums text-slate-600">{fmtINR(club.trf.others)}</td>
+                <td className="px-3 py-2.5 text-right tabular-nums font-semibold text-blue-700">{fmtINR(club.trf.totalINR)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot className="bg-slate-800 text-white">
             <tr>
-              <td className="px-3 py-3 font-bold text-sm">Zone Total</td>
-              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtUSD(totalAnnual)}</td>
-              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtUSD(totalPolio)}</td>
-              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtUSD(totalOther)}</td>
-              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtUSD(totalEndow)}</td>
-              <td className="px-3 py-3 text-right font-bold tabular-nums" style={{ color: ROTARY_GOLD }}>{fmtUSD(totalGiving)}</td>
-              <td className="px-3 py-3 text-right font-bold">{totalDonors}</td>
-              <td className="px-3 py-3 text-right font-bold">{totalNewDonors}</td>
+              <td className="px-3 py-3 font-bold text-sm">AG Total</td>
+              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtINR(totalAnnual)}</td>
+              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtINR(totalPolio)}</td>
+              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtINR(totalEndow)}</td>
+              <td className="px-3 py-3 text-right font-bold tabular-nums">{fmtINR(totalOther)}</td>
+              <td className="px-3 py-3 text-right font-bold tabular-nums" style={{ color: ROTARY_GOLD }}>{fmtINR(totalGiving)}</td>
             </tr>
           </tfoot>
         </table>
@@ -322,91 +315,57 @@ function TRFTable({ clubs, totals }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function TRFGiving() {
-  const user   = JSON.parse(sessionStorage.getItem('ag_user') || '{}')
-  const clubs  = user.zone === 'ALL' ? CLUBS : getZoneClubs(user.zone)
-  const totals = user.zone === 'ALL' ? DISTRICT_TOTALS : ZONE_TOTALS[user.zone]
-  const zoneInfo = user.zone === 'ALL' ? null : getZoneInfo(user.zone)
-  const zoneName = user.zone === 'ALL' ? 'All Zones (District)' : `Zone ${user.zone}`
+  const agTotal   = AG_TOTALS.totalTRF_INR
+  const agTotalUSD = AG_TOTALS.totalTRF_USD
 
-  // Derive per-club aggregated sums for KPI when zone === ALL
-  // For zone users, ZONE_TOTALS has the fields. For ALL, DISTRICT_TOTALS has them.
-  const kpiTotal   = totals?.trfTotal  ?? clubs.reduce((s, c) => s + c.trf.total, 0)
-  const kpiAnnual  = totals?.trfAnnualFund ?? clubs.reduce((s, c) => s + c.trf.annualFund, 0)
-  const kpiPolio   = totals?.trfPolioPlus  ?? clubs.reduce((s, c) => s + c.trf.polioPlus, 0)
-  const kpiOther   = (totals?.trfOther ?? totals?.trfOtherFunds) ?? clubs.reduce((s, c) => s + c.trf.otherFunds, 0)
-  const kpiDonors  = totals?.donors    ?? clubs.reduce((s, c) => s + c.trf.donors, 0)
-  const kpiNew     = totals?.newDonors ?? clubs.reduce((s, c) => s + c.trf.newDonors, 0)
-
-  // For zone-level users, compute annual/polio/other from clubs (ZONE_TOTALS doesn't break them out)
-  const zoneAnnual = clubs.reduce((s, c) => s + c.trf.annualFund, 0)
-  const zonePolio  = clubs.reduce((s, c) => s + c.trf.polioPlus, 0)
-  const zoneOther  = clubs.reduce((s, c) => s + c.trf.otherFunds, 0)
-  const zoneEndow  = clubs.reduce((s, c) => s + c.trf.endowment, 0)
-
-  const displayAnnual = user.zone === 'ALL' ? kpiAnnual : zoneAnnual
-  const displayPolio  = user.zone === 'ALL' ? kpiPolio  : zonePolio
-  const displayOther  = user.zone === 'ALL' ? kpiOther  : zoneOther
-  const displayTotal  = kpiTotal
-
-  const districtTotal = DISTRICT_TOTALS.trfTotal
-  const zoneTotal     = user.zone === 'ALL' ? districtTotal : (ZONE_TOTALS[user.zone]?.trfTotal ?? clubs.reduce((s, c) => s + c.trf.total, 0))
+  // Compute per-club aggregates
+  const totalAnnualINR = CLUBS.reduce((s, c) => s + (c.trf.annualINR || 0), 0)
+  const totalPolioINR  = CLUBS.reduce((s, c) => s + (c.trf.polioINR  || 0), 0)
+  const totalOtherINR  = CLUBS.reduce((s, c) => s + (c.trf.others    || 0), 0)
 
   return (
     <div className="space-y-6 pb-8">
       {/* 1. Header */}
       <SectionHeader
         title="The Rotary Foundation Giving"
-        subtitle="Charitable contributions — Rotary Year 2025-26"
+        subtitle={`Charitable contributions — Rotary Year 2025-26 · AG: ${AG_NAME}`}
         icon={Heart}
       />
 
       {/* 2. KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
         <KPICard
-          title="Total Giving (USD)"
-          value={fmtUSD(displayTotal)}
+          title="Total Giving (INR)"
+          value={fmtINR(agTotal)}
           icon={DollarSign}
           color="gold"
           subtitle="All TRF funds combined"
         />
         <KPICard
           title="Annual Fund"
-          value={fmtUSD(displayAnnual)}
+          value={fmtINR(totalAnnualINR)}
           icon={TrendingUp}
           color="blue"
           subtitle="Unrestricted annual giving"
         />
         <KPICard
           title="PolioPlus Fund"
-          value={fmtUSD(displayPolio)}
+          value={fmtINR(totalPolioINR)}
           icon={Heart}
           color="purple"
           subtitle="Polio eradication"
         />
         <KPICard
-          title="Other Funds"
-          value={fmtUSD(displayOther)}
+          title="Other / Endowment"
+          value={fmtINR(totalOtherINR)}
           icon={Award}
           color="green"
           subtitle="Designated & special"
         />
-        <KPICard
-          title="Total Donors"
-          value={kpiDonors}
-          icon={Users}
-          color="blue"
-          subtitle={`${kpiDonors} donors, ${kpiNew} new`}
-        />
       </div>
 
-      {/* 3. Zone Banner */}
-      {user.zone !== 'ALL' && (
-        <ZoneBanner
-          zoneTotal={zoneTotal}
-          districtTotal={districtTotal}
-          zoneName={zoneName}
-        />
-      )}
+      {/* 3. AG Banner */}
+      <AgBanner clubsTotal={agTotal} agName={AG_NAME} />
 
       {/* 4. Chart + Leaderboard side-by-side */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -419,27 +378,21 @@ export default function TRFGiving() {
             </div>
             <BarChart2 size={18} className="text-slate-300" />
           </div>
-          <TRFStackedBarChart clubs={clubs} />
+          <TRFStackedBarChart clubs={CLUBS} />
         </div>
 
         {/* Leaderboard */}
         <div className="bg-white rounded-2xl border border-slate-200 p-5">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-base font-semibold text-slate-800">Top Giving Clubs</h3>
-            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{zoneName}</span>
+            <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">My Clubs</span>
           </div>
-          <Leaderboard clubs={clubs} />
+          <Leaderboard clubs={CLUBS} />
         </div>
       </div>
 
-      {/* 5. Zone vs District */}
-      {user.zone !== 'ALL' && (
-        <ZoneVsDistrictBar
-          zoneTotal={zoneTotal}
-          districtTotal={districtTotal}
-          label={zoneName}
-        />
-      )}
+      {/* 5. Club vs AG total comparison bars */}
+      <ClubVsAgBar clubs={CLUBS} agTotal={agTotal} />
 
       {/* 6. Detailed Table */}
       <div>
@@ -447,7 +400,7 @@ export default function TRFGiving() {
           <h3 className="text-base font-semibold text-slate-800">Detailed TRF Giving Table</h3>
           <span className="text-xs text-slate-400">Click column headers to sort</span>
         </div>
-        <TRFTable clubs={clubs} totals={totals} />
+        <TRFTable clubs={CLUBS} />
       </div>
     </div>
   )

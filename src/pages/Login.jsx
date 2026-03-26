@@ -1,34 +1,32 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ShieldCheck, Smartphone, KeyRound, ChevronDown } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Separator } from '@/components/ui/separator'
+import { ShieldCheck, Smartphone, KeyRound, User, Check } from 'lucide-react'
 
-const ZONES = [
-  { id: 'A', label: 'Zone A', name: 'Shankar Sastry C V', role: 'ag' },
-  { id: 'B', label: 'Zone B', name: 'Sharavana J', role: 'ag' },
-  { id: 'C', label: 'Zone C', name: 'Aravind S Hooli', role: 'ag' },
-  { id: 'D', label: 'Zone D', name: 'Manjunath Patil K', role: 'ag' },
-  { id: 'E', label: 'Zone E', name: 'Madhusudan R Bidi', role: 'ag' },
-  { id: 'F', label: 'Zone F', name: 'Prasanna Kumar C N', role: 'ag' },
-  { id: 'G', label: 'Zone G', name: 'Rajesh T S', role: 'ag' },
-  { id: 'ALL', label: 'District Governor', name: 'District Governor', role: 'dg' },
+const FEATURES = [
+  'Club membership analytics',
+  'Foundation & TRF tracking',
+  'Goals & compliance',
+  'Youth services overview',
 ]
 
 export default function Login() {
   const navigate = useNavigate()
 
-  const [selectedZone, setSelectedZone] = useState('')
-  const [mobile, setMobile] = useState('')
+  const [name,    setName]    = useState('')
+  const [mobile,  setMobile]  = useState('')
   const [otpSent, setOtpSent] = useState(false)
-  const [otp, setOtp] = useState(['', '', '', ''])
-  const [error, setError] = useState('')
+  const [otp,     setOtp]     = useState(['', '', '', ''])
+  const [error,   setError]   = useState('')
   const [loading, setLoading] = useState(false)
 
-  const selectedUser = ZONES.find(z => z.id === selectedZone)
-
+  /* ── Handlers ─────────────────────────────────────────────────────── */
   const handleSendOtp = () => {
     setError('')
-    if (!selectedZone) {
-      setError('Please select your zone or role.')
+    if (!name.trim()) {
+      setError('Please enter your full name.')
       return
     }
     if (!mobile || mobile.length < 10) {
@@ -49,237 +47,282 @@ export default function Login() {
     next[index] = cleaned
     setOtp(next)
     if (cleaned && index < 3) {
-      const nextInput = document.getElementById(`otp-${index + 1}`)
-      if (nextInput) nextInput.focus()
+      document.getElementById(`otp-${index + 1}`)?.focus()
     }
   }
 
   const handleOtpKeyDown = (e, index) => {
     if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      const prev = document.getElementById(`otp-${index - 1}`)
-      if (prev) prev.focus()
+      document.getElementById(`otp-${index - 1}`)?.focus()
     }
   }
 
   const handleVerify = () => {
     setError('')
-    const entered = otp.join('')
-    if (entered !== '1234') {
-      setError('Invalid OTP. Use demo OTP: 1234')
-      return
-    }
-    if (!selectedUser) {
-      setError('No zone selected.')
+    if (otp.join('') !== '1234') {
+      setError('Invalid OTP. Demo OTP is 1234.')
       return
     }
     const userData = {
-      id: `${selectedUser.role}-${selectedUser.id.toLowerCase()}`,
-      name: selectedUser.name,
-      zone: selectedUser.id,
-      role: selectedUser.role,
+      name:   name.trim(),
+      mobile: mobile,
+      role:   'ag',
     }
     sessionStorage.setItem('ag_user', JSON.stringify(userData))
     navigate('/overview')
   }
 
+  /* ── Render ────────────────────────────────────────────────────────── */
   return (
-    <div
-      className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{
-        background: 'linear-gradient(135deg, #001f6e 0%, #003DA5 45%, #0055c8 75%, #0068e1 100%)',
-      }}
-    >
-      {/* Decorative background circles */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    <div className="min-h-screen flex flex-col lg:flex-row">
+
+      {/* ── Left panel ── */}
+      <div
+        className="relative hidden lg:flex flex-col justify-between w-1/2 p-12 overflow-hidden"
+        style={{ backgroundColor: '#003DA5' }}
+      >
+        {/* Gold accent line at top */}
         <div
-          className="absolute -top-32 -left-32 w-96 h-96 rounded-full opacity-10"
-          style={{ background: '#F7A81B' }}
+          className="absolute top-0 left-0 w-full h-1"
+          style={{ background: 'linear-gradient(90deg, #F7A81B, transparent)' }}
         />
-        <div
-          className="absolute -bottom-24 -right-24 w-80 h-80 rounded-full opacity-10"
-          style={{ background: '#F7A81B' }}
-        />
-        <div
-          className="absolute top-1/2 left-1/4 w-48 h-48 rounded-full opacity-5"
-          style={{ background: '#ffffff' }}
-        />
+
+        {/* Decorative Rotary wheel rings — bottom-right */}
+        <div className="absolute -bottom-40 -right-40 opacity-10 pointer-events-none">
+          <div className="w-[28rem] h-[28rem] rounded-full border-[40px] border-white" />
+        </div>
+        <div className="absolute -bottom-24 -right-24 opacity-10 pointer-events-none">
+          <div className="w-72 h-72 rounded-full border-[28px] border-white" />
+        </div>
+        <div className="absolute -bottom-10 -right-10 opacity-10 pointer-events-none">
+          <div className="w-44 h-44 rounded-full border-[18px] border-white" />
+        </div>
+
+        {/* Top: logo + heading */}
+        <div>
+          <div
+            className="w-20 h-20 rounded-full flex items-center justify-center font-black text-3xl shadow-xl mb-8"
+            style={{
+              background: 'linear-gradient(145deg, #F7A81B, #e09210)',
+              color: '#1e3a5f',
+            }}
+          >
+            RI
+          </div>
+
+          <h1 className="text-white text-4xl font-extrabold tracking-tight leading-none mb-2">
+            Assistant Governor
+          </h1>
+          <p className="text-blue-200 text-xl font-medium mb-5">
+            Dashboard
+          </p>
+
+          <Badge
+            className="text-xs font-semibold px-3 py-1 rounded-full border-0"
+            style={{ backgroundColor: 'rgba(247,168,27,0.2)', color: '#F7A81B' }}
+          >
+            Rotary Year 2025-26
+          </Badge>
+        </div>
+
+        {/* Middle: feature bullets */}
+        <div>
+          <p className="text-blue-300 text-xs uppercase tracking-widest font-semibold mb-4">
+            What&apos;s inside
+          </p>
+          <ul className="flex flex-col gap-3">
+            {FEATURES.map(f => (
+              <li key={f} className="flex items-center gap-3">
+                <span
+                  className="flex-shrink-0 w-5 h-5 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: 'rgba(247,168,27,0.2)' }}
+                >
+                  <Check size={11} style={{ color: '#F7A81B' }} strokeWidth={3} />
+                </span>
+                <span className="text-blue-100 text-sm">{f}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Bottom: tagline */}
+        <div>
+          <p className="text-blue-400 text-xs">
+            Rotary International · Karnataka, India
+          </p>
+        </div>
       </div>
 
-      {/* Login card */}
-      <div className="relative w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+      {/* ── Right panel ── */}
+      <div className="flex-1 flex items-center justify-center bg-slate-50 px-6 py-12">
+        <div className="w-full max-w-md">
 
-        {/* Top accent bar */}
-        <div className="h-1.5 w-full" style={{ background: 'linear-gradient(90deg, #003DA5, #F7A81B, #003DA5)' }} />
-
-        <div className="px-8 pt-8 pb-10">
-
-          {/* Logo & heading */}
-          <div className="flex flex-col items-center mb-7">
-            {/* Gold Rotary gear circle */}
+          {/* Mobile-only brand header */}
+          <div className="flex lg:hidden flex-col items-center mb-8">
             <div
-              className="w-20 h-20 rounded-full flex items-center justify-center shadow-lg mb-4"
-              style={{ background: 'linear-gradient(145deg, #F7A81B, #e09210)' }}
+              className="w-14 h-14 rounded-full flex items-center justify-center font-black text-xl shadow-lg mb-3"
+              style={{
+                background: 'linear-gradient(145deg, #F7A81B, #e09210)',
+                color: '#1e3a5f',
+              }}
             >
-              <span className="text-white font-black text-2xl tracking-tight select-none">RI</span>
+              RI
             </div>
+            <p className="text-slate-800 font-bold text-lg">Assistant Governor</p>
+            <p className="text-slate-500 text-sm">Dashboard</p>
+          </div>
 
-            <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: '#003DA5' }}>
-              District 3192
-            </h1>
-            <p className="mt-1 text-sm font-medium text-gray-500">
-              Assistant Governor Dashboard &nbsp;·&nbsp; 2025-26
-            </p>
-
+          <Card className="border border-slate-200 shadow-lg rounded-2xl overflow-hidden">
+            {/* Accent bar */}
             <div
-              className="mt-3 px-3 py-1 rounded-full text-xs font-semibold text-white"
-              style={{ background: '#003DA5' }}
-            >
-              Rotary International
-            </div>
-          </div>
+              className="h-1 w-full"
+              style={{ background: 'linear-gradient(90deg, #003DA5, #F7A81B, #003DA5)' }}
+            />
 
-          {/* Divider */}
-          <div className="border-t border-gray-100 mb-6" />
+            <CardHeader className="px-7 pt-7 pb-0">
+              <CardTitle className="text-xl font-extrabold text-slate-800">
+                Sign In
+              </CardTitle>
+              <CardDescription className="text-sm text-slate-500 mt-1">
+                Enter your details to access your clubs
+              </CardDescription>
+            </CardHeader>
 
-          {/* Zone selector */}
-          <div className="mb-4">
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Select Your Zone
-            </label>
-            <div className="relative">
-              <select
-                value={selectedZone}
-                onChange={e => { setSelectedZone(e.target.value); setError('') }}
-                className="w-full appearance-none border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-800 bg-gray-50 focus:outline-none focus:ring-2 focus:border-transparent transition"
-                style={{ '--tw-ring-color': '#003DA5' }}
-              >
-                <option value="">— Select zone or role —</option>
-                {ZONES.map(z => (
-                  <option key={z.id} value={z.id}>
-                    {z.label} {z.id !== 'ALL' ? `— ${z.name}` : ''}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
+            <CardContent className="px-7 pt-5 pb-7">
 
-            {selectedUser && selectedUser.id !== 'ALL' && (
-              <p className="mt-1.5 text-xs text-gray-500 pl-1">
-                <span className="font-semibold" style={{ color: '#003DA5' }}>{selectedUser.name}</span>
-                &nbsp;· AG Zone {selectedUser.id}
-              </p>
-            )}
-            {selectedUser && selectedUser.id === 'ALL' && (
-              <p className="mt-1.5 text-xs pl-1" style={{ color: '#F7A81B' }} >
-                <span className="font-semibold">District Governor</span> &nbsp;· All Zones
-              </p>
-            )}
-          </div>
-
-          {/* Mobile input */}
-          <div className="mb-5">
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
-              Mobile Number
-            </label>
-            <div className="relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
-                <Smartphone size={15} className="text-gray-400" />
-                <span className="text-sm text-gray-400">+91</span>
-              </div>
-              <input
-                type="tel"
-                maxLength={10}
-                placeholder="Enter 10-digit mobile"
-                value={mobile}
-                onChange={e => { setMobile(e.target.value.replace(/\D/g, '')); setError('') }}
-                className="w-full border border-gray-200 rounded-xl pl-14 pr-4 py-3 text-sm bg-gray-50 text-gray-800 focus:outline-none focus:ring-2 focus:border-transparent transition"
-                style={{ '--tw-ring-color': '#003DA5' }}
-              />
-            </div>
-          </div>
-
-          {/* OTP fields */}
-          {otpSent && (
-            <div className="mb-5 p-4 rounded-xl bg-blue-50 border border-blue-100">
-              <div className="flex items-center gap-2 mb-3">
-                <KeyRound size={14} className="text-blue-600" />
-                <span className="text-xs font-semibold text-blue-700">Enter OTP</span>
-              </div>
-              <div className="flex gap-3 justify-center mb-2">
-                {otp.map((digit, i) => (
+              {/* Name input */}
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Your Name
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+                    <User size={14} className="text-slate-400" />
+                  </div>
                   <input
-                    key={i}
-                    id={`otp-${i}`}
                     type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={e => handleOtpChange(e.target.value, i)}
-                    onKeyDown={e => handleOtpKeyDown(e, i)}
-                    className="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl bg-white focus:outline-none transition"
-                    style={{
-                      borderColor: digit ? '#003DA5' : '#d1d5db',
-                      color: '#003DA5',
-                    }}
+                    placeholder="Your full name"
+                    value={name}
+                    onChange={e => { setName(e.target.value); setError('') }}
+                    disabled={otpSent}
+                    className="w-full border border-slate-200 rounded-xl pl-9 pr-4 py-3 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/40 focus:border-blue-600 transition disabled:bg-slate-50 disabled:text-slate-400"
                   />
-                ))}
+                </div>
               </div>
-              <p className="text-center text-xs text-blue-500 mt-1">
-                Demo: use OTP <span className="font-bold tracking-widest">1234</span>
-              </p>
-            </div>
-          )}
 
-          {/* Error message */}
-          {error && (
-            <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
-              {error}
-            </div>
-          )}
+              {/* Mobile number */}
+              <div className="mb-5">
+                <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Mobile Number
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3.5 top-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none">
+                    <Smartphone size={14} className="text-slate-400" />
+                    <span className="text-sm text-slate-400 font-medium">+91</span>
+                    <span className="text-slate-200 mx-0.5">|</span>
+                  </div>
+                  <input
+                    type="tel"
+                    maxLength={10}
+                    placeholder="10-digit number"
+                    value={mobile}
+                    onChange={e => { setMobile(e.target.value.replace(/\D/g, '')); setError('') }}
+                    disabled={otpSent}
+                    className="w-full border border-slate-200 rounded-xl pl-[4.5rem] pr-4 py-3 text-sm bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-600/40 focus:border-blue-600 transition disabled:bg-slate-50 disabled:text-slate-400"
+                  />
+                </div>
+              </div>
 
-          {/* Action buttons */}
-          {!otpSent ? (
-            <button
-              onClick={handleSendOtp}
-              disabled={loading}
-              className="w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-wide transition-all active:scale-95 shadow-md hover:shadow-lg disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #003DA5, #0055c8)' }}
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                  </svg>
-                  Sending OTP…
-                </span>
-              ) : 'Send OTP'}
-            </button>
-          ) : (
-            <div className="flex flex-col gap-3">
-              <button
-                onClick={handleVerify}
-                className="w-full py-3.5 rounded-xl text-white font-bold text-sm tracking-wide transition-all active:scale-95 shadow-md hover:shadow-lg"
-                style={{ background: 'linear-gradient(135deg, #003DA5, #0055c8)' }}
-              >
-                Verify &amp; Login
-              </button>
-              <button
-                onClick={() => { setOtpSent(false); setOtp(['', '', '', '']); setError('') }}
-                className="w-full py-2.5 rounded-xl text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200 transition"
-              >
-                Change Zone / Mobile
-              </button>
-            </div>
-          )}
+              {/* OTP boxes */}
+              {otpSent && (
+                <div className="mb-5 p-4 rounded-xl bg-blue-50 border border-blue-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <KeyRound size={13} className="text-blue-600" />
+                    <span className="text-xs font-semibold text-blue-700">Enter OTP</span>
+                  </div>
+                  <div className="flex gap-3 justify-center mb-2">
+                    {otp.map((digit, i) => (
+                      <input
+                        key={i}
+                        id={`otp-${i}`}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={e => handleOtpChange(e.target.value, i)}
+                        onKeyDown={e => handleOtpKeyDown(e, i)}
+                        className="w-12 h-12 text-center text-xl font-bold border-2 rounded-xl bg-white focus:outline-none transition-colors"
+                        style={{
+                          borderColor: digit ? '#003DA5' : '#e2e8f0',
+                          color: '#003DA5',
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-center text-xs text-blue-500 mt-1.5">
+                    Demo mode — OTP is{' '}
+                    <span className="font-bold tracking-[0.2em]">1234</span>
+                  </p>
+                </div>
+              )}
 
-          {/* Footer note */}
-          <div className="mt-6 flex items-center justify-center gap-1.5">
-            <ShieldCheck size={13} className="text-gray-400" />
-            <p className="text-xs text-gray-400">
-              View-only dashboard &nbsp;·&nbsp; RI District 3192
-            </p>
-          </div>
+              {/* Error */}
+              {error && (
+                <div className="mb-4 px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 font-medium">
+                  {error}
+                </div>
+              )}
+
+              {/* Action buttons */}
+              {!otpSent ? (
+                <button
+                  onClick={handleSendOtp}
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl text-white text-sm font-bold tracking-wide shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                  style={{ background: 'linear-gradient(135deg, #003DA5 0%, #0055c8 100%)' }}
+                >
+                  {loading ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                      </svg>
+                      Sending OTP…
+                    </span>
+                  ) : (
+                    'Send OTP'
+                  )}
+                </button>
+              ) : (
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={handleVerify}
+                    className="w-full py-3.5 rounded-xl text-white text-sm font-bold tracking-wide shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+                    style={{ background: 'linear-gradient(135deg, #003DA5 0%, #0055c8 100%)' }}
+                  >
+                    Verify &amp; Login
+                  </button>
+                  <button
+                    onClick={() => { setOtpSent(false); setOtp(['', '', '', '']); setError('') }}
+                    className="w-full py-2.5 rounded-xl text-sm font-semibold text-slate-500 bg-slate-100 hover:bg-slate-200 transition-colors"
+                  >
+                    Change Details
+                  </button>
+                </div>
+              )}
+
+              <Separator className="my-5" />
+
+              {/* Footer */}
+              <div className="flex items-center justify-center gap-1.5">
+                <ShieldCheck size={12} className="text-slate-400" />
+                <p className="text-xs text-slate-400">
+                  View-only dashboard · Rotary International
+                </p>
+              </div>
+
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

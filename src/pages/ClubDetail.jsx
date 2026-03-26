@@ -1,680 +1,991 @@
-import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CLUBS } from '../data/district3192'
+import { useState } from 'react'
+import { getClubById } from '@/data/realData'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Progress } from '@/components/ui/progress'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
-  BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
-} from 'recharts'
-import {
-  ArrowLeft, Users, Heart, Award, Star, Briefcase,
-  TrendingUp, AlertCircle, CheckCircle, Calendar, MapPin, User
+  ArrowLeft, Users, Calendar, TrendingUp, Heart, Award,
+  Briefcase, CheckCircle2, XCircle, BarChart2, Globe,
+  DollarSign, Target, BookOpen, Megaphone, Eye, FileText
 } from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  Legend, ResponsiveContainer, Cell
+} from 'recharts'
 
-const ROTARY_BLUE = '#003DA5'
-const ROTARY_GOLD = '#F7A81B'
-const DONUT_COLORS = ['#003DA5', '#F7A81B', '#10B981', '#8B5CF6']
+// ── Formatters ────────────────────────────────────────────────────────────────
 
-// ── helpers ────────────────────────────────────────────────────────────────
-
-function fmt(n, decimals = 2) {
-  return Number(n || 0).toLocaleString('en-IN', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  })
+const fmtINR = (n) => {
+  if (!n && n !== 0) return '—'
+  const v = Number(n)
+  if (v === 0) return '₹0'
+  if (v >= 10000000) return '₹' + (v / 10000000).toFixed(2) + ' Cr'
+  if (v >= 100000) return '₹' + (v / 100000).toFixed(2) + ' L'
+  if (v >= 1000) return '₹' + (v / 1000).toFixed(1) + 'K'
+  return '₹' + v.toLocaleString('en-IN')
 }
 
-function fmtUSD(n) {
-  return `$${fmt(n)}`
+const fmtINRFull = (n) =>
+  n != null ? '₹' + Number(n).toLocaleString('en-IN', { maximumFractionDigits: 0 }) : '—'
+
+const fmtNum = (n) =>
+  n != null ? Number(n).toLocaleString('en-IN') : '—'
+
+const fmtDate = (d) => {
+  if (!d) return '—'
+  const parts = d.split('-')
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0].slice(2)}`
+  }
+  return d
 }
 
-function fmtINR(n) {
-  return `₹${Number(n || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-}
+// ── Custom Tooltip ────────────────────────────────────────────────────────────
 
-function growthLabel(pct) {
-  if (pct < 0) return { label: 'Declining', color: 'bg-red-100 text-red-700' }
-  if (pct === 0) return { label: 'Stable', color: 'bg-yellow-100 text-yellow-700' }
-  if (pct < 10) return { label: 'Growing', color: 'bg-blue-100 text-blue-700' }
-  return { label: 'High Growth', color: 'bg-green-100 text-green-700' }
-}
-
-// ── small reusable components ───────────────────────────────────────────────
-
-function KpiCard({ icon: Icon, label, value, sub, accent }) {
-  return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-start gap-3">
-      <div className="p-2 rounded-lg" style={{ backgroundColor: accent + '18' }}>
-        <Icon size={20} style={{ color: accent }} />
-      </div>
-      <div>
-        <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</p>
-        <p className="text-2xl font-bold text-gray-800 leading-tight">{value}</p>
-        {sub && <p className="text-xs text-gray-500 mt-0.5">{sub}</p>}
-      </div>
-    </div>
-  )
-}
-
-function StatusBadge({ ok, trueLabel = 'Paid', falseLabel = 'Unpaid' }) {
-  return ok ? (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-100 text-green-700">
-      <CheckCircle size={12} /> {trueLabel}
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-red-100 text-red-700">
-      <AlertCircle size={12} /> {falseLabel}
-    </span>
-  )
-}
-
-function HBar({ label, value, benchmark, color }) {
-  const pct = Math.min(value, 100)
-  const bpct = Math.min(benchmark, 100)
-  return (
-    <div className="mb-4">
-      <div className="flex justify-between text-sm mb-1">
-        <span className="font-medium text-gray-700">{label}</span>
-        <span className="font-bold" style={{ color }}>{fmt(value, 1)}%</span>
-      </div>
-      <div className="relative h-3 bg-gray-100 rounded-full overflow-visible">
-        <div
-          className="h-full rounded-full transition-all"
-          style={{ width: `${pct}%`, backgroundColor: color }}
-        />
-        {/* benchmark tick */}
-        <div
-          className="absolute top-0 h-full w-0.5 bg-gray-400"
-          style={{ left: `${bpct}%` }}
-          title={`District avg: ${benchmark}%`}
-        />
-      </div>
-      <p className="text-xs text-gray-400 mt-0.5">District avg: {benchmark}%</p>
-    </div>
-  )
-}
-
-function CircularProgress({ pct }) {
-  const r = 54
-  const circ = 2 * Math.PI * r
-  const offset = circ - (pct / 100) * circ
-  const color = pct >= 80 ? '#10B981' : pct >= 50 ? ROTARY_GOLD : '#EF4444'
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width="140" height="140" viewBox="0 0 140 140">
-        <circle cx="70" cy="70" r={r} fill="none" stroke="#E5E7EB" strokeWidth="12" />
-        <circle
-          cx="70" cy="70" r={r} fill="none"
-          stroke={color} strokeWidth="12"
-          strokeDasharray={circ}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform="rotate(-90 70 70)"
-        />
-        <text x="70" y="65" textAnchor="middle" fontSize="22" fontWeight="bold" fill={color}>{Math.round(pct)}%</text>
-        <text x="70" y="83" textAnchor="middle" fontSize="10" fill="#6B7280">Complete</text>
-      </svg>
-    </div>
-  )
-}
-
-function OrgChips({ items }) {
-  if (!items || items.length === 0) return <span className="text-gray-400 text-sm">—</span>
-  return (
-    <div className="flex flex-wrap gap-1.5 mt-1">
-      {items.map((name, i) => (
-        <span key={i} className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
-          {name}
-        </span>
-      ))}
-    </div>
-  )
-}
-
-// ── tabs ────────────────────────────────────────────────────────────────────
-
-const TABS = ['Overview', 'Membership', 'Foundation (TRF)', 'Youth Services', 'Goals & Compliance']
-
-// ── Tab 1: Overview ─────────────────────────────────────────────────────────
-
-function TabOverview({ club }) {
-  const { membership: m, trf, excellence: ex, serviceProjects: sp } = club
-  const goalsCompletionPct = ex.goalsSet > 0 ? Math.round((ex.goalsCompleted / ex.goalsSet) * 100) : 0
-
-  const growthData = [
-    { period: 'July', members: m.atJuly },
-    { period: 'Current', members: m.current },
-  ]
-
-  const trfDonut = [
-    { name: 'Annual Fund', value: trf.annualFund },
-    { name: 'PolioPlus', value: trf.polioPlus },
-    { name: 'Other Funds', value: trf.otherFunds },
-    { name: 'Endowment', value: trf.endowment },
-  ].filter(d => d.value > 0)
-
-  return (
-    <div className="space-y-6">
-      {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Users} label="Current Members" value={m.current} sub={`+${m.current - m.atJuly} since July`} accent={ROTARY_BLUE} />
-        <KpiCard icon={Heart} label="TRF Total" value={fmtUSD(trf.total)} sub={`${trf.donors} donors`} accent="#10B981" />
-        <KpiCard icon={Briefcase} label="Service Projects" value={sp.projects} sub={`${sp.volunteers.toLocaleString()} volunteers`} accent={ROTARY_GOLD} />
-        <KpiCard icon={Star} label="Goals Completion" value={`${goalsCompletionPct}%`} sub={`${ex.goalsCompleted} / ${ex.goalsSet} goals`} accent="#8B5CF6" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Member growth bar */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Member Growth</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={growthData} barCategoryGap="40%">
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="period" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} domain={[0, 'auto']} />
-              <Tooltip />
-              <Bar dataKey="members" name="Members" radius={[6, 6, 0, 0]}>
-                {growthData.map((_, i) => (
-                  <Cell key={i} fill={i === 0 ? '#CBD5E1' : ROTARY_BLUE} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* TRF donut */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">TRF Breakdown</h3>
-          {trfDonut.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200}>
-              <PieChart>
-                <Pie data={trfDonut} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" paddingAngle={3}>
-                  {trfDonut.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
-                </Pie>
-                <Tooltip formatter={(v) => fmtUSD(v)} />
-                <Legend iconType="circle" iconSize={10} />
-              </PieChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-48 flex items-center justify-center text-gray-400 text-sm">No TRF contributions recorded</div>
-          )}
-        </div>
-      </div>
-
-      {/* Status summary */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Status Summary</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-600">Award Status</span>
-            <StatusBadge ok={ex.awardEarned} trueLabel="Earned" falseLabel="Not Earned" />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-600">July Invoice</span>
-            <StatusBadge ok={ex.julyInvoice} />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-            <span className="text-sm text-gray-600">January Invoice</span>
-            <StatusBadge ok={ex.janInvoice} />
-          </div>
-        </div>
-        {ex.duesOutstanding > 0 && (
-          <div className="mt-3 flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
-            <AlertCircle size={16} className="text-red-500 shrink-0" />
-            <span className="text-sm text-red-700">Outstanding dues: <strong>{fmtINR(ex.duesOutstanding)}</strong></span>
-          </div>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Tab 2: Membership ───────────────────────────────────────────────────────
-
-function TabMembership({ club }) {
-  const { membership: m } = club
-  const DIST_FEMALE_AVG = 21.9
-  const DIST_MYROTARY_AVG = 57.75
-  const { label: growthTag, color: growthColor } = growthLabel(m.growth)
-
-  const compositionData = [
-    { name: 'Female', value: m.female },
-    { name: 'Male', value: m.current - m.female },
-  ]
-
-  return (
-    <div className="space-y-6">
-      {/* top stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Members at July</p>
-          <p className="text-3xl font-bold text-gray-800">{m.atJuly}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Current Members</p>
-          <p className="text-3xl font-bold" style={{ color: ROTARY_BLUE }}>{m.current}</p>
-          <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${growthColor}`}>{growthTag}</span>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Female Members</p>
-          <p className="text-3xl font-bold text-gray-800">{m.female}</p>
-          <p className="text-xs text-gray-500">{fmt(m.femalePercent, 1)}% of club</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">MyRotary Registered</p>
-          <p className="text-3xl font-bold text-gray-800">{m.myRotary}</p>
-          <p className="text-xs text-gray-500">{fmt(m.myRotaryPercent, 1)}% of club</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* horizontal bars */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-5">vs District Averages</h3>
-          <HBar label="Female Members %" value={m.femalePercent} benchmark={DIST_FEMALE_AVG} color="#EC4899" />
-          <HBar label="MyRotary Registration %" value={m.myRotaryPercent} benchmark={DIST_MYROTARY_AVG} color={ROTARY_BLUE} />
-          <p className="text-xs text-gray-400 mt-2">Vertical line = district average</p>
-        </div>
-
-        {/* composition donut */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">Member Composition</h3>
-          <ResponsiveContainer width="100%" height={210}>
-            <PieChart>
-              <Pie data={compositionData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} dataKey="value" paddingAngle={3}>
-                <Cell fill="#EC4899" />
-                <Cell fill={ROTARY_BLUE} />
-              </Pie>
-              <Tooltip />
-              <Legend iconType="circle" iconSize={10} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* growth info */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">Growth Details</h3>
-        <div className="flex items-center gap-4 flex-wrap">
-          <div>
-            <span className="text-gray-500 text-sm">Net change: </span>
-            <span className={`font-bold text-sm ${m.current - m.atJuly >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {m.current - m.atJuly >= 0 ? '+' : ''}{m.current - m.atJuly} members
-            </span>
-          </div>
-          <div>
-            <span className="text-gray-500 text-sm">Growth rate: </span>
-            <span className={`font-bold text-sm ${m.growth >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-              {m.growth >= 0 ? '+' : ''}{fmt(m.growth, 2)}%
-            </span>
-          </div>
-          <span className={`text-xs font-semibold px-3 py-1 rounded-full ${growthColor}`}>{growthTag}</span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Tab 3: Foundation ───────────────────────────────────────────────────────
-
-function TabFoundation({ club, allClubs }) {
-  const { trf } = club
-
-  // compute zone total and district total
-  const zoneTRF = allClubs.filter(c => c.zone === club.zone).reduce((s, c) => s + c.trf.total, 0)
-  const distTRF = allClubs.reduce((s, c) => s + c.trf.total, 0)
-  const zonePct = zoneTRF > 0 ? (trf.total / zoneTRF) * 100 : 0
-  const distPct = distTRF > 0 ? (trf.total / distTRF) * 100 : 0
-
-  const cards = [
-    { label: 'Annual Fund', value: trf.annualFund, color: ROTARY_BLUE },
-    { label: 'PolioPlus', value: trf.polioPlus, color: '#EF4444' },
-    { label: 'Other Funds', value: trf.otherFunds, color: '#10B981' },
-    { label: 'Endowment', value: trf.endowment, color: '#8B5CF6' },
-    { label: 'Total', value: trf.total, color: ROTARY_GOLD, bold: true },
-  ]
-
-  const stackData = [
-    {
-      name: club.name,
-      'Annual Fund': trf.annualFund,
-      'PolioPlus': trf.polioPlus,
-      'Other Funds': trf.otherFunds,
-      'Endowment': trf.endowment,
-    }
-  ]
-
-  return (
-    <div className="space-y-6">
-      {/* fund cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-        {cards.map(c => (
-          <div key={c.label} className={`bg-white rounded-xl border shadow-sm p-4 ${c.bold ? 'border-yellow-300 ring-1 ring-yellow-200' : 'border-gray-100'}`}>
-            <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{c.label}</p>
-            <p className="text-xl font-bold mt-1" style={{ color: c.bold ? ROTARY_GOLD : c.color }}>{fmtUSD(c.value)}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* donors */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Total Donors</p>
-          <p className="text-3xl font-bold text-gray-800">{trf.donors}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">New Donors</p>
-          <p className="text-3xl font-bold" style={{ color: '#10B981' }}>{trf.newDonors}</p>
-        </div>
-      </div>
-
-      {/* stacked bar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Fund Breakdown</h3>
-        {trf.total > 0 ? (
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={stackData} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-              <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={v => `$${v.toLocaleString()}`} />
-              <YAxis type="category" dataKey="name" width={10} tick={false} />
-              <Tooltip formatter={(v) => fmtUSD(v)} />
-              <Legend iconType="circle" iconSize={10} />
-              <Bar dataKey="Annual Fund" stackId="a" fill={ROTARY_BLUE} radius={[0,0,0,0]} />
-              <Bar dataKey="PolioPlus" stackId="a" fill="#EF4444" />
-              <Bar dataKey="Other Funds" stackId="a" fill="#10B981" />
-              <Bar dataKey="Endowment" stackId="a" fill="#8B5CF6" radius={[4,4,0,0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-32 flex items-center justify-center text-gray-400 text-sm">No TRF contributions recorded</div>
-        )}
-      </div>
-
-      {/* contribution % */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">Contribution Share</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-3 bg-blue-50 rounded-lg">
-            <p className="text-xs text-blue-600 font-medium">% of Zone {club.zone} Total</p>
-            <p className="text-2xl font-bold text-blue-700">{fmt(zonePct, 1)}%</p>
-            <p className="text-xs text-blue-400">Zone total: {fmtUSD(zoneTRF)}</p>
-          </div>
-          <div className="p-3 bg-purple-50 rounded-lg">
-            <p className="text-xs text-purple-600 font-medium">% of District Total</p>
-            <p className="text-2xl font-bold text-purple-700">{fmt(distPct, 1)}%</p>
-            <p className="text-xs text-purple-400">District total: {fmtUSD(distTRF)}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── Tab 4: Youth Services ───────────────────────────────────────────────────
-
-function TabYouth({ club }) {
-  const { sponsored: sp } = club
-  const [open, setOpen] = useState({ rotary: false, rotaract: false, interact: false, rcc: false })
-  const toggle = key => setOpen(o => ({ ...o, [key]: !o[key] }))
-
-  const totalOrgs =
-    sp.newRotaryClubs.length + sp.newRotaractClubs.length +
-    sp.newInteractClubs.length + sp.sponsoredRCC.length
-
-  if (totalOrgs === 0) {
+const CustomBarTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
     return (
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-3">
-        <AlertCircle size={20} className="text-amber-500 shrink-0 mt-0.5" />
-        <div>
-          <p className="font-semibold text-amber-800">No youth organizations sponsored yet</p>
-          <p className="text-sm text-amber-600 mt-1">
-            This club has not sponsored any new Rotary clubs, Rotaract clubs, Interact clubs, or RCC communities this year.
+      <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs">
+        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ color: p.fill || p.color }}>
+            {p.name}: <span className="font-bold">{p.value != null ? p.value.toLocaleString('en-IN') : '—'}</span>
           </p>
-        </div>
+        ))}
       </div>
     )
   }
+  return null
+}
 
-  const sections = [
-    { key: 'rotary', label: 'New Rotary Clubs', items: sp.newRotaryClubs, color: ROTARY_BLUE },
-    { key: 'rotaract', label: 'New Rotaract Clubs', items: sp.newRotaractClubs, color: '#8B5CF6' },
-    { key: 'interact', label: 'New Interact Clubs', items: sp.newInteractClubs, color: '#10B981' },
-    { key: 'rcc', label: 'Sponsored RCC', items: sp.sponsoredRCC, color: ROTARY_GOLD },
-  ]
-
-  return (
-    <div className="space-y-4">
-      {/* count cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        {sections.map(s => (
-          <div key={s.key} className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">{s.label}</p>
-            <p className="text-3xl font-bold mt-1" style={{ color: s.color }}>{s.items.length}</p>
-          </div>
+const INRTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs">
+        <p className="font-semibold text-slate-700 mb-1">{label}</p>
+        {payload.map((p, i) => (
+          <p key={i} style={{ color: p.fill || p.color }}>
+            {p.name}: <span className="font-bold">{fmtINR(p.value)}</span>
+          </p>
         ))}
       </div>
+    )
+  }
+  return null
+}
 
-      {/* expandable lists */}
-      {sections.map(s => s.items.length > 0 && (
-        <div key={s.key} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <button
-            onClick={() => toggle(s.key)}
-            className="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors"
-          >
-            <span className="font-semibold text-gray-700">{s.label}</span>
-            <span className="text-gray-400 text-sm">{open[s.key] ? '▲' : '▼'}</span>
-          </button>
-          {open[s.key] && (
-            <div className="px-5 pb-4">
-              <OrgChips items={s.items} />
-            </div>
-          )}
+// ── Stat Card ─────────────────────────────────────────────────────────────────
+
+function StatCard({ icon: Icon, iconBg, iconColor, label, value, sub }) {
+  return (
+    <Card className="border border-slate-100 shadow-sm">
+      <CardContent className="pt-5 pb-4">
+        <div className="flex items-start gap-3">
+          <div className={`p-2 rounded-lg ${iconBg}`}>
+            <Icon size={18} className={iconColor} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide leading-none mb-1">{label}</p>
+            <p className="text-2xl font-bold text-slate-900 truncate">{value}</p>
+            {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
+          </div>
         </div>
-      ))}
-    </div>
+      </CardContent>
+    </Card>
   )
 }
 
-// ── Tab 5: Goals & Compliance ───────────────────────────────────────────────
+// ── TAB 1: MEMBERSHIP ─────────────────────────────────────────────────────────
 
-function TabGoals({ club }) {
-  const { excellence: ex } = club
-  const pct = ex.goalsSet > 0 ? (ex.goalsCompleted / ex.goalsSet) * 100 : 0
-  const progressBarColor = pct >= 80 ? 'bg-green-500' : pct >= 50 ? 'bg-yellow-400' : 'bg-red-400'
+function MembershipTab({ club }) {
+  const totalMeetingsHeld = club.monthly.reduce((s, m) => s + (m.meetings || 0), 0)
+
+  // Avg attendance % from meeting records that have a pct
+  const validMeetings = (club.meetingRecords || []).filter(m => m.attendancePct != null)
+  const avgAttPct = validMeetings.length > 0
+    ? (validMeetings.reduce((s, m) => s + m.attendancePct, 0) / validMeetings.length).toFixed(1)
+    : null
+
+  const monthlyBarData = club.monthly.map(m => ({
+    month: m.month.replace(' 20', "'"),
+    Meetings: m.meetings,
+    Projects: m.projects,
+    Rotarians: m.rotarians,
+  }))
 
   return (
     <div className="space-y-6">
-      {/* invoice + goals row */}
+      {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">July Invoice</p>
-          <StatusBadge ok={ex.julyInvoice} />
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium mb-2">January Invoice</p>
-          <StatusBadge ok={ex.janInvoice} />
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Goals Set</p>
-          <p className="text-3xl font-bold text-gray-800">{ex.goalsSet}</p>
-        </div>
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-          <p className="text-xs text-gray-500 uppercase tracking-wide font-medium">Goals Completed</p>
-          <p className="text-3xl font-bold text-green-600">{ex.goalsCompleted}</p>
-        </div>
+        <StatCard
+          icon={Users}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-700"
+          label="Total Members"
+          value={club.members}
+          sub="Active Rotarians"
+        />
+        <StatCard
+          icon={Calendar}
+          iconBg="bg-green-50"
+          iconColor="text-green-700"
+          label="Meetings Held"
+          value={totalMeetingsHeld}
+          sub="Jul 2025 – Mar 2026"
+        />
+        <StatCard
+          icon={TrendingUp}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-700"
+          label="Avg Attendance"
+          value={avgAttPct != null ? `${avgAttPct}%` : 'N/A'}
+          sub={avgAttPct != null ? `Across ${validMeetings.length} recorded meetings` : 'No attendance data'}
+        />
+        <StatCard
+          icon={Eye}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-700"
+          label="OCV Count"
+          value={club.ocv}
+          sub="Official Club Visits (RI)"
+        />
       </div>
 
-      {/* progress bar */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-        <div className="flex justify-between text-sm font-medium text-gray-700 mb-2">
-          <span>Goals Progress</span>
-          <span>{ex.goalsCompleted} / {ex.goalsSet}</span>
-        </div>
-        <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all ${progressBarColor}`}
-            style={{ width: `${Math.min(pct, 100)}%` }}
-          />
-        </div>
-        <p className="text-xs text-gray-400 mt-1">{Math.round(pct)}% of goals completed</p>
-      </div>
+      {/* Monthly Meetings Bar Chart */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Monthly Activity Trend (Jul 2025 – Mar 2026)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={monthlyBarData} barCategoryGap="25%" barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomBarTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+              <Bar dataKey="Meetings" fill="#003DA5" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Projects" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Rotarians" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
 
-      {/* award + circular progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* award badge */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col items-center justify-center gap-3">
-          <p className="text-sm font-semibold text-gray-600">Award Status</p>
-          {ex.awardEarned ? (
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-4 rounded-full bg-green-100">
-                <Award size={40} className="text-green-600" />
-              </div>
-              <span className="text-lg font-bold text-green-700">Club Excellence Award Earned</span>
-            </div>
-          ) : (
-            <div className="flex flex-col items-center gap-2">
-              <div className="p-4 rounded-full bg-red-100">
-                <Award size={40} className="text-red-400" />
-              </div>
-              <span className="text-lg font-bold text-red-500">Award Not Yet Earned</span>
-            </div>
-          )}
-        </div>
-
-        {/* circular progress */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-6 flex flex-col items-center justify-center">
-          <p className="text-sm font-semibold text-gray-600 mb-3">Goals Completion</p>
-          <CircularProgress pct={pct} />
-        </div>
-      </div>
-
-      {/* outstanding dues warning */}
-      {ex.duesOutstanding > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-xl p-5 flex items-start gap-3">
-          <AlertCircle size={20} className="text-red-500 shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-red-800">Outstanding Dues</p>
-            <p className="text-2xl font-bold text-red-700 mt-1">{fmtINR(ex.duesOutstanding)}</p>
-            <p className="text-sm text-red-500 mt-1">Please clear outstanding dues to maintain good standing.</p>
+      {/* BOD Table */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Board of Directors ({club.bod.length} members)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5">#</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold">Designation</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold">Name</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold">Mobile</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {club.bod.map((b, i) => (
+                  <TableRow key={i} className="hover:bg-slate-50/70">
+                    <TableCell className="text-xs text-slate-400 pl-5 py-2">{i + 1}</TableCell>
+                    <TableCell className="text-xs text-slate-600 py-2 max-w-[200px]">
+                      <span className="block truncate" title={b.designation}>{b.designation}</span>
+                    </TableCell>
+                    <TableCell className="text-xs font-medium text-slate-800 py-2 whitespace-nowrap">{b.name}</TableCell>
+                    <TableCell className="text-xs text-slate-500 py-2 whitespace-nowrap font-mono">{b.mobile}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        </div>
-      )}
+        </CardContent>
+      </Card>
 
-      {/* all clear */}
-      {ex.duesOutstanding === 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 flex items-center gap-3">
-          <CheckCircle size={18} className="text-green-600 shrink-0" />
-          <p className="text-sm text-green-700 font-medium">No outstanding dues — club is in good financial standing.</p>
-        </div>
+      {/* Meeting Records */}
+      {club.meetingRecords && club.meetingRecords.length > 0 && (
+        <Card className="border border-slate-100 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-slate-700">Meeting Records ({club.meetingRecords.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-slate-50">
+                    <TableHead className="text-xs text-slate-500 font-semibold pl-5">Date</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Type</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Title</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5">Attendance</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {club.meetingRecords.map((mr, i) => (
+                    <TableRow key={i} className="hover:bg-slate-50/70">
+                      <TableCell className="text-xs text-slate-500 pl-5 py-2 whitespace-nowrap font-mono">{fmtDate(mr.date)}</TableCell>
+                      <TableCell className="py-2">
+                        <Badge variant="outline" className="text-xs font-normal py-0">{mr.type}</Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 max-w-[260px]">
+                        <span className="block truncate" title={mr.title}>{mr.title}</span>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right pr-5 font-medium">
+                        {mr.attendance != null ? mr.attendance : '—'}
+                        {mr.attendancePct != null ? <span className="text-slate-400 ml-1">({mr.attendancePct.toFixed(1)}%)</span> : null}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
     </div>
   )
 }
 
-// ── Main component ──────────────────────────────────────────────────────────
+// ── TAB 2: FOUNDATION & TRF ───────────────────────────────────────────────────
 
-export default function ClubDetail() {
-  const { clubId } = useParams()
-  const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState(0)
+function FoundationTab({ club }) {
+  const { trf, monthly } = club
 
-  const club = CLUBS.find(c => c.id === clubId)
+  const breakdown = [
+    { label: 'Annual (Unrestricted)', usd: trf.annual || 0, inr: trf.annualINR || (trf.annual || 0) * 84 },
+    { label: 'Polio Plus', usd: trf.polio || 0, inr: trf.polioINR || (trf.polio || 0) * 84 },
+    { label: 'Endowment', usd: trf.endowment || 0, inr: (trf.endowment || 0) * 84 },
+    { label: 'Global Grant', usd: trf.globalGrant || 0, inr: trf.globalGrantINR || (trf.globalGrant || 0) * 84 },
+    { label: 'Others', usd: trf.others || 0, inr: (trf.others || 0) * 84 },
+  ].filter(r => r.usd > 0 || r.inr > 0)
 
-  if (!club) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8">
-        <AlertCircle size={48} className="text-gray-300 mb-4" />
-        <h2 className="text-xl font-bold text-gray-600 mb-2">Club not found</h2>
-        <p className="text-gray-400 text-sm mb-6">Club ID <code className="bg-gray-100 px-1.5 py-0.5 rounded">{clubId}</code> does not exist.</p>
-        <button
-          onClick={() => navigate('/clubs')}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg text-white text-sm font-medium"
-          style={{ backgroundColor: ROTARY_BLUE }}
-        >
-          <ArrowLeft size={16} /> Back to Clubs
-        </button>
-      </div>
-    )
-  }
+  const barColors = ['#003DA5', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444']
+
+  const monthlyTRFData = monthly.map(m => ({
+    month: m.month.replace(' 20', "'"),
+    'TRF (USD)': m.trf,
+    'TRF (INR)': m.trf * 84,
+  }))
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 py-6 space-y-6">
-
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <div>
-          {/* back button */}
-          <button
-            onClick={() => navigate('/clubs')}
-            className="flex items-center gap-1.5 text-sm font-medium mb-4 hover:opacity-75 transition-opacity"
-            style={{ color: ROTARY_BLUE }}
-          >
-            <ArrowLeft size={16} /> My Clubs
-          </button>
-
-          {/* club name row */}
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold" style={{ color: ROTARY_BLUE }}>
-                  RC {club.name}
-                </h1>
-                <div className="flex flex-wrap items-center gap-3 mt-2">
-                  <span className="flex items-center gap-1.5 text-sm text-gray-500">
-                    <Calendar size={14} />
-                    Chartered {club.charterDate}
-                  </span>
-                  <span
-                    className="px-3 py-0.5 rounded-full text-xs font-bold text-white"
-                    style={{ backgroundColor: ROTARY_GOLD }}
-                  >
-                    Zone {club.zone}
-                  </span>
-                  <span className="text-xs text-gray-400 font-mono">ID: {club.id}</span>
+    <div className="space-y-6">
+      {/* Hero TRF Card */}
+      <Card className="border-0 bg-gradient-to-r from-blue-900 to-blue-700 text-white shadow-lg">
+        <CardContent className="pt-6 pb-6">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <p className="text-blue-200 text-sm font-medium uppercase tracking-wide mb-1">Total TRF Contribution</p>
+              <p className="text-4xl font-bold">{fmtINRFull(trf.totalINR)}</p>
+              <p className="text-blue-300 text-sm mt-1">USD {(trf.totalUSD || 0).toLocaleString('en-IN')} × ₹84/USD</p>
+            </div>
+            <div className="text-right">
+              <div className="inline-flex items-center gap-2 bg-white/20 rounded-xl px-4 py-3">
+                <Heart size={20} className="text-red-300" />
+                <div>
+                  <p className="text-xs text-blue-200">Annual Fund</p>
+                  <p className="text-xl font-bold">{fmtINRFull(trf.annualINR || (trf.annual || 0) * 84)}</p>
                 </div>
               </div>
             </div>
+          </div>
+        </CardContent>
+      </Card>
 
-            <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Briefcase size={15} className="text-gray-400 shrink-0" />
-                <span><span className="font-medium">AG:</span> {club.ag}</span>
+      {/* Breakdown Cards */}
+      {breakdown.length > 0 && (
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          {breakdown.map((b, i) => (
+            <Card key={i} className="border border-slate-100 shadow-sm">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: barColors[i] }} />
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wide truncate" title={b.label}>{b.label}</p>
+                </div>
+                <p className="text-xl font-bold text-slate-900">{fmtINR(b.inr)}</p>
+                <p className="text-xs text-slate-400 mt-0.5">USD {b.usd.toLocaleString('en-IN')}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* TRF Breakdown Bar Chart */}
+      {breakdown.length > 0 && (
+        <Card className="border border-slate-100 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-slate-700">TRF Breakdown (INR)</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4">
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={breakdown} barCategoryGap="35%">
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+                <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => fmtINR(v)} />
+                <Tooltip content={<INRTooltip />} />
+                <Bar dataKey="inr" name="Amount (INR)" radius={[4, 4, 0, 0]}>
+                  {breakdown.map((_, i) => (
+                    <Cell key={i} fill={barColors[i % barColors.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Monthly TRF Trend */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Monthly TRF Trend (USD)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={monthlyTRFData} barCategoryGap="30%">
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomBarTooltip />} />
+              <Bar dataKey="TRF (USD)" fill="#003DA5" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ── TAB 3: SERVICE PROJECTS ───────────────────────────────────────────────────
+
+function ProjectsTab({ club }) {
+  const { projects, monthly } = club
+
+  const totalCost = projects.reduce((s, p) => s + (p.cost || 0), 0)
+  const totalBeneficiaries = projects.reduce((s, p) => s + (p.beneficiaries || 0), 0)
+  const totalManHours = projects.reduce((s, p) => s + (p.manHours || 0), 0)
+
+  // Category breakdown
+  const catMap = {}
+  projects.forEach(p => {
+    const cat = p.category || 'Uncategorised'
+    catMap[cat] = (catMap[cat] || 0) + 1
+  })
+  const catData = Object.entries(catMap)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count)
+
+  const catColors = ['#003DA5', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#0ea5e9', '#f97316', '#6366f1', '#14b8a6', '#ec4899']
+
+  const monthlyProjectData = monthly.map(m => ({
+    month: m.month.replace(' 20', "'"),
+    Projects: m.projects,
+    'Beneficiaries': m.beneficiaries,
+    'Man Hours': m.manHours,
+  }))
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Stat Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          icon={Briefcase}
+          iconBg="bg-blue-50"
+          iconColor="text-blue-700"
+          label="Total Projects"
+          value={projects.length}
+          sub="All service projects"
+        />
+        <StatCard
+          icon={Users}
+          iconBg="bg-green-50"
+          iconColor="text-green-700"
+          label="Total Beneficiaries"
+          value={fmtNum(totalBeneficiaries)}
+          sub="Lives impacted"
+        />
+        <StatCard
+          icon={TrendingUp}
+          iconBg="bg-purple-50"
+          iconColor="text-purple-700"
+          label="Total Man Hours"
+          value={fmtNum(totalManHours)}
+          sub="Volunteer effort"
+        />
+        <StatCard
+          icon={DollarSign}
+          iconBg="bg-amber-50"
+          iconColor="text-amber-700"
+          label="Total Project Cost"
+          value={fmtINR(totalCost)}
+          sub={fmtINRFull(totalCost)}
+        />
+      </div>
+
+      {/* Monthly Projects Chart */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Monthly Projects Activity</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={monthlyProjectData} barCategoryGap="25%" barGap={4}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <Tooltip content={<CustomBarTooltip />} />
+              <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
+              <Bar dataKey="Projects" fill="#003DA5" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Beneficiaries" fill="#10b981" radius={[3, 3, 0, 0]} />
+              <Bar dataKey="Man Hours" fill="#f59e0b" radius={[3, 3, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Category Breakdown */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Project Categories ({catData.length} categories)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-4 pb-4">
+          <div className="space-y-2">
+            {catData.map((c, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: catColors[i % catColors.length] }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <p className="text-xs text-slate-600 truncate pr-2" title={c.name}>{c.name}</p>
+                    <span className="text-xs font-semibold text-slate-800 shrink-0">{c.count}</span>
+                  </div>
+                  <Progress
+                    value={(c.count / projects.length) * 100}
+                    className="h-1.5"
+                    style={{ '--progress-color': catColors[i % catColors.length] }}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <User size={15} className="text-gray-400 shrink-0" />
-                <span><span className="font-medium">President:</span> {club.president}</span>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Projects Table */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">All Projects ({projects.length})</CardTitle>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5 whitespace-nowrap">Date</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold whitespace-nowrap">Category</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold">Title</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Cost (INR)</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Beneficiaries</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap pr-5">Man Hrs</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold whitespace-nowrap">Funding</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {projects.map((p, i) => (
+                  <TableRow key={i} className="hover:bg-slate-50/70">
+                    <TableCell className="text-xs text-slate-500 pl-5 py-2 font-mono whitespace-nowrap">{fmtDate(p.date)}</TableCell>
+                    <TableCell className="py-2 max-w-[140px]">
+                      <span className="text-xs text-slate-600 block truncate" title={p.category}>{p.category}</span>
+                    </TableCell>
+                    <TableCell className="text-xs font-medium text-slate-800 py-2 max-w-[220px]">
+                      <span className="block truncate" title={p.title}>{p.title}</span>
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-700 py-2 text-right font-mono whitespace-nowrap">
+                      {p.cost ? fmtINR(p.cost) : '—'}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-700 py-2 text-right font-medium whitespace-nowrap">
+                      {p.beneficiaries || '—'}
+                    </TableCell>
+                    <TableCell className="text-xs text-slate-700 py-2 text-right pr-5 whitespace-nowrap">
+                      {p.manHours || '—'}
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Badge
+                        variant={p.funding === 'Global Grant' ? 'default' : 'outline'}
+                        className="text-xs font-normal py-0 whitespace-nowrap"
+                      >
+                        {p.funding}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// ── TAB 4: GOALS / CMR ────────────────────────────────────────────────────────
+
+function GoalsTab({ club }) {
+  const { monthly } = club
+
+  const totals = monthly.reduce(
+    (acc, m) => ({
+      meetings: acc.meetings + (m.meetings || 0),
+      trf: acc.trf + (m.trf || 0),
+      projects: acc.projects + (m.projects || 0),
+      cost: acc.cost + (m.cost || 0),
+      beneficiaries: acc.beneficiaries + (m.beneficiaries || 0),
+      manHours: acc.manHours + (m.manHours || 0),
+      rotarians: acc.rotarians + (m.rotarians || 0),
+      rotaractors: acc.rotaractors + (m.rotaractors || 0),
+    }),
+    { meetings: 0, trf: 0, projects: 0, cost: 0, beneficiaries: 0, manHours: 0, rotarians: 0, rotaractors: 0 }
+  )
+
+  const analyticsCards = [
+    { icon: Briefcase, iconBg: 'bg-blue-50', iconColor: 'text-blue-700', label: 'Vocational Service', value: club.vocationalService ?? '—' },
+    { icon: Globe, iconBg: 'bg-green-50', iconColor: 'text-green-700', label: 'International Service', value: club.internationalService ?? '—' },
+    { icon: BookOpen, iconBg: 'bg-purple-50', iconColor: 'text-purple-700', label: 'New Generation', value: club.newGenerationService ?? '—' },
+    { icon: Megaphone, iconBg: 'bg-amber-50', iconColor: 'text-amber-700', label: 'Public Image Initiatives', value: club.publicImageInitiatives ?? '—' },
+    { icon: FileText, iconBg: 'bg-slate-100', iconColor: 'text-slate-600', label: 'Newsletters', value: club.newsletters ?? '—' },
+    { icon: Eye, iconBg: 'bg-cyan-50', iconColor: 'text-cyan-700', label: 'OCV', value: club.ocv ?? '—' },
+    { icon: Target, iconBg: 'bg-red-50', iconColor: 'text-red-600', label: 'Announcements', value: club.announcements ?? '—' },
+  ]
+
+  return (
+    <div className="space-y-6">
+      {/* Monthly CMR Summary Table */}
+      <Card className="border border-slate-100 shadow-sm">
+        <CardHeader className="pb-2 pt-4 px-5">
+          <CardTitle className="text-sm font-semibold text-slate-700">Monthly CMR Summary (Jul 2025 – Mar 2026)</CardTitle>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5 whitespace-nowrap">Month</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Meetings</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">TRF (USD)</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Projects</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Cost (INR)</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Beneficiaries</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Man Hours</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap">Rotarians</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right whitespace-nowrap pr-5">Rotaractors</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monthly.map((m, i) => {
+                  const hasData = m.meetings > 0 || m.projects > 0 || m.trf > 0
+                  return (
+                    <TableRow key={i} className={`hover:bg-slate-50/70 ${!hasData ? 'opacity-40' : ''}`}>
+                      <TableCell className="text-xs font-medium text-slate-700 pl-5 py-2 whitespace-nowrap">{m.month}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right">{m.meetings}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right font-mono">{m.trf > 0 ? `$${m.trf.toLocaleString('en-IN')}` : '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right">{m.projects || '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right font-mono whitespace-nowrap">{m.cost > 0 ? fmtINR(m.cost) : '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right">{m.beneficiaries || '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right">{m.manHours || '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right">{m.rotarians || '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-700 py-2 text-right pr-5">{m.rotaractors || '—'}</TableCell>
+                    </TableRow>
+                  )
+                })}
+                {/* Totals Row */}
+                <TableRow className="bg-blue-900 text-white font-bold">
+                  <TableCell className="text-xs pl-5 py-2 text-white font-bold">TOTAL</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white">{totals.meetings}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white font-mono">${totals.trf.toLocaleString('en-IN')}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white">{totals.projects}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white font-mono whitespace-nowrap">{fmtINR(totals.cost)}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white">{totals.beneficiaries.toLocaleString('en-IN')}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white">{totals.manHours.toLocaleString('en-IN')}</TableCell>
+                  <TableCell className="text-xs py-2 text-right text-white">{totals.rotarians.toLocaleString('en-IN')}</TableCell>
+                  <TableCell className="text-xs py-2 text-right pr-5 text-white">{totals.rotaractors.toLocaleString('en-IN')}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Club Analytics Stat Cards */}
+      <div>
+        <h3 className="text-sm font-semibold text-slate-700 mb-3 px-1">Club Analytics</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
+          {analyticsCards.map((c, i) => (
+            <Card key={i} className="border border-slate-100 shadow-sm">
+              <CardContent className="pt-4 pb-3">
+                <div className={`p-2 rounded-lg ${c.iconBg} inline-flex mb-2`}>
+                  <c.icon size={16} className={c.iconColor} />
+                </div>
+                <p className="text-2xl font-bold text-slate-900">{c.value}</p>
+                <p className="text-xs text-slate-500 leading-tight mt-0.5">{c.label}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      {/* Project Rank */}
+      {club.projectRank && (
+        <Card className="border border-amber-200 bg-amber-50 shadow-sm">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center gap-3">
+              <Award size={24} className="text-amber-600 shrink-0" />
+              <div>
+                <p className="text-sm font-semibold text-amber-900">District Project Ranking</p>
+                <p className="text-2xl font-bold text-amber-800">#{club.projectRank.toLocaleString('en-IN')} <span className="text-sm font-normal text-amber-600">out of 4,928 clubs in District {club.district}</span></p>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ── TAB 5: DUES & COMPLIANCE ──────────────────────────────────────────────────
+
+function DuesTab({ club }) {
+  const { dues } = club
+  const paid = dues?.paid || []
+  const notUploaded = dues?.notUploaded || []
+  const totalPaid = paid.reduce((s, d) => s + (d.amount || 0), 0)
+
+  return (
+    <div className="space-y-6">
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card className="border border-green-200 bg-green-50 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 size={24} className="text-green-600 shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-green-700 uppercase tracking-wide">Paid & Uploaded</p>
+                <p className="text-3xl font-bold text-green-800">{paid.length}</p>
+                <p className="text-xs text-green-600 mt-0.5">Total: {fmtINRFull(totalPaid)}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-red-200 bg-red-50 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <XCircle size={24} className="text-red-500 shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-red-700 uppercase tracking-wide">Not Uploaded</p>
+                <p className="text-3xl font-bold text-red-700">{notUploaded.length}</p>
+                <p className="text-xs text-red-600 mt-0.5">Action required</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-slate-200 shadow-sm">
+          <CardContent className="pt-5 pb-4">
+            <div className="flex items-center gap-3">
+              <BarChart2 size={24} className="text-slate-500 shrink-0" />
+              <div>
+                <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Compliance Rate</p>
+                <p className="text-3xl font-bold text-slate-800">
+                  {paid.length + notUploaded.length > 0
+                    ? Math.round((paid.length / (paid.length + notUploaded.length)) * 100) + '%'
+                    : 'N/A'}
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">{paid.length} of {paid.length + notUploaded.length} dues</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Compliance Progress */}
+      {paid.length + notUploaded.length > 0 && (
+        <Card className="border border-slate-100 shadow-sm">
+          <CardContent className="pt-4 pb-4">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Overall Dues Compliance</p>
+              <span className="text-xs font-bold text-slate-700">
+                {Math.round((paid.length / (paid.length + notUploaded.length)) * 100)}%
+              </span>
+            </div>
+            <Progress
+              value={(paid.length / (paid.length + notUploaded.length)) * 100}
+              className="h-3"
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Paid Dues Table */}
+      {paid.length > 0 && (
+        <Card className="border border-slate-100 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+              <CheckCircle2 size={15} className="text-green-600" />
+              Paid & Uploaded ({paid.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-green-50">
+                    <TableHead className="text-xs text-slate-500 font-semibold pl-5">#</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Type</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Document</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold whitespace-nowrap">Paid On</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold whitespace-nowrap">Uploaded On</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 whitespace-nowrap">Amount (INR)</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {paid.map((d, i) => (
+                    <TableRow key={i} className="hover:bg-green-50/60">
+                      <TableCell className="text-xs text-slate-400 pl-5 py-2">{i + 1}</TableCell>
+                      <TableCell className="py-2">
+                        <Badge className="bg-green-100 text-green-800 border-green-200 text-xs font-medium py-0 hover:bg-green-100">
+                          {d.type}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-600 py-2 max-w-[220px]">
+                        <span className="block truncate font-mono text-[10px]" title={d.document}>{d.document}</span>
+                      </TableCell>
+                      <TableCell className="text-xs text-slate-500 py-2 whitespace-nowrap font-mono">{d.paidOn || '—'}</TableCell>
+                      <TableCell className="text-xs text-slate-500 py-2 whitespace-nowrap font-mono">{d.uploadedOn || '—'}</TableCell>
+                      <TableCell className="text-xs font-semibold text-green-700 py-2 text-right pr-5 whitespace-nowrap font-mono">
+                        {fmtINRFull(d.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {/* Total Row */}
+                  <TableRow className="bg-green-100 font-bold">
+                    <TableCell colSpan={5} className="text-xs pl-5 py-2 text-green-800 font-bold">TOTAL PAID</TableCell>
+                    <TableCell className="text-xs text-right pr-5 py-2 text-green-800 font-bold font-mono">{fmtINRFull(totalPaid)}</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Not Uploaded Table */}
+      {notUploaded.length > 0 && (
+        <Card className="border border-red-200 shadow-sm">
+          <CardHeader className="pb-2 pt-4 px-5">
+            <CardTitle className="text-sm font-semibold text-red-700 flex items-center gap-2">
+              <XCircle size={15} className="text-red-500" />
+              Not Uploaded ({notUploaded.length}) — Action Required
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-red-50">
+                    <TableHead className="text-xs text-slate-500 font-semibold pl-5">#</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Due Type</TableHead>
+                    <TableHead className="text-xs text-slate-500 font-semibold">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {notUploaded.map((d, i) => (
+                    <TableRow key={i} className="hover:bg-red-50/60">
+                      <TableCell className="text-xs text-slate-400 pl-5 py-2">{i + 1}</TableCell>
+                      <TableCell className="text-xs font-medium text-slate-700 py-2">{d.type}</TableCell>
+                      <TableCell className="py-2">
+                        <Badge className="bg-red-100 text-red-700 border-red-200 text-xs font-medium py-0 hover:bg-red-100">
+                          Not Uploaded
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* All clear message */}
+      {paid.length > 0 && notUploaded.length === 0 && (
+        <Card className="border border-green-200 bg-green-50 shadow-sm">
+          <CardContent className="pt-5 pb-5">
+            <div className="flex items-center gap-3">
+              <CheckCircle2 size={28} className="text-green-600 shrink-0" />
+              <div>
+                <p className="text-sm font-bold text-green-800">All dues uploaded — Full Compliance!</p>
+                <p className="text-xs text-green-700 mt-0.5">All {paid.length} dues have been paid and documents uploaded.</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+}
+
+// ── MAIN ClubDetail PAGE ──────────────────────────────────────────────────────
+
+export default function ClubDetail() {
+  const { id } = useParams()
+  const navigate = useNavigate()
+  const [activeTab, setActiveTab] = useState('membership')
+
+  const club = getClubById(id)
+
+  if (!club) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Card className="border border-slate-200 shadow-md p-8 text-center max-w-sm w-full">
+          <XCircle size={40} className="text-red-400 mx-auto mb-3" />
+          <h2 className="text-lg font-bold text-slate-800 mb-1">Club Not Found</h2>
+          <p className="text-sm text-slate-500 mb-4">No club found with ID: <code className="bg-slate-100 px-1 rounded">{id}</code></p>
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline font-medium"
+          >
+            <ArrowLeft size={14} /> Go Back
+          </button>
+        </Card>
+      </div>
+    )
+  }
+
+  const duesPaid = (club.dues?.paid || []).length
+  const duesPending = (club.dues?.notUploaded || []).length
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-30 bg-white border-b border-slate-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6">
+          <div className="flex items-center gap-3 h-14">
+            {/* Back Button */}
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-1.5 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors shrink-0 pr-3 border-r border-slate-200"
+            >
+              <ArrowLeft size={16} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+
+            {/* Club Name */}
+            <div className="flex-1 min-w-0">
+              <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate">
+                RC {club.name}
+              </h1>
+            </div>
+
+            {/* Meta Chips */}
+            <div className="hidden md:flex items-center gap-3 shrink-0">
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Users size={13} className="text-blue-600" />
+                <span className="font-semibold text-slate-700">{club.members}</span>
+                <span>members</span>
+              </div>
+              <div className="w-px h-4 bg-slate-200" />
+              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+                <Award size={13} className="text-amber-500" />
+                <span className="font-medium text-slate-700 truncate max-w-[160px]" title={club.president?.name}>
+                  {club.president?.name || '—'}
+                </span>
+              </div>
+              {duesPending > 0 && (
+                <>
+                  <div className="w-px h-4 bg-slate-200" />
+                  <Badge className="bg-red-100 text-red-700 border-red-200 text-xs hover:bg-red-100">
+                    {duesPending} dues pending
+                  </Badge>
+                </>
+              )}
+              {duesPending === 0 && duesPaid > 0 && (
+                <>
+                  <div className="w-px h-4 bg-slate-200" />
+                  <Badge className="bg-green-100 text-green-700 border-green-200 text-xs hover:bg-green-100">
+                    Compliant
+                  </Badge>
+                </>
+              )}
             </div>
           </div>
         </div>
+      </div>
 
-        {/* ── Tab navigation ──────────────────────────────────────────────── */}
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div className="flex overflow-x-auto border-b border-gray-100">
-            {TABS.map((tab, i) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(i)}
-                className={`px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${
-                  activeTab === i
-                    ? 'border-blue-700 text-blue-700'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-200'
-                }`}
-                style={activeTab === i ? { borderColor: ROTARY_BLUE, color: ROTARY_BLUE } : {}}
-              >
-                {tab}
-              </button>
-            ))}
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+        {/* Mobile president/member chips */}
+        <div className="md:hidden flex flex-wrap items-center gap-2 mb-4">
+          <div className="flex items-center gap-1.5 text-xs bg-white border border-slate-200 rounded-full px-3 py-1.5">
+            <Users size={12} className="text-blue-600" />
+            <span className="font-semibold text-slate-700">{club.members} members</span>
           </div>
-
-          <div className="p-5">
-            {activeTab === 0 && <TabOverview club={club} />}
-            {activeTab === 1 && <TabMembership club={club} />}
-            {activeTab === 2 && <TabFoundation club={club} allClubs={CLUBS} />}
-            {activeTab === 3 && <TabYouth club={club} />}
-            {activeTab === 4 && <TabGoals club={club} />}
+          <div className="flex items-center gap-1.5 text-xs bg-white border border-slate-200 rounded-full px-3 py-1.5">
+            <Award size={12} className="text-amber-500" />
+            <span className="text-slate-600">{club.president?.name}</span>
           </div>
         </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-5 w-full mb-6 bg-white border border-slate-200 shadow-sm h-auto p-1">
+            <TabsTrigger value="membership" className="text-xs sm:text-sm py-2 data-[state=active]:bg-blue-900 data-[state=active]:text-white">
+              <span className="hidden sm:inline">Membership</span>
+              <span className="sm:hidden">Members</span>
+            </TabsTrigger>
+            <TabsTrigger value="foundation" className="text-xs sm:text-sm py-2 data-[state=active]:bg-blue-900 data-[state=active]:text-white">
+              <span className="hidden sm:inline">Foundation</span>
+              <span className="sm:hidden">TRF</span>
+            </TabsTrigger>
+            <TabsTrigger value="projects" className="text-xs sm:text-sm py-2 data-[state=active]:bg-blue-900 data-[state=active]:text-white">
+              <span className="hidden sm:inline">Projects</span>
+              <span className="sm:hidden">Projects</span>
+            </TabsTrigger>
+            <TabsTrigger value="goals" className="text-xs sm:text-sm py-2 data-[state=active]:bg-blue-900 data-[state=active]:text-white">
+              <span className="hidden sm:inline">Goals / CMR</span>
+              <span className="sm:hidden">CMR</span>
+            </TabsTrigger>
+            <TabsTrigger value="dues" className="text-xs sm:text-sm py-2 data-[state=active]:bg-blue-900 data-[state=active]:text-white relative">
+              <span className="hidden sm:inline">Dues</span>
+              <span className="sm:hidden">Dues</span>
+              {duesPending > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                  {duesPending}
+                </span>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="membership">
+            <MembershipTab club={club} />
+          </TabsContent>
+
+          <TabsContent value="foundation">
+            <FoundationTab club={club} />
+          </TabsContent>
+
+          <TabsContent value="projects">
+            <ProjectsTab club={club} />
+          </TabsContent>
+
+          <TabsContent value="goals">
+            <GoalsTab club={club} />
+          </TabsContent>
+
+          <TabsContent value="dues">
+            <DuesTab club={club} />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

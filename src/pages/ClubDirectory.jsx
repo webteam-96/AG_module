@@ -64,7 +64,7 @@ const ZoneInfoCard = ({ zoneId }) => {
       <div className="bg-gradient-to-r from-[#003DA5] to-blue-700 text-white rounded-xl p-4 mb-6 flex flex-wrap gap-6 items-center shadow">
         <div className="flex items-center gap-2">
           <MapPin size={16} className="opacity-80" />
-          <span className="font-semibold text-sm">RI District 3192</span>
+          <span className="font-semibold text-sm">RI </span>
         </div>
         <div className="text-sm opacity-90">
           <span className="font-medium">7 Zones</span> · Bengaluru &amp; surrounds

@@ -1,518 +1,444 @@
 import { useMemo } from 'react'
-import { BarChart3, Info, Trophy, Star, TrendingUp, DollarSign, Briefcase, CheckCircle } from 'lucide-react'
 import {
+  Trophy, Users, Briefcase, Calendar, Star,
+} from 'lucide-react'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, Cell, Legend,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
-  ResponsiveContainer, Tooltip as RechartTooltip, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Cell, Tooltip,
 } from 'recharts'
-import SectionHeader from '../components/SectionHeader'
-import { ZONES, ZONE_TOTALS, DISTRICT_TOTALS } from '../data/district3192'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CLUBS, AG_TOTALS, AG_NAME } from '@/data/realData'
 
 // ─── constants ────────────────────────────────────────────────────────────────
-const ROTARY_BLUE = '#003DA5'
-const ROTARY_GOLD = '#F7A81B'
-const ZONE_PALETTE = [
-  '#003DA5', '#0052cc', '#1668e8', '#2196f3',
-  '#64b5f6', '#90caf9', '#bbdefb',
+const ROTARY_BLUE  = '#003DA5'
+const ROTARY_GOLD  = '#F7A81B'
+
+// One distinct colour per club (index-stable)
+const CLUB_COLORS = [
+  '#003DA5', // Navi Mumbai        – deep Rotary blue
+  '#F7A81B', // Flamingo City      – Rotary gold
+  '#10b981', // Palm Beach         – emerald
+  '#ef4444', // New Bombay Seaside – coral-red
 ]
 
+// Short display names for chart axes
+const SHORT_NAMES = {
+  'Navi Mumbai':            'Navi Mumbai',
+  'Navi Mumbai Flamingo City': 'Flamingo City',
+  'Navi Mumbai-Palm Beach': 'Palm Beach',
+  'New Bombay Seaside':     'New Bombay Seaside',
+}
+
 // ─── formatters ───────────────────────────────────────────────────────────────
-const fmtUSD = (n) => (n >= 1000 ? `$${(n / 1000).toFixed(1)}k` : `$${Math.round(n)}`)
-const fmtPct = (n) => (n != null ? n.toFixed(1) + '%' : '—')
-const fmtN = (n) => (n ?? 0).toLocaleString()
+const fmtINR = (n) =>
+  new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n ?? 0)
 
-// ─── zone rank score ──────────────────────────────────────────────────────────
-// Rank score = simple (growthRank + trfRank + awardsRank) / 3, lower = better
-function computeRankScores(zoneIds) {
-  const zones = zoneIds.map((id) => ({ id, ...ZONE_TOTALS[id] }))
+const fmtN = (n) => (n ?? 0).toLocaleString('en-IN')
 
-  const rank = (arr, key, higher = true) => {
-    const sorted = [...arr].sort((a, b) =>
-      higher ? b[key] - a[key] : a[key] - b[key]
+// ─── helpers ──────────────────────────────────────────────────────────────────
+function maxIndex(clubs, accessor) {
+  let best = 0
+  clubs.forEach((c, i) => { if (accessor(c) > accessor(clubs[best])) best = i })
+  return best
+}
+
+function normalize(clubs, accessor) {
+  const max = Math.max(...clubs.map(accessor))
+  return clubs.map((c) => (max === 0 ? 0 : Math.round((accessor(c) / max) * 100)))
+}
+
+// ─── sub-components ───────────────────────────────────────────────────────────
+
+/** One leaderboard summary card */
+function LeaderCard({ icon: Icon, title, accessor, formatter, clubs }) {
+  const sorted = [...clubs].sort((a, b) => accessor(b) - accessor(a))
+  const leader = sorted[0]
+  const colorIdx = clubs.indexOf(leader)
+
+  return (
+    <Card className="border border-gray-200 shadow-sm">
+      <CardHeader className="pb-2 pt-4 px-5">
+        <div className="flex items-center gap-2">
+          <Icon size={18} style={{ color: ROTARY_BLUE }} />
+          <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
+            {title}
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent className="px-5 pb-5">
+        {/* Winner */}
+        <div
+          className="rounded-lg px-4 py-3 mb-3"
+          style={{ backgroundColor: ROTARY_BLUE }}
+        >
+          <p className="text-white font-bold text-base leading-tight">
+            {SHORT_NAMES[leader.name] ?? leader.name}
+          </p>
+          <p className="text-yellow-300 font-semibold text-lg mt-0.5">
+            {formatter(accessor(leader))}
+          </p>
+        </div>
+
+        {/* Ranked list (2–4) */}
+        <ol className="space-y-1.5">
+          {sorted.slice(1).map((club, i) => (
+            <li key={club.id} className="flex items-center justify-between text-sm">
+              <span className="flex items-center gap-2 text-gray-600">
+                <span
+                  className="w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  style={{ backgroundColor: CLUB_COLORS[clubs.indexOf(club)] }}
+                >
+                  {i + 2}
+                </span>
+                {SHORT_NAMES[club.name] ?? club.name}
+              </span>
+              <span className="font-medium text-gray-800">{formatter(accessor(club))}</span>
+            </li>
+          ))}
+        </ol>
+      </CardContent>
+    </Card>
+  )
+}
+
+/** Simple bar chart wrapper */
+function ClubBarChart({ title, accessor, formatter, clubs, yLabel }) {
+  const data = clubs.map((c) => ({
+    name: SHORT_NAMES[c.name] ?? c.name,
+    value: accessor(c),
+    color: CLUB_COLORS[clubs.indexOf(c)],
+  }))
+
+  const CustomTooltip = ({ active, payload }) => {
+    if (!active || !payload?.length) return null
+    return (
+      <div className="bg-white border border-gray-200 rounded shadow px-3 py-2 text-sm">
+        <p className="font-semibold text-gray-700">{payload[0].payload.name}</p>
+        <p style={{ color: payload[0].payload.color }} className="font-bold">
+          {formatter(payload[0].value)}
+        </p>
+      </div>
     )
-    const map = {}
-    sorted.forEach((z, i) => { map[z.id] = i + 1 })
-    return map
   }
 
-  const gRank = rank(zones, 'growth')
-  const tRank = rank(zones, 'trfTotal')
-  const aRank = rank(zones, 'awards')
-
-  return zones.reduce((acc, z) => {
-    acc[z.id] = Math.round(((gRank[z.id] + tRank[z.id] + aRank[z.id]) / 3) * 10) / 10
-    return acc
-  }, {})
-}
-
-// ─── normalize values for radar 0-100 ────────────────────────────────────────
-function normalizeZones() {
-  const ids = ZONES.map((z) => z.id)
-  const zones = ids.map((id) => ({ id, ...ZONE_TOTALS[id] }))
-
-  const maxOf = (key) => Math.max(...zones.map((z) => z[key] ?? 0)) || 1
-
-  const maxGrowth = maxOf('growth')
-  const maxTrf = maxOf('trfTotal')
-  const maxAwardsPct = maxOf('awards')  // use raw awards count
-  const maxMyRotary = maxOf('myRotaryPercent')
-  const maxProjectsPerClub = Math.max(...zones.map((z) => (z.clubs > 0 ? z.projects / z.clubs : 0))) || 1
-  const maxYouth = Math.max(...zones.map((z) => (z.newRotaract + z.newInteract + z.rcc) || 0)) || 1
-
-  return ids.map((id) => {
-    const z = ZONE_TOTALS[id]
-    return {
-      id,
-      'Membership Growth': Math.round(Math.max(0, (z.growth / maxGrowth) * 100)),
-      'TRF Giving Index': Math.round((z.trfTotal / maxTrf) * 100),
-      'Awards %': Math.round(((z.awards / z.clubs) * 100 / (maxAwardsPct / Math.max(...ZONES.map((_z) => ZONE_TOTALS[_z.id].clubs)))) * 100) || 0,
-      'MyRotary %': Math.round((z.myRotaryPercent / maxMyRotary) * 100),
-      'Projects/Club': Math.round(((z.projects / z.clubs) / maxProjectsPerClub) * 100),
-      'New Youth Orgs': Math.round(((z.newRotaract + z.newInteract + z.rcc) / maxYouth) * 100),
-    }
-  })
-}
-
-// ─── Radar Tooltip ────────────────────────────────────────────────────────────
-function RadarTip({ active, payload }) {
-  if (!active || !payload?.length) return null
   return (
-    <div className="bg-white border border-slate-200 rounded-lg shadow p-2 text-xs">
-      {payload.map((p) => (
-        <div key={p.dataKey} className="flex items-center gap-2">
-          <span className="w-2.5 h-2.5 rounded-full inline-block" style={{ backgroundColor: p.stroke }} />
-          <span className="text-slate-600">Zone {p.dataKey}:</span>
-          <span className="font-bold text-slate-800">{p.value}</span>
-        </div>
-      ))}
-    </div>
+    <Card className="border border-gray-200 shadow-sm">
+      <CardHeader className="pb-0 pt-4 px-5">
+        <CardTitle className="text-sm font-semibold text-gray-600">{title}</CardTitle>
+      </CardHeader>
+      <CardContent className="pt-2 px-2 pb-4">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={data} margin={{ top: 8, right: 16, left: 8, bottom: 32 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
+            <XAxis
+              dataKey="name"
+              tick={{ fontSize: 11, fill: '#555', fontFamily: 'inherit' }}
+              angle={-20}
+              textAnchor="end"
+              interval={0}
+              height={52}
+            />
+            <YAxis
+              tick={{ fontSize: 11, fill: '#888' }}
+              tickLine={false}
+              axisLine={false}
+              label={
+                yLabel
+                  ? { value: yLabel, angle: -90, position: 'insideLeft', offset: 8, style: { fontSize: 10, fill: '#aaa' } }
+                  : undefined
+              }
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Bar dataKey="value" radius={[4, 4, 0, 0]} maxBarSize={60}>
+              {data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
   )
 }
 
 // ─── main page ────────────────────────────────────────────────────────────────
 export default function DistrictComparison() {
-  const user = JSON.parse(sessionStorage.getItem('ag_user') || '{}')
-  const myZone = user.zone === 'ALL' ? null : user.zone
-  const zoneIds = ZONES.map((z) => z.id)
+  // Pre-compute per-column best values for green highlighting
+  const best = useMemo(() => ({
+    members:   Math.max(...CLUBS.map((c) => c.members)),
+    meetings:  Math.max(...CLUBS.map((c) => c.meetings)),
+    projects:  Math.max(...CLUBS.map((c) => c.totalProjects)),
+    trf:       Math.max(...CLUBS.map((c) => c.trf.totalINR)),
+    ocv:       Math.max(...CLUBS.map((c) => c.ocv)),
+    rank:      Math.min(...CLUBS.map((c) => c.projectRank)), // lower is better
+    voc:       Math.max(...CLUBS.map((c) => c.vocationalService)),
+    intl:      Math.max(...CLUBS.map((c) => c.internationalService)),
+    newgen:    Math.max(...CLUBS.map((c) => c.newGenerationService)),
+  }), [])
 
-  const rankScores = useMemo(() => computeRankScores(zoneIds), [])
-  const radarData = useMemo(() => normalizeZones(), [])
-
-  // ─ build ranking table rows ────────────────────────────────────────────────
-  const rankRows = useMemo(
-    () =>
-      zoneIds.map((id) => {
-        const z = ZONE_TOTALS[id]
-        const zoneInfo = ZONES.find((zi) => zi.id === id)
-        const awardsPct = z.clubs > 0 ? ((z.awards / z.clubs) * 100).toFixed(1) : '0.0'
-        return {
-          id,
-          ambassador: zoneInfo?.ambassador ?? '—',
-          clubs: z.clubs,
-          members: z.membersCurrent,
-          growth: z.growth,
-          trf: z.trfTotal,
-          projects: z.projects,
-          awards: z.awards,
-          awardsPct,
-          rankScore: rankScores[id],
-        }
-      }).sort((a, b) => a.rankScore - b.rankScore),
-    [rankScores, zoneIds]
-  )
-
-  // ─ determine extremes ─────────────────────────────────────────────────────
-  const maxGrowthZone = rankRows.reduce((m, r) => (r.growth > m.growth ? r : m), rankRows[0])
-  const minGrowthZone = rankRows.reduce((m, r) => (r.growth < m.growth ? r : m), rankRows[0])
-  const maxTrfZone = rankRows.reduce((m, r) => (r.trf > m.trf ? r : m), rankRows[0])
-  const maxAwardsZone = rankRows.reduce((m, r) => (r.awards > m.awards ? r : m), rankRows[0])
-  const maxProjectsZone = rankRows.reduce((m, r) => (r.projects > m.projects ? r : m), rankRows[0])
-  const maxAwardsPctZone = rankRows.reduce(
-    (m, r) => (parseFloat(r.awardsPct) > parseFloat(m.awardsPct) ? r : m),
-    rankRows[0]
-  )
-
-  // ─ leaderboard cards data ─────────────────────────────────────────────────
-  const myZoneData = myZone ? rankRows.find((r) => r.id === myZone) : null
-
-  const leaderboards = [
-    {
-      title: 'Top TRF Giving',
-      icon: DollarSign,
-      color: 'gold',
-      zone: maxTrfZone?.id,
-      value: fmtUSD(maxTrfZone?.trf ?? 0),
-      myValue: myZoneData ? fmtUSD(myZoneData.trf) : null,
-      diff: myZoneData ? fmtUSD(Math.abs((maxTrfZone?.trf ?? 0) - myZoneData.trf)) : null,
-      ahead: myZoneData ? myZoneData.trf >= (maxTrfZone?.trf ?? 0) : false,
-    },
-    {
-      title: 'Top Membership Growth',
-      icon: TrendingUp,
-      color: 'green',
-      zone: maxGrowthZone?.id,
-      value: fmtPct(maxGrowthZone?.growth ?? 0),
-      myValue: myZoneData ? fmtPct(myZoneData.growth) : null,
-      diff: myZoneData ? fmtPct(Math.abs((maxGrowthZone?.growth ?? 0) - myZoneData.growth)) : null,
-      ahead: myZoneData ? myZoneData.id === maxGrowthZone?.id : false,
-    },
-    {
-      title: 'Top Service Projects',
-      icon: Briefcase,
-      color: 'blue',
-      zone: maxProjectsZone?.id,
-      value: fmtN(maxProjectsZone?.projects ?? 0),
-      myValue: myZoneData ? fmtN(myZoneData.projects) : null,
-      diff: myZoneData ? fmtN(Math.abs((maxProjectsZone?.projects ?? 0) - myZoneData.projects)) : null,
-      ahead: myZoneData ? myZoneData.id === maxProjectsZone?.id : false,
-    },
-    {
-      title: 'Top Award Club %',
-      icon: CheckCircle,
-      color: 'purple',
-      zone: maxAwardsPctZone?.id,
-      value: maxAwardsPctZone?.awardsPct + '%',
-      myValue: myZoneData ? myZoneData.awardsPct + '%' : null,
-      diff: myZoneData
-        ? fmtPct(Math.abs(parseFloat(maxAwardsPctZone?.awardsPct ?? 0) - parseFloat(myZoneData.awardsPct)))
-        : null,
-      ahead: myZoneData ? myZoneData.id === maxAwardsPctZone?.id : false,
-    },
-  ]
-
-  // ─ performance bars data ───────────────────────────────────────────────────
-  const perfMetrics = useMemo(() => {
-    const growthData = zoneIds.map((id) => ({
-      zone: `Z${id}`,
-      zoneId: id,
-      value: Math.max(0, ZONE_TOTALS[id].growth ?? 0),
-    }))
-    const trfData = zoneIds.map((id) => ({
-      zone: `Z${id}`,
-      zoneId: id,
-      value: ZONE_TOTALS[id].trfTotal,
-    }))
-    const projData = zoneIds.map((id) => ({
-      zone: `Z${id}`,
-      zoneId: id,
-      value: ZONE_TOTALS[id].projects,
-    }))
-    const myRotaryData = zoneIds.map((id) => ({
-      zone: `Z${id}`,
-      zoneId: id,
-      value: ZONE_TOTALS[id].myRotaryPercent ?? 0,
-    }))
-    return [
-      { title: 'Membership Growth %', data: growthData, suffix: '%', color: '#22c55e' },
-      { title: 'TRF Giving (USD)', data: trfData, suffix: '', isCurrency: true, color: ROTARY_GOLD },
-      { title: 'Service Projects', data: projData, suffix: '', color: ROTARY_BLUE },
-      { title: 'MyRotary Registration %', data: myRotaryData, suffix: '%', color: '#9333ea' },
+  // Radar data — 5 normalized metrics, one entry per metric
+  const radarData = useMemo(() => {
+    const metrics = [
+      { key: 'Members',  fn: (c) => c.members },
+      { key: 'Projects', fn: (c) => c.totalProjects },
+      { key: 'TRF',      fn: (c) => c.trf.totalINR },
+      { key: 'Meetings', fn: (c) => c.meetings },
+      { key: 'OCV',      fn: (c) => c.ocv },
     ]
-  }, [zoneIds])
 
-  // ─ radar: restructure for recharts (one row per axis) ────────────────────
-  const AXES = [
-    'Membership Growth',
-    'TRF Giving Index',
-    'Awards %',
-    'MyRotary %',
-    'Projects/Club',
-    'New Youth Orgs',
-  ]
-  const radarChartData = useMemo(
-    () =>
-      AXES.map((axis) => {
-        const row = { axis }
-        radarData.forEach((z) => { row[z.id] = z[axis] })
-        return row
-      }),
-    [radarData]
-  )
+    return metrics.map(({ key, fn }) => {
+      const normed = normalize(CLUBS, fn)
+      const point = { metric: key }
+      CLUBS.forEach((c, i) => {
+        point[SHORT_NAMES[c.name] ?? c.name] = normed[i]
+      })
+      return point
+    })
+  }, [])
+
+  const cellCls = (isGreen) =>
+    `px-3 py-3 text-sm whitespace-nowrap ${isGreen ? 'bg-green-50 text-green-700 font-bold' : 'text-gray-700'}`
 
   return (
-    <div className="space-y-8">
-      {/* ── Section Header ── */}
-      <SectionHeader
-        title="District Comparison"
-        subtitle="How your zone ranks among all 7 zones"
-        icon={BarChart3}
-      />
+    <div className="px-4 md:px-8 py-6 max-w-7xl mx-auto space-y-8">
 
-      {/* ── Info banner ── */}
-      <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-5 py-4 text-sm text-blue-800">
-        <Info size={18} className="text-blue-500 flex-shrink-0 mt-0.5" />
-        <span>
-          You are viewing <strong>zone-level aggregates only</strong>. Individual club data from
-          other zones is not shown. All metrics are sourced from district records as of 19 March 2026.
-        </span>
+      {/* ── Page Header ──────────────────────────────────────────────────────── */}
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold" style={{ color: ROTARY_BLUE }}>
+          Club Performance Comparison
+        </h1>
+        <p className="text-gray-500 mt-1">How your 4 clubs compare across key metrics</p>
+        <p className="text-xs text-gray-400 mt-0.5">AG: {AG_NAME} · District 3142 · RY 2025–26</p>
       </div>
 
-      {/* ── Zone Ranking Table ── */}
-      <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-100">
-          <h3 className="text-base font-semibold text-slate-800">Zone Rankings</h3>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Rank Score = average of Growth rank, TRF rank, Awards rank (lower = better)
-          </p>
+      {/* ── Summary Leaderboard Cards ─────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-base font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+          Leaderboards
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <LeaderCard
+            icon={Star}
+            title="Top TRF Giving"
+            clubs={CLUBS}
+            accessor={(c) => c.trf.totalINR}
+            formatter={fmtINR}
+          />
+          <LeaderCard
+            icon={Briefcase}
+            title="Most Projects"
+            clubs={CLUBS}
+            accessor={(c) => c.totalProjects}
+            formatter={(v) => `${v} projects`}
+          />
+          <LeaderCard
+            icon={Users}
+            title="Largest Club"
+            clubs={CLUBS}
+            accessor={(c) => c.members}
+            formatter={(v) => `${v} members`}
+          />
+          <LeaderCard
+            icon={Calendar}
+            title="Most Active"
+            clubs={CLUBS}
+            accessor={(c) => c.meetings}
+            formatter={(v) => `${v} meetings`}
+          />
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wide border-b border-slate-200">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold">#</th>
-                <th className="px-4 py-3 text-left font-semibold">Zone</th>
-                <th className="px-4 py-3 text-left font-semibold hidden md:table-cell">Ambassador</th>
-                <th className="px-4 py-3 text-center font-semibold">Clubs</th>
-                <th className="px-4 py-3 text-center font-semibold">Members</th>
-                <th className="px-4 py-3 text-center font-semibold">Growth%</th>
-                <th className="px-4 py-3 text-center font-semibold">TRF Giving</th>
-                <th className="px-4 py-3 text-center font-semibold">Projects</th>
-                <th className="px-4 py-3 text-center font-semibold">Awards</th>
-                <th className="px-4 py-3 text-center font-semibold">Rank Score</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rankRows.map((row, idx) => {
-                const isMyZone = row.id === myZone
-                const isMaxGrowth = row.id === maxGrowthZone?.id
-                const isMinGrowth = row.id === minGrowthZone?.id
-                const isMaxTrf = row.id === maxTrfZone?.id
-                const isMaxAwards = row.id === maxAwardsZone?.id
-                return (
+      </section>
+
+      {/* ── Club Comparison Table ─────────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-base font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+          Head-to-Head Comparison
+        </h2>
+        <Card className="border border-gray-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-left">
+              <thead>
+                <tr style={{ backgroundColor: ROTARY_BLUE }}>
+                  {[
+                    'Club', 'Members', 'Meetings', 'Projects',
+                    'TRF (INR)', 'OCV', 'National Rank',
+                    'Vocational', 'International', 'New Gen',
+                  ].map((h) => (
+                    <th
+                      key={h}
+                      className="px-3 py-3 text-xs font-semibold text-white uppercase tracking-wide whitespace-nowrap"
+                    >
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {CLUBS.map((club, idx) => (
                   <tr
-                    key={row.id}
-                    className={`border-t border-slate-100 transition-colors ${
-                      isMyZone
-                        ? 'bg-blue-50 hover:bg-blue-100'
-                        : 'hover:bg-slate-50'
-                    }`}
-                    style={isMyZone ? { borderLeft: `4px solid ${ROTARY_BLUE}` } : {}}
+                    key={club.id}
+                    className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
                   >
-                    <td className="px-4 py-3 text-slate-500 font-semibold">{idx + 1}</td>
-                    <td className="px-4 py-3">
+                    {/* Club name */}
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <span
-                          className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                          style={{ backgroundColor: ZONE_PALETTE[ZONES.findIndex((z) => z.id === row.id) % ZONE_PALETTE.length] }}
-                        >
-                          {row.id}
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: CLUB_COLORS[idx] }}
+                        />
+                        <span className="text-sm font-semibold text-gray-800">
+                          {SHORT_NAMES[club.name] ?? club.name}
                         </span>
-                        <span className="font-medium text-slate-800">Zone {row.id}</span>
-                        {isMyZone && (
-                          <span
-                            className="text-xs font-bold px-1.5 py-0.5 rounded text-white"
-                            style={{ backgroundColor: ROTARY_BLUE }}
-                          >
-                            ← Your Zone
-                          </span>
-                        )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-600 text-xs hidden md:table-cell">
-                      {row.ambassador}
+
+                    <td className={cellCls(club.members === best.members)}>
+                      {fmtN(club.members)}
                     </td>
-                    <td className="px-4 py-3 text-center text-slate-700">{row.clubs}</td>
-                    <td className="px-4 py-3 text-center text-slate-700">{fmtN(row.members)}</td>
-                    <td
-                      className={`px-4 py-3 text-center font-semibold ${
-                        isMaxGrowth
-                          ? 'text-green-600'
-                          : isMinGrowth
-                          ? 'text-red-500'
-                          : 'text-slate-700'
-                      }`}
-                    >
-                      {row.growth != null ? fmtPct(row.growth) : '—'}
-                      {isMaxGrowth && <span className="ml-1 text-green-500">▲</span>}
-                      {isMinGrowth && <span className="ml-1 text-red-400">▼</span>}
+                    <td className={cellCls(club.meetings === best.meetings)}>
+                      {fmtN(club.meetings)}
                     </td>
-                    <td className="px-4 py-3 text-center text-slate-700">
-                      {fmtUSD(row.trf)}
-                      {isMaxTrf && <span className="ml-1">🏆</span>}
+                    <td className={cellCls(club.totalProjects === best.projects)}>
+                      {fmtN(club.totalProjects)}
                     </td>
-                    <td className="px-4 py-3 text-center text-slate-700">{fmtN(row.projects)}</td>
-                    <td className="px-4 py-3 text-center text-slate-700">
-                      {row.awards}
-                      {isMaxAwards && <span className="ml-1">⭐</span>}
+                    <td className={cellCls(club.trf.totalINR === best.trf)}>
+                      {fmtINR(club.trf.totalINR)}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded text-xs font-bold ${
-                          idx === 0
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : idx === rankRows.length - 1
-                            ? 'bg-red-50 text-red-600'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}
-                      >
-                        {row.rankScore}
-                      </span>
+                    <td className={cellCls(club.ocv === best.ocv)}>
+                      {fmtN(club.ocv)}
+                    </td>
+                    <td className={cellCls(club.projectRank === best.rank)}>
+                      #{fmtN(club.projectRank)}
+                    </td>
+                    <td className={cellCls(club.vocationalService === best.voc)}>
+                      {fmtN(club.vocationalService)}
+                    </td>
+                    <td className={cellCls(club.internationalService === best.intl)}>
+                      {fmtN(club.internationalService)}
+                    </td>
+                    <td className={cellCls(club.newGenerationService === best.newgen)}>
+                      {fmtN(club.newGenerationService)}
                     </td>
                   </tr>
-                )
-              })}
-              {/* District total row */}
-              <tr className="border-t-2 border-slate-300 bg-slate-50 font-bold text-slate-700 text-sm">
-                <td className="px-4 py-3 text-slate-400">—</td>
-                <td className="px-4 py-3">District Total</td>
-                <td className="px-4 py-3 hidden md:table-cell text-slate-400 font-normal text-xs">All zones</td>
-                <td className="px-4 py-3 text-center">{DISTRICT_TOTALS.clubs}</td>
-                <td className="px-4 py-3 text-center">{fmtN(DISTRICT_TOTALS.membersCurrent)}</td>
-                <td className="px-4 py-3 text-center">{fmtPct(DISTRICT_TOTALS.growth)}</td>
-                <td className="px-4 py-3 text-center">{fmtUSD(DISTRICT_TOTALS.trfTotal)}</td>
-                <td className="px-4 py-3 text-center">{fmtN(DISTRICT_TOTALS.projects)}</td>
-                <td className="px-4 py-3 text-center">{DISTRICT_TOTALS.awards}</td>
-                <td className="px-4 py-3 text-center text-slate-400">—</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 bg-gray-50 border-t border-gray-100 text-xs text-gray-400">
+            Green cells indicate the leading club in each column. National Rank = lower is better.
+          </div>
+        </Card>
+      </section>
 
-      {/* ── Radar Chart ── */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6">
-        <h3 className="text-base font-semibold text-slate-800 mb-1">Multi-Axis Zone Comparison</h3>
-        <p className="text-xs text-slate-500 mb-4">
-          Values normalized 0–100 (% of district maximum). {myZone ? `Zone ${myZone} highlighted in bold blue.` : 'All zones shown.'}
+      {/* ── Bar Charts 2×2 ───────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-base font-semibold text-gray-600 mb-3 uppercase tracking-wide">
+          Club Metrics at a Glance
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <ClubBarChart
+            title="Members per Club"
+            clubs={CLUBS}
+            accessor={(c) => c.members}
+            formatter={(v) => `${v} members`}
+          />
+          <ClubBarChart
+            title="Projects per Club"
+            clubs={CLUBS}
+            accessor={(c) => c.totalProjects}
+            formatter={(v) => `${v} projects`}
+          />
+          <ClubBarChart
+            title="TRF Giving per Club (INR)"
+            clubs={CLUBS}
+            accessor={(c) => c.trf.totalINR}
+            formatter={fmtINR}
+            yLabel="INR"
+          />
+          <ClubBarChart
+            title="Meetings per Club"
+            clubs={CLUBS}
+            accessor={(c) => c.meetings}
+            formatter={(v) => `${v} meetings`}
+          />
+        </div>
+      </section>
+
+      {/* ── Radar Chart ──────────────────────────────────────────────────────── */}
+      <section>
+        <h2 className="text-base font-semibold text-gray-600 mb-1 uppercase tracking-wide">
+          Multi-Metric Radar
+        </h2>
+        <p className="text-xs text-gray-400 mb-3">
+          All metrics normalized to 0–100 so clubs can be compared across dimensions.
+          The club with the highest raw value in each category scores 100.
         </p>
-        <ResponsiveContainer width="100%" height={350}>
-          <RadarChart data={radarChartData} margin={{ top: 10, right: 30, bottom: 10, left: 30 }}>
-            <PolarGrid stroke="#e2e8f0" />
-            <PolarAngleAxis
-              dataKey="axis"
-              tick={{ fontSize: 11, fill: '#64748b' }}
-            />
-            <PolarRadiusAxis
-              angle={90}
-              domain={[0, 100]}
-              tick={{ fontSize: 9, fill: '#94a3b8' }}
-              tickCount={4}
-            />
-            <RechartTooltip content={<RadarTip />} />
-            {zoneIds.map((id, idx) => {
-              const isMy = id === myZone
-              return (
-                <Radar
-                  key={id}
-                  name={id}
-                  dataKey={id}
-                  stroke={isMy ? ROTARY_BLUE : ZONE_PALETTE[idx]}
-                  fill={isMy ? ROTARY_BLUE : ZONE_PALETTE[idx]}
-                  fillOpacity={isMy ? 0.18 : 0.05}
-                  strokeWidth={isMy ? 2.5 : 1}
-                  dot={isMy}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardContent className="pt-6 pb-4">
+            <ResponsiveContainer width="100%" height={380}>
+              <RadarChart data={radarData} margin={{ top: 10, right: 40, bottom: 10, left: 40 }}>
+                <PolarGrid stroke="#e5e7eb" />
+                <PolarAngleAxis
+                  dataKey="metric"
+                  tick={{ fontSize: 12, fill: '#374151', fontFamily: 'inherit', fontWeight: 600 }}
                 />
-              )
-            })}
-            <Legend
-              formatter={(val) => `Zone ${val}`}
-              wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
-      </div>
+                <PolarRadiusAxis
+                  angle={90}
+                  domain={[0, 100]}
+                  tick={{ fontSize: 10, fill: '#9ca3af' }}
+                  tickCount={5}
+                />
+                {CLUBS.map((club, idx) => (
+                  <Radar
+                    key={club.id}
+                    name={SHORT_NAMES[club.name] ?? club.name}
+                    dataKey={SHORT_NAMES[club.name] ?? club.name}
+                    stroke={CLUB_COLORS[idx]}
+                    fill={CLUB_COLORS[idx]}
+                    fillOpacity={0.12}
+                    strokeWidth={2}
+                    dot={{ r: 3, fill: CLUB_COLORS[idx] }}
+                  />
+                ))}
+                <Legend
+                  wrapperStyle={{ fontSize: 12, paddingTop: 12 }}
+                  formatter={(value, entry) => (
+                    <span style={{ color: entry.color, fontWeight: 600 }}>{value}</span>
+                  )}
+                />
+              </RadarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </section>
 
-      {/* ── Category Leaderboards ── */}
-      <div>
-        <h3 className="text-base font-semibold text-slate-800 mb-3">Category Leaderboards</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {leaderboards.map((lb) => {
-            const colorMap = {
-              gold: { bg: 'bg-yellow-50 border-yellow-200', icon: 'bg-yellow-100 text-yellow-600', badge: 'bg-yellow-100 text-yellow-800' },
-              green: { bg: 'bg-green-50 border-green-200', icon: 'bg-green-100 text-green-600', badge: 'bg-green-100 text-green-800' },
-              blue: { bg: 'bg-blue-50 border-blue-200', icon: 'bg-blue-100 text-blue-600', badge: 'bg-blue-100 text-blue-800' },
-              purple: { bg: 'bg-purple-50 border-purple-200', icon: 'bg-purple-100 text-purple-600', badge: 'bg-purple-100 text-purple-800' },
-            }
-            const c = colorMap[lb.color]
-            return (
-              <div key={lb.title} className={`rounded-xl border p-4 ${c.bg}`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <div className={`p-2 rounded-lg ${c.icon}`}>
-                    <lb.icon size={16} />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-600">{lb.title}</span>
+      {/* ── AG Totals Footer Strip ────────────────────────────────────────────── */}
+      <section>
+        <Card
+          className="border-0 shadow-sm"
+          style={{ background: `linear-gradient(135deg, ${ROTARY_BLUE} 0%, #0052cc 100%)` }}
+        >
+          <CardContent className="py-5 px-6">
+            <p className="text-white text-xs uppercase tracking-widest font-semibold mb-3 opacity-70">
+              AG Group Combined Totals
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {[
+                { label: 'Total Members',  value: fmtN(AG_TOTALS.totalMembers) },
+                { label: 'Total Meetings', value: fmtN(AG_TOTALS.totalMeetings) },
+                { label: 'Total Projects', value: fmtN(AG_TOTALS.totalProjects) },
+                { label: 'Total TRF',      value: fmtINR(AG_TOTALS.totalTRF_INR) },
+              ].map(({ label, value }) => (
+                <div key={label} className="text-center">
+                  <p className="text-white text-xl font-bold">{value}</p>
+                  <p className="text-blue-200 text-xs mt-0.5">{label}</p>
                 </div>
-                <div className="text-2xl font-bold text-slate-800 mb-0.5">{lb.value}</div>
-                <div className={`inline-block text-xs font-bold px-2 py-0.5 rounded-full mb-2 ${c.badge}`}>
-                  Zone {lb.zone}
-                </div>
-                {myZone && lb.myValue && (
-                  <div className="border-t border-slate-200 pt-2 mt-2">
-                    <div className="text-xs text-slate-500">
-                      Your zone: <span className="font-semibold text-slate-700">{lb.myValue}</span>
-                    </div>
-                    {lb.zone !== myZone && (
-                      <div className={`text-xs mt-0.5 ${lb.ahead ? 'text-green-600' : 'text-red-500'}`}>
-                        {lb.ahead ? '▲ Ahead by' : '▼ Behind by'} {lb.diff}
-                      </div>
-                    )}
-                    {lb.zone === myZone && (
-                      <div className="text-xs mt-0.5 text-green-600 font-semibold">🏆 You lead this category!</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* ── Zone Performance Bars ── */}
-      <div>
-        <h3 className="text-base font-semibold text-slate-800 mb-3">Zone Performance Bars</h3>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {perfMetrics.map((metric) => (
-            <div key={metric.title} className="bg-white rounded-xl border border-slate-200 p-5">
-              <h4 className="text-sm font-semibold text-slate-700 mb-3">{metric.title}</h4>
-              <ResponsiveContainer width="100%" height={180}>
-                <BarChart
-                  data={metric.data}
-                  margin={{ top: 4, right: 20, left: 0, bottom: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis
-                    dataKey="zone"
-                    tick={{ fontSize: 11, fill: '#64748b' }}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 10, fill: '#94a3b8' }}
-                    tickFormatter={(v) =>
-                      metric.isCurrency
-                        ? fmtUSD(v)
-                        : metric.suffix
-                        ? v + metric.suffix
-                        : v
-                    }
-                    width={metric.isCurrency ? 50 : 40}
-                  />
-                  <Tooltip
-                    formatter={(v) =>
-                      metric.isCurrency
-                        ? ['$' + Math.round(v).toLocaleString(), metric.title]
-                        : [v + (metric.suffix || ''), metric.title]
-                    }
-                    labelFormatter={(l) => `Zone ${l.replace('Z', '')}`}
-                  />
-                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                    {metric.data.map((entry, idx) => (
-                      <Cell
-                        key={idx}
-                        fill={entry.zoneId === myZone ? ROTARY_BLUE : '#cbd5e1'}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              {myZone && (
-                <p className="text-xs text-slate-400 mt-1">
-                  <span className="inline-block w-3 h-3 rounded-sm mr-1 align-middle" style={{ backgroundColor: ROTARY_BLUE }} />
-                  Rotary blue = Zone {myZone} (your zone)
-                </p>
-              )}
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </CardContent>
+        </Card>
+      </section>
+
     </div>
   )
 }
