@@ -2,7 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { getClubById } from '@/data/realData'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   ArrowLeft, Users, Calendar, TrendingUp, Heart, Award,
@@ -1255,8 +1254,9 @@ export default function ClubDetail() {
       </div>
 
       {/* ── 2. Tabs ── */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full justify-start bg-transparent border-b border-slate-200 rounded-none h-auto p-0 gap-1">
+      <div className="w-full">
+        {/* Tab Bar */}
+        <div className="flex overflow-x-auto border-b border-slate-200 bg-white rounded-t-2xl">
           {[
             { value: 'membership', icon: Users, label: 'Membership' },
             { value: 'foundation', icon: Heart, label: 'Foundation & TRF' },
@@ -1264,40 +1264,33 @@ export default function ClubDetail() {
             { value: 'goals', icon: Target, label: 'Goals' },
             { value: 'dues', icon: Shield, label: 'Dues', alert: !allDuesPaid },
           ].map(tab => (
-            <TabsTrigger
+            <button
               key={tab.value}
-              value={tab.value}
-              className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-[#003DA5] data-[state=active]:text-[#003DA5] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 gap-2"
+              onClick={() => setActiveTab(tab.value)}
+              className={`relative flex items-center gap-2 px-6 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-colors ${
+                activeTab === tab.value
+                  ? 'border-[#003DA5] text-[#003DA5]'
+                  : 'border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300'
+              }`}
             >
-              <tab.icon size={14} />
-              <span className="hidden sm:inline">{tab.label}</span>
-              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              <tab.icon size={15} />
+              {tab.label}
               {tab.alert && (
-                <span className="absolute top-2 right-1 w-2 h-2 rounded-full bg-red-400" />
+                <span className="w-2 h-2 rounded-full bg-red-400 ml-1" />
               )}
-            </TabsTrigger>
+            </button>
           ))}
-        </TabsList>
-
-        {/* ── 3. Tab Content ── */}
-        <div className="pt-7">
-          <TabsContent value="membership">
-            <MembershipTab club={club} />
-          </TabsContent>
-          <TabsContent value="foundation">
-            <FoundationTab club={club} />
-          </TabsContent>
-          <TabsContent value="projects">
-            <ProjectsTab club={club} />
-          </TabsContent>
-          <TabsContent value="goals">
-            <GoalsTab club={club} />
-          </TabsContent>
-          <TabsContent value="dues">
-            <DuesTab club={club} />
-          </TabsContent>
         </div>
-      </Tabs>
+
+        {/* Tab Content */}
+        <div className="w-full pt-6">
+          {activeTab === 'membership' && <MembershipTab club={club} />}
+          {activeTab === 'foundation' && <FoundationTab club={club} />}
+          {activeTab === 'projects'   && <ProjectsTab club={club} />}
+          {activeTab === 'goals'      && <GoalsTab club={club} />}
+          {activeTab === 'dues'       && <DuesTab club={club} />}
+        </div>
+      </div>
 
     </div>
   )
