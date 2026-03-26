@@ -120,7 +120,7 @@ export default function Membership() {
       meetings: c.meetings,
       totalProjects: c.totalProjects,
       projectRank: c.projectRank,
-      trf: c.trf?.totalUSD ?? 0,
+      trf: c.trf?.totalINR ?? 0,
       ocv: c.ocv ?? 0,
     })),
     []
@@ -192,8 +192,8 @@ export default function Membership() {
           />
           <KPICard
             title="TRF Contributions"
-            value={`$${fmtInt(AG_TOTALS.totalTRF_USD)}`}
-            subtitle={`₹${fmtInt(AG_TOTALS.totalTRF_INR)}`}
+            value={`₹${fmtInt(AG_TOTALS.totalTRF_INR)}`}
+            subtitle="Total TRF contribution"
             icon={Globe}
             color="gold"
           />
@@ -332,7 +332,7 @@ export default function Membership() {
                   <Th label="Members"        colKey="members"      sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <Th label="Meetings"       colKey="meetings"     sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <Th label="Projects"       colKey="totalProjects" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
-                  <Th label="TRF (USD)"      colKey="trf"          sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
+                  <Th label="TRF (INR)"      colKey="trf"          sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <Th label="OCV"            colKey="ocv"          sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                   <Th label="District Rank"  colKey="projectRank"  sortKey={sortKey} sortDir={sortDir} onSort={toggleSort} />
                 </tr>
@@ -349,7 +349,7 @@ export default function Membership() {
                     <td className="px-3 py-2 font-semibold text-slate-800 tabular-nums text-right">{fmtInt(row.members)}</td>
                     <td className="px-3 py-2 text-slate-600 tabular-nums text-right">{fmtInt(row.meetings)}</td>
                     <td className="px-3 py-2 text-slate-600 tabular-nums text-right">{fmtInt(row.totalProjects)}</td>
-                    <td className="px-3 py-2 text-slate-600 tabular-nums text-right">${fmtInt(row.trf)}</td>
+                    <td className="px-3 py-2 text-slate-600 tabular-nums text-right">₹{fmtInt(row.trf)}</td>
                     <td className="px-3 py-2 text-slate-600 tabular-nums text-right">{fmtInt(row.ocv)}</td>
                     <td className="px-3 py-2 text-slate-600 tabular-nums text-right">
                       {row.projectRank
@@ -366,7 +366,7 @@ export default function Membership() {
                   <td className="px-3 py-2.5 tabular-nums text-right">{fmtInt(AG_TOTALS.totalMembers)}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right">{fmtInt(AG_TOTALS.totalMeetings)}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right">{fmtInt(AG_TOTALS.totalProjects)}</td>
-                  <td className="px-3 py-2.5 tabular-nums text-right">${fmtInt(AG_TOTALS.totalTRF_USD)}</td>
+                  <td className="px-3 py-2.5 tabular-nums text-right">₹{fmtInt(AG_TOTALS.totalTRF_INR)}</td>
                   <td className="px-3 py-2.5 tabular-nums text-right">{fmtInt(AG_TOTALS.totalOCV)}</td>
                   <td className="px-3 py-2.5"></td>
                 </tr>
