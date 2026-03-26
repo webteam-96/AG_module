@@ -96,7 +96,7 @@ const CITATION_CATEGORIES = [
 function buildGoalsData() {
   return CLUBS.map((club) => {
     // TRF per capita (real)
-    const trfPerCapita = club.trf.totalUSD / club.members
+    const trfPerCapita = (club.trf.totalUSD * 84) / club.members
 
     // Meeting attendance: use average of real records where available
     let attendancePct = 0
@@ -154,7 +154,7 @@ function buildGoalsData() {
 
 const GOALS = [
   { key: 'membershipGrowth',  label: 'Membership Growth',       target: 5,   unit: '%',  higher: true  },
-  { key: 'trfPerCapita',      label: 'TRF Per Capita',          target: 100, unit: 'USD', higher: true  },
+  { key: 'trfPerCapita',      label: 'TRF Per Capita',          target: 8400, unit: 'INR', higher: true  },
   { key: 'serviceProjects',   label: 'Service Projects',         target: 12,  unit: '',   higher: true  },
   { key: 'meetingAttendance', label: 'Meeting Attendance',       target: 60,  unit: '%',  higher: true  },
   { key: 'myRotary',          label: 'MyRotary Registrations',  target: 80,  unit: '%',  higher: true  },
@@ -232,14 +232,14 @@ function GoalBar({ label, value, target, unit, higher }) {
   const color  = pct >= 100 ? GREEN : pct >= 60 ? AMBER : RED
   const status = pct >= 100 ? 'achieved' : pct >= 60 ? 'on-track' : 'behind'
 
-  const display = unit === 'USD'
-    ? `$${value.toFixed(0)}`
+  const display = unit === 'INR'
+    ? `₹${Math.round(value).toLocaleString('en-IN')}`
     : unit === '%'
     ? `${value.toFixed(1)}%`
     : `${value}`
 
-  const targetDisplay = unit === 'USD'
-    ? `$${target}`
+  const targetDisplay = unit === 'INR'
+    ? `₹${target.toLocaleString('en-IN')}`
     : unit === '%'
     ? `${target}%`
     : `${target}`
@@ -485,7 +485,7 @@ function MonthlyTrackingSection() {
   const metricOpts = [
     { key: 'projects', label: 'Service Projects' },
     { key: 'meetings', label: 'Meetings Held' },
-    { key: 'trf',      label: 'TRF (USD)' },
+    { key: 'trf',      label: 'TRF (INR)' },
   ]
 
   const data = useMemo(() => buildMonthlyChartData(metric), [metric])
@@ -630,7 +630,7 @@ export default function ClubExcellence() {
             <span key={g.key} className="mr-4">
               {g.label}:&nbsp;
               <span className="font-semibold text-slate-700">
-                {g.unit === 'USD' ? `$${g.target}` : g.unit === '%' ? `${g.target}%` : g.target}
+                {g.unit === 'INR' ? `₹${g.target.toLocaleString('en-IN')}` : g.unit === '%' ? `${g.target}%` : g.target}
               </span>
               {i < GOALS.length - 1 ? '' : ''}
             </span>

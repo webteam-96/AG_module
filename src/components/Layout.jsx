@@ -189,12 +189,6 @@ export default function Layout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <Badge
-              className="text-[10px] font-semibold px-2 py-0.5 rounded border-0"
-              style={{ backgroundColor: '#f1f5f9', color: '#64748b' }}
-            >
-              Read Only
-            </Badge>
           </div>
         </header>
 

@@ -199,54 +199,39 @@ export default function Membership() {
           />
         </div>
 
-        {/* 3 ── Club-by-Club Comparison */}
+        {/* 3 ── Club-by-Club Comparison (grouped bar chart) */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-5">
-          <h3 className="text-sm font-bold text-slate-700 mb-4 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2">
             <BarChart2 size={15} className="text-blue-600" />
             Club-by-Club Comparison
           </h3>
-
-          {/* Members comparison */}
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Members per Club vs AG Average ({avgMembers.toFixed(1)})</p>
-          <div className="space-y-1 mb-6">
-            {CLUBS.map((club) => (
-              <ComparisonBar
-                key={club.id}
-                clubValue={club.members}
-                avgValue={avgMembers}
-                clubLabel={club.name}
-                avgLabel="AG Avg"
+          <p className="text-xs text-slate-400 mb-4">Members · Meetings · Projects side by side</p>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart
+              data={CLUBS.map(c => ({
+                name: c.name.replace('Navi Mumbai', 'NM').replace('New Bombay Seaside', 'NB Seaside').replace('-Palm Beach', ' PB').replace(' Flamingo City', ' FC'),
+                fullName: c.name,
+                Members: c.members,
+                Meetings: c.meetings,
+                Projects: c.totalProjects,
+              }))}
+              margin={{ top: 4, right: 8, left: 0, bottom: 4 }}
+              barCategoryGap="25%"
+              barGap={3}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
+              <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} width={32} />
+              <Tooltip
+                contentStyle={{ fontSize: 12, borderRadius: 8, border: '1px solid #e2e8f0' }}
+                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullName ?? ''}
               />
-            ))}
-          </div>
-
-          {/* Meetings comparison */}
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Meetings per Club vs AG Average ({avgMeetings.toFixed(1)})</p>
-          <div className="space-y-1 mb-6">
-            {CLUBS.map((club) => (
-              <ComparisonBar
-                key={club.id}
-                clubValue={club.meetings}
-                avgValue={avgMeetings}
-                clubLabel={club.name}
-                avgLabel="AG Avg"
-              />
-            ))}
-          </div>
-
-          {/* Projects comparison */}
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Projects per Club vs AG Average ({avgProjects.toFixed(1)})</p>
-          <div className="space-y-1">
-            {CLUBS.map((club) => (
-              <ComparisonBar
-                key={club.id}
-                clubValue={club.totalProjects}
-                avgValue={avgProjects}
-                clubLabel={club.name}
-                avgLabel="AG Avg"
-              />
-            ))}
-          </div>
+              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 8 }} />
+              <Bar dataKey="Members" fill={ROTARY_BLUE} radius={[3,3,0,0]} />
+              <Bar dataKey="Meetings" fill={ROTARY_GOLD} radius={[3,3,0,0]} />
+              <Bar dataKey="Projects" fill={ROTARY_TEAL} radius={[3,3,0,0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
         {/* 4 ── Charts row */}

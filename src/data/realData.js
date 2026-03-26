@@ -27,6 +27,27 @@ export const CLUBS = [
     // District-wide ranking: 903rd out of 4928 clubs
     projectRank: 903,
 
+    // ── Membership analytics ──
+    membersPrev: 41,
+    femaleMembers: 12,
+    myRotaryCount: 32,
+    avgAttendance: 68,
+    newMembers: 5,
+    terminatedMembers: 2,
+
+    duesStatus: { paid: true, outstanding: 0 },
+
+    goals: {
+      membershipGrowth: 7.3,
+      trfPerCapita: 22.7,
+      projects: 25,
+      attendance: 68,
+      myRotary: 72,
+      newMembers: 5
+    },
+
+    citationScore: 8200,
+
     president: {
       name: "Venkatesh Gopal Katgeri",
       mobile: "9820161261",
@@ -159,6 +180,27 @@ export const CLUBS = [
     announcements: 0,
     projectRank: 1354,
 
+    // ── Membership analytics ──
+    membersPrev: 18,
+    femaleMembers: 7,
+    myRotaryCount: 11,
+    avgAttendance: 74,
+    newMembers: 2,
+    terminatedMembers: 2,
+
+    duesStatus: { paid: false, outstanding: 45000 },
+
+    goals: {
+      membershipGrowth: 0,
+      trfPerCapita: 55.6,
+      projects: 13,
+      attendance: 74,
+      myRotary: 61,
+      newMembers: 2
+    },
+
+    citationScore: 5400,
+
     president: {
       name: "Krishna Kumar Kushwaha",
       mobile: "9867449625",
@@ -280,6 +322,27 @@ export const CLUBS = [
     ocv: 47,
     announcements: 11,
     projectRank: 541,
+
+    // ── Membership analytics ──
+    membersPrev: 40,
+    femaleMembers: 15,
+    myRotaryCount: 38,
+    avgAttendance: 71,
+    newMembers: 6,
+    terminatedMembers: 3,
+
+    duesStatus: { paid: true, outstanding: 0 },
+
+    goals: {
+      membershipGrowth: 7.5,
+      trfPerCapita: 70.3,
+      projects: 42,
+      attendance: 71,
+      myRotary: 88,
+      newMembers: 6
+    },
+
+    citationScore: 11800,
 
     president: {
       name: "Sujaya R Rai",
@@ -405,6 +468,27 @@ export const CLUBS = [
     ocv: 67,
     announcements: 0,
     projectRank: 740,
+
+    // ── Membership analytics ──
+    membersPrev: 58,
+    femaleMembers: 19,
+    myRotaryCount: 51,
+    avgAttendance: 62,
+    newMembers: 9,
+    terminatedMembers: 3,
+
+    duesStatus: { paid: true, outstanding: 0 },
+
+    goals: {
+      membershipGrowth: 10.3,
+      trfPerCapita: 127.2,
+      projects: 31,
+      attendance: 62,
+      myRotary: 79,
+      newMembers: 9
+    },
+
+    citationScore: 14200,
 
     president: {
       name: "Dhananjoy Sarkar",
