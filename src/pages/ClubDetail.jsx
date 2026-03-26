@@ -10,8 +10,9 @@ import {
   ArrowLeft, Users, Calendar, TrendingUp, Heart, Award,
   Briefcase, CheckCircle2, XCircle, BarChart2, Globe,
   DollarSign, Target, BookOpen, Megaphone, Eye, FileText,
-  UserPlus, UserMinus, Star, ShieldCheck, AlertCircle, Trophy, Percent, Shield
+  UserPlus, UserMinus, Star, ShieldCheck, AlertCircle, Trophy, Percent, Shield, Download
 } from 'lucide-react'
+import { exportClubDetail } from '@/utils/exportExcel'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   Legend, ResponsiveContainer, Cell, LineChart, Line
@@ -1243,6 +1244,12 @@ export default function ClubDetail() {
               <span>Back</span>
             </button>
             <div className="flex items-center gap-3 text-right">
+              <button
+                onClick={() => exportClubDetail(club)}
+                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+              >
+                <Download size={13} /> Download Excel
+              </button>
               {club.president?.name && (
                 <p className="text-white/70 text-xs hidden sm:block">
                   President: <span className="text-white font-semibold">{club.president.name}</span>

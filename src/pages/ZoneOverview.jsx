@@ -2,7 +2,8 @@ import { useNavigate } from 'react-router-dom'
 import { CLUBS, AG_NAME, AG_TOTALS } from '@/data/realData'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Users, CalendarCheck, FolderKanban, IndianRupee, Trophy, ChevronRight } from 'lucide-react'
+import { Users, CalendarCheck, FolderKanban, IndianRupee, Trophy, ChevronRight, Download } from 'lucide-react'
+import { exportAllClubs } from '@/utils/exportExcel'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -200,11 +201,22 @@ export default function ZoneOverview() {
             </span>
           </div>
 
-          <h1 className="text-3xl font-extrabold tracking-tight">My Clubs</h1>
-          <p className="text-blue-200 mt-1 text-sm font-medium">
-            Assistant Governor:&nbsp;
-            <span className="text-white font-semibold">{AG_NAME}</span>
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">My Clubs</h1>
+              <p className="text-blue-200 mt-1 text-sm font-medium">
+                Assistant Governor:&nbsp;
+                <span className="text-white font-semibold">{AG_NAME}</span>
+              </p>
+            </div>
+            <button
+              onClick={() => exportAllClubs(CLUBS, AG_NAME)}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Download size={15} />
+              Download Excel
+            </button>
+          </div>
         </div>
       </div>
 
