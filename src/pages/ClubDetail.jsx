@@ -1,21 +1,19 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { getClubById } from '@/data/realData'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import {
   ArrowLeft, Users, Calendar, TrendingUp, Heart, Award,
   Briefcase, CheckCircle2, XCircle, BarChart2, Globe,
-  DollarSign, Target, BookOpen, Megaphone, Eye, FileText,
-  UserPlus, UserMinus, Star, ShieldCheck, AlertCircle, Trophy, Percent, Shield, Download
+  DollarSign, Target, Megaphone, Eye, FileText,
+  UserPlus, UserMinus, Star, ShieldCheck, AlertCircle, Trophy, Shield, Download
 } from 'lucide-react'
 import { exportClubDetail } from '@/utils/exportExcel'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  Legend, ResponsiveContainer, Cell, LineChart, Line
+  Legend, ResponsiveContainer, Cell
 } from 'recharts'
 
 // ── Formatters ────────────────────────────────────────────────────────────────
@@ -80,38 +78,54 @@ const INRTooltip = ({ active, payload, label }) => {
   return null
 }
 
-// ── Section Heading ───────────────────────────────────────────────────────────
+// ── Stat Card (top-border accent design) ──────────────────────────────────────
 
-function SectionHeading({ children }) {
+function StatCard({ icon: Icon, iconBg, iconColor, accentColor, label, value, sub, trend }) {
   return (
-    <div className="mb-4">
-      <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">{children}</h3>
-      <div className="mt-1.5 h-px bg-slate-200" />
+    <div
+      className="rounded-xl border border-slate-200 bg-white shadow-sm p-5 hover:shadow-md transition-shadow duration-200"
+      style={{ borderTop: `3px solid ${accentColor || '#003DA5'}` }}
+    >
+      <div className="flex items-start gap-3">
+        <div
+          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}
+        >
+          <Icon size={16} className={iconColor} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-slate-500 mb-1 leading-none">{label}</p>
+          <p className="text-2xl font-bold text-slate-900 leading-tight truncate">{value}</p>
+          {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
+          {trend != null && (
+            <p className={`text-xs font-semibold mt-1 ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+              {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
 
-// ── Stat Card (bordered accent design) ───────────────────────────────────────
+// ── Chart Card wrapper ─────────────────────────────────────────────────────────
 
-function StatCard({ icon: Icon, iconBg, iconColor, accentColor, label, value, sub }) {
+function ChartCard({ title, subtitle, children }) {
   return (
-    <div
-      className="rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
-      style={{ borderLeft: `4px solid ${accentColor || '#003DA5'}` }}
-    >
-      <div className="p-5">
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}>
-            <Icon size={18} className={iconColor} />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-medium text-slate-500 uppercase tracking-wide leading-none mb-1.5">{label}</p>
-            <p className="text-2xl font-bold text-slate-900 truncate leading-tight">{value}</p>
-            {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
-          </div>
-        </div>
+    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+      <div className="px-5 pt-4 pb-2">
+        <h4 className="text-sm font-semibold text-slate-800">{title}</h4>
+        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
       </div>
+      <div className="px-3 pb-4">{children}</div>
     </div>
+  )
+}
+
+// ── Section Label ──────────────────────────────────────────────────────────────
+
+function SectionLabel({ children }) {
+  return (
+    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-3">{children}</p>
   )
 }
 
@@ -129,7 +143,7 @@ function MembershipTab({ club }) {
   }))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* 4 Key Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -173,87 +187,86 @@ function MembershipTab({ club }) {
       {/* Growth & Status Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Membership Growth Card */}
-        <div className={`rounded-2xl border shadow-sm overflow-hidden ${growthPositive ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50' : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'}`}>
-          <div className="p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Membership Growth</p>
-            <div className="flex items-end gap-4">
-              <div>
-                <p className={`text-5xl font-bold leading-none ${growthPositive ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {growthPositive ? '+' : ''}{growthPct}%
-                </p>
-                <p className="text-sm text-slate-500 mt-2 flex items-center gap-2">
-                  <span className="font-semibold text-slate-700">{prev}</span>
-                  <span className="text-slate-400">→</span>
-                  <span className="font-semibold text-slate-700">{club.members}</span>
-                  <span className="text-slate-400">members</span>
-                </p>
-              </div>
-              <TrendingUp size={36} className={`mb-1 ${growthPositive ? 'text-emerald-300' : 'text-red-300'}`} />
+        <div
+          className={`rounded-xl border shadow-sm p-5 ${
+            growthPositive
+              ? 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-green-50'
+              : 'border-red-200 bg-gradient-to-br from-red-50 to-rose-50'
+          }`}
+        >
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Membership Growth</p>
+          <div className="flex items-end gap-4">
+            <div>
+              <p className={`text-5xl font-bold leading-none ${growthPositive ? 'text-emerald-700' : 'text-red-600'}`}>
+                {growthPositive ? '+' : ''}{growthPct}%
+              </p>
+              <p className="text-sm text-slate-500 mt-2 flex items-center gap-2">
+                <span className="font-semibold text-slate-700">{prev}</span>
+                <span className="text-slate-400">→</span>
+                <span className="font-semibold text-slate-700">{club.members}</span>
+                <span className="text-slate-400">members</span>
+              </p>
             </div>
+            <TrendingUp size={36} className={`mb-1 ${growthPositive ? 'text-emerald-300' : 'text-red-300'}`} />
           </div>
         </div>
 
         {/* Member Status Card */}
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="p-5">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Member Status This Year</p>
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-                  <UserPlus size={18} className="text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-emerald-700">+{club.newMembers ?? 0}</p>
-                  <p className="text-xs text-slate-500">Inducted</p>
-                </div>
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
+          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-4">Member Activity This Year</p>
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
+                <UserPlus size={16} className="text-emerald-600" />
               </div>
-              <div className="w-px h-12 bg-slate-100" />
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                  <UserMinus size={18} className="text-red-500" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-600">-{club.terminatedMembers ?? 0}</p>
-                  <p className="text-xs text-slate-500">Terminated</p>
-                </div>
-              </div>
-              <div className="w-px h-12 bg-slate-100" />
               <div>
-                <p className={`text-2xl font-bold ${(club.newMembers ?? 0) - (club.terminatedMembers ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
-                  {(club.newMembers ?? 0) - (club.terminatedMembers ?? 0) >= 0 ? '+' : ''}
-                  {(club.newMembers ?? 0) - (club.terminatedMembers ?? 0)}
-                </p>
-                <p className="text-xs text-slate-500">Net change</p>
+                <p className="text-2xl font-bold text-emerald-700">+{club.newMembers ?? 0}</p>
+                <p className="text-xs text-slate-500">Inducted</p>
               </div>
+            </div>
+            <div className="w-px h-12 bg-slate-100" />
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-red-100 flex items-center justify-center">
+                <UserMinus size={16} className="text-red-500" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-red-600">-{club.terminatedMembers ?? 0}</p>
+                <p className="text-xs text-slate-500">Terminated</p>
+              </div>
+            </div>
+            <div className="w-px h-12 bg-slate-100" />
+            <div>
+              <p className={`text-2xl font-bold ${(club.newMembers ?? 0) - (club.terminatedMembers ?? 0) >= 0 ? 'text-emerald-700' : 'text-red-600'}`}>
+                {(club.newMembers ?? 0) - (club.terminatedMembers ?? 0) >= 0 ? '+' : ''}
+                {(club.newMembers ?? 0) - (club.terminatedMembers ?? 0)}
+              </p>
+              <p className="text-xs text-slate-500">Net change</p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Monthly Activity Bar Chart */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 pt-5 pb-2">
-          <h4 className="text-sm font-semibold text-slate-800">Monthly Activity — Rotarians Present & Meetings Held</h4>
-          <p className="text-xs text-slate-400 mt-0.5">Jul 2025 – Mar 2026</p>
-        </div>
-        <div className="px-4 pb-5">
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlyBarData} barCategoryGap="28%" barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              <Bar dataKey="Attendance" name="Rotarians Present" fill="#003DA5" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Meetings" name="Meetings Held" fill="#10b981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {/* Monthly Activity Chart */}
+      <ChartCard
+        title="Monthly Activity — Rotarians Present & Meetings Held"
+        subtitle="Jul 2025 – Mar 2026"
+      >
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={monthlyBarData} barCategoryGap="28%" barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+            <Bar dataKey="Attendance" name="Rotarians Present" fill="#003DA5" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Meetings" name="Meetings Held" fill="#10b981" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* BOD Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-5 pt-4 pb-3 border-b border-slate-100">
           <h4 className="text-sm font-semibold text-slate-800">Board of Directors</h4>
           <p className="text-xs text-slate-400 mt-0.5">{club.bod.length} office-bearers</p>
         </div>
@@ -261,7 +274,7 @@ function MembershipTab({ club }) {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3">#</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3">#</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold py-3">Designation</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold py-3">Name</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold py-3">Mobile</TableHead>
@@ -269,8 +282,8 @@ function MembershipTab({ club }) {
             </TableHeader>
             <TableBody>
               {club.bod.map((b, i) => (
-                <TableRow key={i} className="hover:bg-slate-50 border-b border-slate-50">
-                  <TableCell className="text-xs text-slate-400 pl-6 py-3">{i + 1}</TableCell>
+                <TableRow key={i} className={`border-b border-slate-50 hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                  <TableCell className="text-xs text-slate-400 pl-5 py-3">{i + 1}</TableCell>
                   <TableCell className="py-3 max-w-[220px]">
                     <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium truncate max-w-[200px]" title={b.designation}>
                       {b.designation}
@@ -287,8 +300,8 @@ function MembershipTab({ club }) {
 
       {/* Meeting Records */}
       {club.meetingRecords && club.meetingRecords.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-5 pt-4 pb-3 border-b border-slate-100">
             <h4 className="text-sm font-semibold text-slate-800">Meeting Records</h4>
             <p className="text-xs text-slate-400 mt-0.5">{club.meetingRecords.length} meetings on record</p>
           </div>
@@ -296,16 +309,16 @@ function MembershipTab({ club }) {
             <Table>
               <TableHeader>
                 <TableRow className="bg-slate-50 hover:bg-slate-50">
-                  <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3">Date</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3">Date</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Type</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Title</TableHead>
-                  <TableHead className="text-xs text-slate-500 font-semibold text-right pr-6 py-3">Attendance</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 py-3">Attendance</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {club.meetingRecords.map((mr, i) => (
-                  <TableRow key={i} className="hover:bg-slate-50 border-b border-slate-50">
-                    <TableCell className="text-xs text-slate-500 pl-6 py-3 whitespace-nowrap font-mono">{fmtDate(mr.date)}</TableCell>
+                  <TableRow key={i} className={`border-b border-slate-50 hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                    <TableCell className="text-xs text-slate-500 pl-5 py-3 whitespace-nowrap font-mono">{fmtDate(mr.date)}</TableCell>
                     <TableCell className="py-3">
                       <Badge variant="outline" className={`text-xs font-medium py-0.5 ${mr.type === 'Regular' ? 'border-blue-200 text-blue-700 bg-blue-50' : 'border-purple-200 text-purple-700 bg-purple-50'}`}>
                         {mr.type}
@@ -314,7 +327,7 @@ function MembershipTab({ club }) {
                     <TableCell className="text-xs text-slate-700 py-3 max-w-[280px]">
                       <span className="block truncate" title={mr.title}>{mr.title}</span>
                     </TableCell>
-                    <TableCell className="text-sm font-semibold text-slate-800 py-3 text-right pr-6 whitespace-nowrap">
+                    <TableCell className="text-sm font-semibold text-slate-800 py-3 text-right pr-5 whitespace-nowrap">
                       {mr.attendance != null ? mr.attendance : '—'}
                       {mr.attendancePct != null ? <span className="text-xs text-slate-400 ml-1.5 font-normal">({mr.attendancePct.toFixed(1)}%)</span> : null}
                     </TableCell>
@@ -335,10 +348,6 @@ function FoundationTab({ club }) {
   const { trf, monthly, members } = club
 
   const perMember = members > 0 ? (trf.totalUSD / members).toFixed(1) : 0
-  const targetPerMember = 100
-  const perMemberPct = Math.min((perMember / targetPerMember) * 100, 100)
-
-  // Per-member INR target at ₹8,400 (= $100 × ₹84)
   const perMemberINR = members > 0 ? (trf.totalINR / members) : 0
   const targetPerMemberINR = 8400
   const perMemberINRPct = Math.min((perMemberINR / targetPerMemberINR) * 100, 100)
@@ -356,34 +365,57 @@ function FoundationTab({ club }) {
   }))
 
   return (
-    <div className="space-y-6">
-      {/* Hero TRF Total Card */}
-      <div className="rounded-2xl overflow-hidden shadow-md"
-        style={{ background: 'linear-gradient(135deg, #d97706 0%, #ea580c 100%)' }}>
-        <div className="p-7">
-          <p className="text-amber-100 text-xs font-semibold uppercase tracking-widest mb-2">Total TRF Contribution</p>
-          <p className="text-5xl font-bold text-white leading-none">{fmtINRFull(trf.totalINR)}</p>
-          <p className="text-amber-200 text-sm mt-3">USD {(trf.totalUSD || 0).toLocaleString('en-IN')} at ₹84/USD exchange rate</p>
-          <div className="flex flex-wrap gap-4 mt-5">
-            <div className="bg-white/15 rounded-xl px-4 py-3">
-              <p className="text-amber-100 text-xs mb-0.5">Per Member (USD)</p>
-              <p className="text-xl font-bold text-white">${perMember}</p>
+    <div className="space-y-5">
+      {/* TRF Hero — amber info panel (no full-bleed gradient) */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div>
+            <p className="text-xs font-semibold text-amber-700 uppercase tracking-widest mb-1">Total TRF Contribution</p>
+            <p className="text-4xl font-bold text-amber-900 leading-none">{fmtINRFull(trf.totalINR)}</p>
+            <p className="text-sm text-amber-700 mt-2">USD {(trf.totalUSD || 0).toLocaleString('en-IN')} at ₹84/USD</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <div className="bg-white border border-amber-200 rounded-lg px-4 py-3 min-w-[120px]">
+              <p className="text-xs text-amber-600 mb-0.5">Per Member (USD)</p>
+              <p className="text-xl font-bold text-amber-900">${perMember}</p>
             </div>
-            <div className="bg-white/15 rounded-xl px-4 py-3">
-              <p className="text-amber-100 text-xs mb-0.5">Per Member (INR)</p>
-              <p className="text-xl font-bold text-white">{fmtINR(perMemberINR)}</p>
+            <div className="bg-white border border-amber-200 rounded-lg px-4 py-3 min-w-[120px]">
+              <p className="text-xs text-amber-600 mb-0.5">Per Member (INR)</p>
+              <p className="text-xl font-bold text-amber-900">{fmtINR(perMemberINR)}</p>
             </div>
-            <div className="bg-white/15 rounded-xl px-4 py-3">
-              <p className="text-amber-100 text-xs mb-0.5">Target Achievement</p>
-              <p className="text-xl font-bold text-white">{perMemberINRPct.toFixed(0)}%</p>
+            <div className="bg-white border border-amber-200 rounded-lg px-4 py-3 min-w-[120px]">
+              <p className="text-xs text-amber-600 mb-0.5">vs ₹8,400 Target</p>
+              <p className={`text-xl font-bold ${perMemberINRPct >= 100 ? 'text-emerald-700' : 'text-amber-900'}`}>
+                {perMemberINRPct.toFixed(0)}%
+              </p>
             </div>
+          </div>
+        </div>
+        {/* Progress toward ₹8,400 */}
+        <div className="mt-4">
+          <div className="flex justify-between text-xs text-amber-700 mb-1.5">
+            <span>Progress toward ₹8,400/member target</span>
+            <span className="font-bold">{perMemberINRPct.toFixed(0)}%</span>
+          </div>
+          <div className="h-2.5 bg-amber-200 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all"
+              style={{
+                width: `${perMemberINRPct}%`,
+                backgroundColor: perMemberINRPct >= 100 ? '#10b981' : '#d97706'
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-xs text-amber-600 mt-1">
+            <span>Current: {fmtINR(perMemberINR)}/member</span>
+            <span>Target: ₹8,400/member</span>
           </div>
         </div>
       </div>
 
-      {/* 4 Fund Breakdown Cards */}
+      {/* 4 Fund Breakdown Stat Cards */}
       <div>
-        <SectionHeading>Fund Breakdown</SectionHeading>
+        <SectionLabel>Fund Breakdown</SectionLabel>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {breakdown.map((b, i) => (
             <StatCard
@@ -400,84 +432,37 @@ function FoundationTab({ club }) {
         </div>
       </div>
 
-      {/* Fund Breakdown Bar Chart */}
+      {/* Fund Breakdown Chart */}
       {breakdown.filter(b => b.usd > 0 || b.inr > 0).length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="px-6 pt-5 pb-2">
-            <h4 className="text-sm font-semibold text-slate-800">TRF Fund Breakdown (INR)</h4>
-            <p className="text-xs text-slate-400 mt-0.5">Distribution across fund categories</p>
-          </div>
-          <div className="px-4 pb-5">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={breakdown.filter(b => b.usd > 0 || b.inr > 0)} barCategoryGap="35%">
-                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => fmtINR(v)} />
-                <Tooltip content={<INRTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
-                <Bar dataKey="inr" name="Amount (INR)" radius={[6, 6, 0, 0]}>
-                  {breakdown.filter(b => b.usd > 0 || b.inr > 0).map((item, i) => (
-                    <Cell key={i} fill={item.color} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* Per-member giving progress toward ₹8,400 */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h4 className="text-sm font-semibold text-slate-800">Per-Member Giving vs Target</h4>
-              <p className="text-xs text-slate-400 mt-0.5">Target: ₹8,400/member ($100 at ₹84)</p>
-            </div>
-            <span className={`text-xl font-bold ${perMemberINRPct >= 100 ? 'text-emerald-600' : 'text-amber-600'}`}>
-              {perMemberINRPct.toFixed(0)}%
-            </span>
-          </div>
-          <div className="h-3 bg-slate-100 rounded-full overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all"
-              style={{ width: `${perMemberINRPct}%`, backgroundColor: perMemberINRPct >= 100 ? '#10b981' : '#f59e0b' }}
-            />
-          </div>
-          <div className="flex justify-between mt-2">
-            <span className="text-xs text-slate-500">Current: {fmtINR(perMemberINR)}/member</span>
-            <span className="text-xs text-slate-500">Target: {fmtINRFull(targetPerMemberINR)}/member</span>
-          </div>
-          {perMemberINR < targetPerMemberINR && (
-            <p className="text-xs text-amber-600 mt-2 font-medium">
-              Gap: {fmtINR(targetPerMemberINR - perMemberINR)}/member — {fmtINRFull((targetPerMemberINR - perMemberINR) * members)} total needed
-            </p>
-          )}
-          {perMemberINR >= targetPerMemberINR && (
-            <p className="text-xs text-emerald-600 mt-2 font-medium flex items-center gap-1">
-              <CheckCircle2 size={12} /> Target achieved — {fmtINR(perMemberINR)}/member exceeds the ₹8,400 benchmark
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Monthly TRF Trend */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 pt-5 pb-2">
-          <h4 className="text-sm font-semibold text-slate-800">Monthly TRF Contributions (USD)</h4>
-          <p className="text-xs text-slate-400 mt-0.5">Jul 2025 – Mar 2026</p>
-        </div>
-        <div className="px-4 pb-5">
-          <ResponsiveContainer width="100%" height={210}>
-            <BarChart data={monthlyTRFData} barCategoryGap="30%">
+        <ChartCard title="TRF Fund Breakdown (INR)" subtitle="Distribution across fund categories">
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={breakdown.filter(b => b.usd > 0 || b.inr > 0)} barCategoryGap="35%">
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
-              <Bar dataKey="TRF (USD)" fill="#003DA5" radius={[6, 6, 0, 0]} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={v => fmtINR(v)} />
+              <Tooltip content={<INRTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
+              <Bar dataKey="inr" name="Amount (INR)" radius={[6, 6, 0, 0]}>
+                {breakdown.filter(b => b.usd > 0 || b.inr > 0).map((item, i) => (
+                  <Cell key={i} fill={item.color} />
+                ))}
+              </Bar>
             </BarChart>
           </ResponsiveContainer>
-        </div>
-      </div>
+        </ChartCard>
+      )}
+
+      {/* Monthly TRF Trend */}
+      <ChartCard title="Monthly TRF Contributions (USD)" subtitle="Jul 2025 – Mar 2026">
+        <ResponsiveContainer width="100%" height={210}>
+          <BarChart data={monthlyTRFData} barCategoryGap="30%">
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
+            <Bar dataKey="TRF (USD)" fill="#003DA5" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
     </div>
   )
 }
@@ -492,7 +477,6 @@ function ProjectsTab({ club }) {
   const totalBeneficiaries = projects.reduce((s, p) => s + (p.beneficiaries || 0), 0)
   const totalManHours = projects.reduce((s, p) => s + (p.manHours || 0), 0)
 
-  // Category breakdown
   const catMap = {}
   projects.forEach(p => {
     const cat = p.category || 'Uncategorised'
@@ -517,7 +501,7 @@ function ProjectsTab({ club }) {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* 4 Summary Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
@@ -558,34 +542,28 @@ function ProjectsTab({ club }) {
         />
       </div>
 
-      {/* Monthly Projects Trend Chart */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 pt-5 pb-2">
-          <h4 className="text-sm font-semibold text-slate-800">Monthly Projects & Volunteer Hours</h4>
-          <p className="text-xs text-slate-400 mt-0.5">Jul 2025 – Mar 2026</p>
-        </div>
-        <div className="px-4 pb-5">
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlyProjectData} barCategoryGap="25%" barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              <Bar dataKey="Projects" fill="#003DA5" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Man Hours" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {/* Monthly Projects Chart */}
+      <ChartCard title="Monthly Projects & Volunteer Hours" subtitle="Jul 2025 – Mar 2026">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={monthlyProjectData} barCategoryGap="25%" barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+            <Bar dataKey="Projects" fill="#003DA5" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Man Hours" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
-      {/* Category Breakdown */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+      {/* Category Breakdown — horizontal bars */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div className="px-5 pt-4 pb-3 border-b border-slate-100">
           <h4 className="text-sm font-semibold text-slate-800">Project Categories</h4>
           <p className="text-xs text-slate-400 mt-0.5">{catData.length} categories across {projects.length} projects</p>
         </div>
-        <div className="p-6 space-y-3">
+        <div className="p-5 space-y-3">
           {catData.map((c, i) => (
             <div key={i} className="flex items-center gap-3">
               <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: catColors[i % catColors.length] }} />
@@ -607,8 +585,8 @@ function ProjectsTab({ club }) {
       </div>
 
       {/* Projects Table with Search */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-5 pt-4 pb-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h4 className="text-sm font-semibold text-slate-800">All Projects</h4>
             <p className="text-xs text-slate-400 mt-0.5">{filteredProjects.length} of {projects.length} shown</p>
@@ -618,25 +596,25 @@ function ProjectsTab({ club }) {
             placeholder="Search projects..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="text-sm border border-slate-200 rounded-xl px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-slate-50"
+            className="text-sm border border-slate-200 rounded-lg px-3 py-2 w-full sm:w-64 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-slate-50"
           />
         </div>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3 whitespace-nowrap">Date</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3 whitespace-nowrap">Date</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold py-3 whitespace-nowrap">Category</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold py-3">Title</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">Cost (INR)</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">Beneficiaries</TableHead>
-                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-6 py-3 whitespace-nowrap">Man Hrs</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 py-3 whitespace-nowrap">Man Hrs</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredProjects.map((p, i) => (
-                <TableRow key={i} className="hover:bg-slate-50 border-b border-slate-50">
-                  <TableCell className="text-xs text-slate-500 pl-6 py-3 font-mono whitespace-nowrap">{fmtDate(p.date)}</TableCell>
+                <TableRow key={i} className={`border-b border-slate-50 hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                  <TableCell className="text-xs text-slate-500 pl-5 py-3 font-mono whitespace-nowrap">{fmtDate(p.date)}</TableCell>
                   <TableCell className="py-3 max-w-[140px]">
                     <span className="text-xs text-slate-600 block truncate" title={p.category}>{p.category}</span>
                   </TableCell>
@@ -649,7 +627,7 @@ function ProjectsTab({ club }) {
                   <TableCell className="text-xs font-semibold text-slate-700 py-3 text-right whitespace-nowrap">
                     {p.beneficiaries || '—'}
                   </TableCell>
-                  <TableCell className="text-xs text-slate-700 py-3 text-right pr-6 whitespace-nowrap">
+                  <TableCell className="text-xs text-slate-700 py-3 text-right pr-5 whitespace-nowrap">
                     {p.manHours || '—'}
                   </TableCell>
                 </TableRow>
@@ -672,12 +650,11 @@ function ProjectsTab({ club }) {
 // ── TAB 4: GOALS ──────────────────────────────────────────────────────────────
 
 function GoalsTab({ club }) {
-  const { monthly, goals, citationScore, members } = club
+  const { monthly, goals, citationScore } = club
 
   const citationMax = 20000
   const citationPct = citationScore != null ? Math.min((citationScore / citationMax) * 100, 100) : 0
 
-  // Award badges
   const awards = [
     {
       label: 'Presidential Citation',
@@ -721,7 +698,6 @@ function GoalsTab({ club }) {
     },
   ]
 
-  // Goals progress items
   const goalItems = goals ? [
     { label: 'Membership Growth', actual: goals.membershipGrowth, target: 5, unit: '%', color: '#003DA5' },
     { label: 'TRF Per Capita', actual: goals.trfPerCapita, target: 100, unit: ' USD', color: '#10b981' },
@@ -738,36 +714,31 @@ function GoalsTab({ club }) {
   }))
 
   return (
-    <div className="space-y-6">
-      {/* Citation Score Hero */}
-      <div
-        className="rounded-2xl overflow-hidden shadow-md"
-        style={{ background: 'linear-gradient(135deg, #1e3a8a 0%, #003DA5 50%, #0052cc 100%)' }}
-      >
-        <div className="p-7">
-          <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-2">Club Citation Score</p>
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
-            <div>
-              <p className="text-6xl font-bold text-white leading-none">
-                {citationScore != null ? citationScore.toLocaleString('en-IN') : '—'}
-              </p>
-              <p className="text-blue-300 text-sm mt-3">out of {citationMax.toLocaleString('en-IN')} maximum points</p>
+    <div className="space-y-5">
+      {/* Citation Score Panel — Rotary blue card (contained, not full-bleed) */}
+      <div className="bg-[#003DA5] text-white rounded-xl p-6">
+        <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-2">Club Citation Score</p>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+          <div>
+            <p className="text-6xl font-bold text-white leading-none">
+              {citationScore != null ? citationScore.toLocaleString('en-IN') : '—'}
+            </p>
+            <p className="text-blue-300 text-sm mt-2">out of {citationMax.toLocaleString('en-IN')} maximum points</p>
+          </div>
+          <div className="sm:w-72">
+            <div className="flex justify-between text-xs text-blue-200 mb-1.5">
+              <span>Score Progress</span>
+              <span>{citationPct.toFixed(0)}%</span>
             </div>
-            <div className="sm:w-72">
-              <div className="flex justify-between text-xs text-blue-200 mb-1.5">
-                <span>Score Progress</span>
-                <span>{citationPct.toFixed(0)}%</span>
-              </div>
-              <div className="h-3 bg-white/20 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full"
-                  style={{ width: `${citationPct}%`, background: 'linear-gradient(90deg, #F7A81B, #fbbf24)' }}
-                />
-              </div>
-              <div className="flex justify-between text-xs text-blue-300 mt-2">
-                <span>Presidential: 10,000</span>
-                <span>Max: 20,000</span>
-              </div>
+            <div className="h-3 bg-white/20 rounded-full overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${citationPct}%`, background: 'linear-gradient(90deg, #F7A81B, #fbbf24)' }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-blue-300 mt-2">
+              <span>Presidential: 10,000</span>
+              <span>Max: 20,000</span>
             </div>
           </div>
         </div>
@@ -776,7 +747,7 @@ function GoalsTab({ club }) {
       {/* 6 Goal Progress Cards in 2-col grid */}
       {goalItems.length > 0 && (
         <div>
-          <SectionHeading>Goal Progress vs Targets</SectionHeading>
+          <SectionLabel>Goal Progress vs Targets</SectionLabel>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {goalItems.map((g, i) => {
               const pct = g.target > 0 ? Math.min((g.actual / g.target) * 100, 100) : 0
@@ -784,8 +755,8 @@ function GoalsTab({ club }) {
               return (
                 <div
                   key={i}
-                  className="rounded-2xl border bg-white shadow-sm p-5 hover:shadow-md transition-shadow"
-                  style={{ borderLeft: `4px solid ${g.color}` }}
+                  className="rounded-xl border bg-white shadow-sm p-5 hover:shadow-md transition-shadow"
+                  style={{ borderTop: `3px solid ${g.color}` }}
                 >
                   <div className="flex items-center justify-between mb-3">
                     <p className="text-sm font-semibold text-slate-800">{g.label}</p>
@@ -819,52 +790,46 @@ function GoalsTab({ club }) {
 
       {/* Award Status Badges */}
       <div>
-        <SectionHeading>Award Status</SectionHeading>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <SectionLabel>Award Status</SectionLabel>
+        <div className="flex flex-wrap gap-3">
           {awards.map((a, i) => {
             const bg = a.earned ? a.earnedBg : a.pendingBg
             const textCls = a.earned ? a.earnedText : a.pendingText
             return (
-              <div key={i} className={`rounded-2xl border ${bg} p-5 shadow-sm`}>
-                <div className="flex items-center gap-2 mb-3">
-                  <a.icon size={20} className={a.earned ? textCls : 'text-slate-300'} />
+              <div key={i} className={`flex-1 min-w-[160px] rounded-xl border ${bg} p-4 shadow-sm`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <a.icon size={18} className={a.earned ? textCls : 'text-slate-300'} />
                   {a.earned
                     ? <Badge className="bg-emerald-500 text-white text-xs py-0 hover:bg-emerald-500">Achieved</Badge>
                     : <Badge variant="outline" className="text-xs py-0 text-slate-400 border-slate-200">Pending</Badge>
                   }
                 </div>
                 <p className={`text-sm font-bold ${textCls}`}>{a.label}</p>
-                <p className={`text-xs mt-1 ${a.earned ? textCls + ' opacity-70' : 'text-slate-400'}`}>{a.detail}</p>
+                <p className={`text-xs mt-0.5 ${a.earned ? textCls + ' opacity-70' : 'text-slate-400'}`}>{a.detail}</p>
               </div>
             )
           })}
         </div>
       </div>
 
-      {/* Monthly Meetings Line Chart */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="px-6 pt-5 pb-2">
-          <h4 className="text-sm font-semibold text-slate-800">Monthly Meetings & Projects Trend</h4>
-          <p className="text-xs text-slate-400 mt-0.5">Jul 2025 – Mar 2026</p>
-        </div>
-        <div className="px-4 pb-5">
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlyMeetingsData} barCategoryGap="28%" barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
-              <Bar dataKey="Meetings" fill="#003DA5" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Projects" fill="#10b981" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      {/* Monthly Meetings Chart */}
+      <ChartCard title="Monthly Meetings & Projects Trend" subtitle="Jul 2025 – Mar 2026">
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={monthlyMeetingsData} barCategoryGap="28%" barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+            <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomBarTooltip />} cursor={{ fill: 'rgba(0,61,165,0.04)' }} />
+            <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+            <Bar dataKey="Meetings" fill="#003DA5" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="Projects" fill="#10b981" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </ChartCard>
 
       {/* CMR Summary Table */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-5 pt-4 pb-3 border-b border-slate-100">
           <h4 className="text-sm font-semibold text-slate-800">Monthly CMR Summary</h4>
           <p className="text-xs text-slate-400 mt-0.5">Jul 2025 – Mar 2026</p>
         </div>
@@ -872,25 +837,25 @@ function GoalsTab({ club }) {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3 whitespace-nowrap">Month</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3 whitespace-nowrap">Month</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">Meetings</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">TRF (USD)</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">Projects</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3 whitespace-nowrap">Beneficiaries</TableHead>
-                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-6 py-3 whitespace-nowrap">Man Hours</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 py-3 whitespace-nowrap">Man Hours</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {monthly.map((m, i) => {
+              {club.monthly.map((m, i) => {
                 const hasData = m.meetings > 0 || m.projects > 0 || m.trf > 0
                 return (
-                  <TableRow key={i} className={`hover:bg-slate-50 border-b border-slate-50 ${!hasData ? 'opacity-40' : ''}`}>
-                    <TableCell className="text-xs font-semibold text-slate-700 pl-6 py-3 whitespace-nowrap">{m.month}</TableCell>
+                  <TableRow key={i} className={`border-b border-slate-50 hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''} ${!hasData ? 'opacity-40' : ''}`}>
+                    <TableCell className="text-xs font-semibold text-slate-700 pl-5 py-3 whitespace-nowrap">{m.month}</TableCell>
                     <TableCell className="text-xs text-slate-700 py-3 text-right">{m.meetings || '—'}</TableCell>
                     <TableCell className="text-xs text-slate-700 py-3 text-right font-mono">{m.trf > 0 ? `$${m.trf.toLocaleString('en-IN')}` : '—'}</TableCell>
                     <TableCell className="text-xs text-slate-700 py-3 text-right">{m.projects || '—'}</TableCell>
                     <TableCell className="text-xs text-slate-700 py-3 text-right">{m.beneficiaries || '—'}</TableCell>
-                    <TableCell className="text-xs text-slate-700 py-3 text-right pr-6">{m.manHours || '—'}</TableCell>
+                    <TableCell className="text-xs text-slate-700 py-3 text-right pr-5">{m.manHours || '—'}</TableCell>
                   </TableRow>
                 )
               })}
@@ -901,9 +866,9 @@ function GoalsTab({ club }) {
 
       {/* Project Rank */}
       {club.projectRank && (
-        <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <Award size={22} className="text-amber-600" />
+        <div className="rounded-xl border border-amber-200 bg-gradient-to-r from-amber-50 to-yellow-50 shadow-sm p-5 flex items-center gap-4">
+          <div className="w-11 h-11 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <Award size={20} className="text-amber-600" />
           </div>
           <div>
             <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide mb-0.5">District Project Ranking</p>
@@ -938,48 +903,45 @@ function DuesTab({ club }) {
   const outstanding = duesStatus?.outstanding ?? 0
 
   return (
-    <div className="space-y-6">
-      {/* Hero Dues Status */}
-      <div
-        className="rounded-2xl overflow-hidden shadow-md"
-        style={{
-          background: allDuesPaid
-            ? 'linear-gradient(135deg, #065f46 0%, #059669 100%)'
-            : 'linear-gradient(135deg, #991b1b 0%, #dc2626 100%)'
-        }}
-      >
-        <div className="p-7 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-          <div className="flex items-center gap-5">
-            <div className={`w-14 h-14 rounded-full flex items-center justify-center shrink-0 ${allDuesPaid ? 'bg-white/20' : 'bg-white/20'}`}>
+    <div className="space-y-5">
+      {/* Status Banner */}
+      <div className={`rounded-xl border p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
+        allDuesPaid
+          ? 'bg-emerald-50 border-emerald-200'
+          : 'bg-red-50 border-red-200'
+      }`}>
+        <div className="flex items-center gap-4">
+          <div className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 ${allDuesPaid ? 'bg-emerald-100' : 'bg-red-100'}`}>
+            {allDuesPaid
+              ? <CheckCircle2 size={22} className="text-emerald-600" />
+              : <AlertCircle size={22} className="text-red-500" />
+            }
+          </div>
+          <div>
+            <p className={`text-base font-bold ${allDuesPaid ? 'text-emerald-800' : 'text-red-800'}`}>
+              {allDuesPaid ? 'All Dues Paid — Full Compliance' : 'Dues Outstanding'}
+            </p>
+            <p className={`text-sm mt-0.5 ${allDuesPaid ? 'text-emerald-700' : 'text-red-700'}`}>
               {allDuesPaid
-                ? <CheckCircle2 size={28} className="text-white" />
-                : <AlertCircle size={28} className="text-white" />
-              }
-            </div>
-            <div>
-              <p className="text-lg font-bold text-white">
-                {allDuesPaid ? 'All Dues Paid — Full Compliance' : 'Dues Outstanding'}
-              </p>
-              <p className="text-sm text-white/75 mt-1">
-                {allDuesPaid
-                  ? 'This club has no outstanding dues with RI or District.'
-                  : `Outstanding amount: ${fmtINRFull(outstanding)}`}
-              </p>
-            </div>
+                ? 'This club has no outstanding dues with RI or District.'
+                : `Outstanding amount: ${fmtINRFull(outstanding)}`}
+            </p>
           </div>
-          <div className="text-right shrink-0">
-            <p className="text-4xl font-bold text-white">{compliancePct}%</p>
-            <p className="text-sm text-white/70 mt-1">{paid.length} of {totalDues} dues uploaded</p>
-          </div>
+        </div>
+        <div className={`text-right shrink-0 ${allDuesPaid ? 'text-emerald-800' : 'text-red-800'}`}>
+          <p className="text-4xl font-bold">{compliancePct}%</p>
+          <p className={`text-xs mt-0.5 ${allDuesPaid ? 'text-emerald-600' : 'text-red-600'}`}>
+            {paid.length} of {totalDues} dues uploaded
+          </p>
         </div>
       </div>
 
       {/* 3 Summary Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm p-5">
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center">
-              <CheckCircle2 size={18} className="text-emerald-600" />
+            <div className="w-9 h-9 rounded-full bg-emerald-100 flex items-center justify-center">
+              <CheckCircle2 size={16} className="text-emerald-600" />
             </div>
             <div>
               <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Paid & Uploaded</p>
@@ -988,12 +950,12 @@ function DuesTab({ club }) {
             </div>
           </div>
         </div>
-        <div className={`rounded-2xl border shadow-sm p-5 ${notUploaded.length > 0 ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'}`}>
+        <div className={`rounded-xl border shadow-sm p-5 ${notUploaded.length > 0 ? 'border-red-200 bg-red-50' : 'border-emerald-200 bg-emerald-50'}`}>
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${notUploaded.length > 0 ? 'bg-red-100' : 'bg-emerald-100'}`}>
+            <div className={`w-9 h-9 rounded-full flex items-center justify-center ${notUploaded.length > 0 ? 'bg-red-100' : 'bg-emerald-100'}`}>
               {notUploaded.length > 0
-                ? <XCircle size={18} className="text-red-500" />
-                : <CheckCircle2 size={18} className="text-emerald-600" />
+                ? <XCircle size={16} className="text-red-500" />
+                : <CheckCircle2 size={16} className="text-emerald-600" />
               }
             </div>
             <div>
@@ -1005,10 +967,10 @@ function DuesTab({ club }) {
             </div>
           </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-              <BarChart2 size={18} className="text-slate-500" />
+            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center">
+              <BarChart2 size={16} className="text-slate-500" />
             </div>
             <div>
               <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Compliance Rate</p>
@@ -1021,7 +983,7 @@ function DuesTab({ club }) {
 
       {/* Compliance progress bar */}
       {totalDues > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-5">
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm p-5">
           <div className="flex items-center justify-between mb-3">
             <p className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Overall Dues Compliance</p>
             <span className="text-sm font-bold text-slate-700">{compliancePct}%</span>
@@ -1040,27 +1002,27 @@ function DuesTab({ club }) {
 
       {/* Paid Dues Table */}
       {paid.length > 0 && (
-        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-3 border-b border-slate-100 flex items-center gap-2">
-            <CheckCircle2 size={15} className="text-emerald-600" />
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-5 pt-4 pb-3 border-b border-slate-100 flex items-center gap-2">
+            <CheckCircle2 size={14} className="text-emerald-600" />
             <h4 className="text-sm font-semibold text-slate-800">Paid & Uploaded ({paid.length})</h4>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-emerald-50/60 hover:bg-emerald-50/60">
-                  <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3">#</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3">#</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Type</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Document</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3 whitespace-nowrap">Paid On</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3 whitespace-nowrap">Uploaded On</TableHead>
-                  <TableHead className="text-xs text-slate-500 font-semibold text-right pr-6 py-3 whitespace-nowrap">Amount (INR)</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 py-3 whitespace-nowrap">Amount (INR)</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paid.map((d, i) => (
-                  <TableRow key={i} className="hover:bg-emerald-50/40 border-b border-slate-50">
-                    <TableCell className="text-xs text-slate-400 pl-6 py-3">{i + 1}</TableCell>
+                  <TableRow key={i} className={`border-b border-slate-50 hover:bg-emerald-50/40 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                    <TableCell className="text-xs text-slate-400 pl-5 py-3">{i + 1}</TableCell>
                     <TableCell className="py-3">
                       <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs font-medium py-0.5 hover:bg-emerald-100">
                         {d.type}
@@ -1071,14 +1033,14 @@ function DuesTab({ club }) {
                     </TableCell>
                     <TableCell className="text-xs text-slate-500 py-3 whitespace-nowrap font-mono">{d.paidOn || '—'}</TableCell>
                     <TableCell className="text-xs text-slate-500 py-3 whitespace-nowrap font-mono">{d.uploadedOn || '—'}</TableCell>
-                    <TableCell className="text-sm font-bold text-emerald-700 py-3 text-right pr-6 whitespace-nowrap font-mono">
+                    <TableCell className="text-sm font-bold text-emerald-700 py-3 text-right pr-5 whitespace-nowrap font-mono">
                       {fmtINRFull(d.amount)}
                     </TableCell>
                   </TableRow>
                 ))}
                 <TableRow className="bg-emerald-100/60">
-                  <TableCell colSpan={5} className="text-xs pl-6 py-3 text-emerald-800 font-bold">TOTAL PAID</TableCell>
-                  <TableCell className="text-sm text-right pr-6 py-3 text-emerald-800 font-bold font-mono">{fmtINRFull(totalPaid)}</TableCell>
+                  <TableCell colSpan={5} className="text-xs pl-5 py-3 text-emerald-800 font-bold">TOTAL PAID</TableCell>
+                  <TableCell className="text-sm text-right pr-5 py-3 text-emerald-800 font-bold font-mono">{fmtINRFull(totalPaid)}</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
@@ -1088,24 +1050,24 @@ function DuesTab({ club }) {
 
       {/* Not Uploaded Table */}
       {notUploaded.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-white shadow-sm overflow-hidden">
-          <div className="px-6 pt-5 pb-3 border-b border-red-100 flex items-center gap-2">
-            <XCircle size={15} className="text-red-500" />
+        <div className="rounded-xl border border-red-200 bg-white shadow-sm overflow-hidden">
+          <div className="px-5 pt-4 pb-3 border-b border-red-100 flex items-center gap-2">
+            <XCircle size={14} className="text-red-500" />
             <h4 className="text-sm font-semibold text-red-700">Not Uploaded ({notUploaded.length}) — Action Required</h4>
           </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="bg-red-50/60 hover:bg-red-50/60">
-                  <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3">#</TableHead>
+                  <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3">#</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Due Type</TableHead>
                   <TableHead className="text-xs text-slate-500 font-semibold py-3">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {notUploaded.map((d, i) => (
-                  <TableRow key={i} className="hover:bg-red-50/40 border-b border-slate-50">
-                    <TableCell className="text-xs text-slate-400 pl-6 py-3">{i + 1}</TableCell>
+                  <TableRow key={i} className={`border-b border-slate-50 hover:bg-red-50/40 ${i % 2 === 1 ? 'bg-slate-50/50' : ''}`}>
+                    <TableCell className="text-xs text-slate-400 pl-5 py-3">{i + 1}</TableCell>
                     <TableCell className="text-sm font-semibold text-slate-700 py-3">{d.type}</TableCell>
                     <TableCell className="py-3">
                       <Badge className="bg-red-100 text-red-700 border-red-200 text-xs font-medium py-0.5 hover:bg-red-100">
@@ -1120,9 +1082,9 @@ function DuesTab({ club }) {
         </div>
       )}
 
-      {/* CMR Monthly Compliance Grid */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
-        <div className="px-6 pt-5 pb-3 border-b border-slate-100">
+      {/* CMR Monthly Compliance */}
+      <div className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-5 pt-4 pb-3 border-b border-slate-100">
           <h4 className="text-sm font-semibold text-slate-800">CMR Monthly Reporting Compliance</h4>
           <p className="text-xs text-slate-400 mt-0.5">{reportedMonths} of 9 months reported</p>
         </div>
@@ -1130,16 +1092,16 @@ function DuesTab({ club }) {
           <Table>
             <TableHeader>
               <TableRow className="bg-slate-50 hover:bg-slate-50">
-                <TableHead className="text-xs text-slate-500 font-semibold pl-6 py-3">Month</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold pl-5 py-3">Month</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-center py-3">CMR Reported</TableHead>
                 <TableHead className="text-xs text-slate-500 font-semibold text-right py-3">Meetings</TableHead>
-                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-6 py-3">Projects</TableHead>
+                <TableHead className="text-xs text-slate-500 font-semibold text-right pr-5 py-3">Projects</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {cmrMonths.map((m, i) => (
-                <TableRow key={i} className={`hover:bg-slate-50 border-b border-slate-50 ${!m.reported ? 'opacity-50' : ''}`}>
-                  <TableCell className="text-xs font-semibold text-slate-700 pl-6 py-3 whitespace-nowrap">{m.month}</TableCell>
+                <TableRow key={i} className={`border-b border-slate-50 hover:bg-slate-50 ${i % 2 === 1 ? 'bg-slate-50/50' : ''} ${!m.reported ? 'opacity-50' : ''}`}>
+                  <TableCell className="text-xs font-semibold text-slate-700 pl-5 py-3 whitespace-nowrap">{m.month}</TableCell>
                   <TableCell className="py-3 text-center">
                     {m.reported
                       ? <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200 text-xs py-0.5 hover:bg-emerald-100">Reported</Badge>
@@ -1147,7 +1109,7 @@ function DuesTab({ club }) {
                     }
                   </TableCell>
                   <TableCell className="text-xs text-slate-700 py-3 text-right">{m.meetings || '—'}</TableCell>
-                  <TableCell className="text-xs text-slate-700 py-3 text-right pr-6">{m.projects || '—'}</TableCell>
+                  <TableCell className="text-xs text-slate-700 py-3 text-right pr-5">{m.projects || '—'}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -1157,9 +1119,9 @@ function DuesTab({ club }) {
 
       {/* OCV & Announcements */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
-            <Eye size={18} className="text-amber-600" />
+        <div className="rounded-xl border border-amber-200 bg-amber-50 shadow-sm p-5 flex items-center gap-4">
+          <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center shrink-0">
+            <Eye size={16} className="text-amber-600" />
           </div>
           <div>
             <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">OCV Count</p>
@@ -1167,9 +1129,9 @@ function DuesTab({ club }) {
             <p className="text-xs text-amber-600 mt-0.5">Official Club Visits submitted</p>
           </div>
         </div>
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 shadow-sm p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
-            <Megaphone size={18} className="text-blue-600" />
+        <div className="rounded-xl border border-blue-200 bg-blue-50 shadow-sm p-5 flex items-center gap-4">
+          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0">
+            <Megaphone size={16} className="text-blue-600" />
           </div>
           <div>
             <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Announcements</p>
@@ -1179,10 +1141,9 @@ function DuesTab({ club }) {
         </div>
       </div>
 
-      {/* All clear */}
       {paid.length > 0 && notUploaded.length === 0 && (
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 shadow-sm p-5 flex items-center gap-4">
-          <CheckCircle2 size={28} className="text-emerald-600 shrink-0" />
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 shadow-sm p-5 flex items-center gap-4">
+          <CheckCircle2 size={26} className="text-emerald-600 shrink-0" />
           <div>
             <p className="text-sm font-bold text-emerald-800">All dues uploaded — Full Compliance!</p>
             <p className="text-xs text-emerald-700 mt-0.5">All {paid.length} dues have been paid and documents uploaded.</p>
@@ -1204,11 +1165,13 @@ export default function ClubDetail() {
 
   if (!club) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div className="rounded-2xl border border-slate-200 shadow-md p-10 text-center max-w-sm w-full bg-white">
           <XCircle size={40} className="text-red-400 mx-auto mb-4" />
           <h2 className="text-lg font-bold text-slate-800 mb-2">Club Not Found</h2>
-          <p className="text-sm text-slate-500 mb-5">No club found with ID: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">{id}</code></p>
+          <p className="text-sm text-slate-500 mb-5">
+            No club found with ID: <code className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">{id}</code>
+          </p>
           <button
             onClick={() => navigate(-1)}
             className="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:underline font-semibold"
@@ -1220,142 +1183,137 @@ export default function ClubDetail() {
     )
   }
 
-  const duesPending = (club.dues?.notUploaded || []).length
   const allDuesPaid = club.duesStatus?.paid === true
-
-  // Quick stat pills for hero
+  const duesPending = (club.dues?.notUploaded || []).length
   const totalBeneficiaries = (club.projects || []).reduce((s, p) => s + (p.beneficiaries || 0), 0)
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* ── Full-Width Hero Banner ── */}
-      <div
-        className="relative w-full"
-        style={{ background: 'linear-gradient(135deg, #003DA5 0%, #0052cc 100%)' }}
-      >
-        <div className="max-w-7xl mx-auto px-6 pt-6 pb-0">
-          {/* Top row: Back + Dues + President */}
-          <div className="flex items-start justify-between mb-6">
-            <button
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm font-medium transition-colors"
-            >
-              <ArrowLeft size={16} />
-              <span>Back</span>
-            </button>
-            <div className="flex items-center gap-3 text-right">
-              <button
-                onClick={() => exportClubDetail(club)}
-                className="flex items-center gap-1.5 bg-white/10 hover:bg-white/20 border border-white/30 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
-              >
-                <Download size={13} /> Download Excel
-              </button>
-              {club.president?.name && (
-                <p className="text-white/70 text-xs hidden sm:block">
-                  President: <span className="text-white font-semibold">{club.president.name}</span>
-                </p>
-              )}
-              {allDuesPaid ? (
-                <span className="inline-flex items-center gap-1.5 bg-emerald-500/20 border border-emerald-400/40 text-emerald-200 text-xs font-semibold px-3 py-1.5 rounded-full">
-                  <CheckCircle2 size={11} /> Dues Compliant
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 bg-red-500/20 border border-red-400/40 text-red-200 text-xs font-semibold px-3 py-1.5 rounded-full">
-                  <AlertCircle size={11} />
-                  {club.duesStatus?.outstanding
-                    ? `₹${club.duesStatus.outstanding.toLocaleString('en-IN')} outstanding`
-                    : `${duesPending} dues pending`}
-                </span>
-              )}
-            </div>
-          </div>
+    <div className="space-y-5">
 
-          {/* Club Name */}
-          <h1 className="text-3xl sm:text-4xl font-bold text-white leading-tight mb-1">
-            RC {club.name}
-          </h1>
-          <p className="text-blue-200 text-sm mb-6">Rotary Club · District {club.district}</p>
+      {/* ── 1. Club Header Card ── */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
 
-          {/* Quick Stat Pills */}
-          <div className="flex flex-wrap gap-3 pb-6">
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full">
-              <Users size={13} className="text-blue-200" />
-              {club.members} Members
-            </div>
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full">
-              <Briefcase size={13} className="text-blue-200" />
-              {club.totalProjects} Projects
-            </div>
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full">
-              <Heart size={13} className="text-blue-200" />
-              {fmtINR(club.trf?.totalINR)} TRF
-            </div>
-            <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 text-white text-xs font-semibold px-4 py-2 rounded-full">
-              <Calendar size={13} className="text-blue-200" />
-              {club.meetings} Meetings
-            </div>
-            {club.citationScore != null && (
-              <div className="inline-flex items-center gap-2 bg-amber-400/20 border border-amber-400/40 text-amber-200 text-xs font-semibold px-4 py-2 rounded-full">
-                <Star size={13} className="text-amber-300" />
-                {club.citationScore.toLocaleString('en-IN')} pts
-              </div>
-            )}
-          </div>
+        {/* Top row: Back | Download */}
+        <div className="flex items-center justify-between mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
+          >
+            <ArrowLeft size={15} />
+            <span>Back</span>
+          </button>
+          <button
+            onClick={() => exportClubDetail(club)}
+            className="inline-flex items-center gap-1.5 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+          >
+            <Download size={13} /> Download Excel
+          </button>
         </div>
 
-        {/* ── Tabs flush to banner bottom ── */}
-        <div className="max-w-7xl mx-auto px-6">
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="flex w-full bg-transparent border-0 shadow-none h-auto p-0 gap-0 rounded-none overflow-x-auto">
-              {[
-                { value: 'membership', icon: Users, label: 'Membership' },
-                { value: 'foundation', icon: Heart, label: 'Foundation & TRF' },
-                { value: 'projects', icon: Briefcase, label: 'Projects' },
-                { value: 'goals', icon: Target, label: 'Goals' },
-                { value: 'dues', icon: Shield, label: 'Dues', alert: !allDuesPaid },
-              ].map(tab => (
-                <button
-                  key={tab.value}
-                  onClick={() => setActiveTab(tab.value)}
-                  className={`relative flex items-center gap-2 px-5 py-3.5 text-xs sm:text-sm font-semibold whitespace-nowrap transition-colors ${
-                    activeTab === tab.value
-                      ? 'text-white border-b-2 border-white'
-                      : 'text-white/60 hover:text-white/90 border-b-2 border-transparent'
-                  }`}
-                >
-                  <tab.icon size={14} />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                  {tab.alert && (
-                    <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-400" />
-                  )}
-                </button>
-              ))}
-            </TabsList>
+        {/* Club name */}
+        <h1 className="text-2xl font-bold text-[#003DA5] leading-tight mb-3">
+          RC {club.name}
+        </h1>
 
-            {/* Tab Content */}
-            <div className="bg-slate-50 -mx-6 px-6 pt-6 pb-10">
-              <div className="max-w-7xl">
-                <TabsContent value="membership">
-                  <MembershipTab club={club} />
-                </TabsContent>
-                <TabsContent value="foundation">
-                  <FoundationTab club={club} />
-                </TabsContent>
-                <TabsContent value="projects">
-                  <ProjectsTab club={club} />
-                </TabsContent>
-                <TabsContent value="goals">
-                  <GoalsTab club={club} />
-                </TabsContent>
-                <TabsContent value="dues">
-                  <DuesTab club={club} />
-                </TabsContent>
-              </div>
-            </div>
-          </Tabs>
+        {/* Badge row */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
+            <FileText size={11} /> District {club.district}
+          </span>
+          {club.president?.name && (
+            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
+              <Users size={11} /> Pres: {club.president.name}
+            </span>
+          )}
+          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
+            <Users size={11} /> {club.members} members
+          </span>
+          {allDuesPaid ? (
+            <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
+              <CheckCircle2 size={11} /> Dues Compliant
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full border border-red-200">
+              <AlertCircle size={11} />
+              {club.duesStatus?.outstanding
+                ? `₹${club.duesStatus.outstanding.toLocaleString('en-IN')} outstanding`
+                : `${duesPending} dues pending`}
+            </span>
+          )}
+        </div>
+
+        {/* Quick stat chips */}
+        <div className="flex flex-wrap gap-2">
+          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <Users size={12} className="text-blue-600" />
+            {club.members} Members
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <Briefcase size={12} className="text-purple-600" />
+            {club.totalProjects} Projects
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <Heart size={12} className="text-rose-600" />
+            {fmtINR(club.trf?.totalINR)} TRF
+          </span>
+          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
+            <Calendar size={12} className="text-emerald-600" />
+            {club.meetings} Meetings
+          </span>
+          {club.citationScore != null && (
+            <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-full">
+              <Star size={12} className="text-amber-500" />
+              {club.citationScore.toLocaleString('en-IN')} pts
+            </span>
+          )}
         </div>
       </div>
+
+      {/* ── 2. Tabs ── */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full justify-start bg-transparent border-b border-slate-200 rounded-none h-auto p-0 gap-1">
+          {[
+            { value: 'membership', icon: Users, label: 'Membership' },
+            { value: 'foundation', icon: Heart, label: 'Foundation & TRF' },
+            { value: 'projects', icon: Briefcase, label: 'Projects' },
+            { value: 'goals', icon: Target, label: 'Goals' },
+            { value: 'dues', icon: Shield, label: 'Dues', alert: !allDuesPaid },
+          ].map(tab => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className="relative rounded-none border-b-2 border-transparent data-[state=active]:border-[#003DA5] data-[state=active]:text-[#003DA5] data-[state=active]:bg-transparent data-[state=active]:shadow-none px-4 py-3 text-sm font-medium text-slate-500 hover:text-slate-700 gap-2"
+            >
+              <tab.icon size={14} />
+              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+              {tab.alert && (
+                <span className="absolute top-2 right-1 w-2 h-2 rounded-full bg-red-400" />
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        {/* ── 3. Tab Content ── */}
+        <div className="pt-5">
+          <TabsContent value="membership">
+            <MembershipTab club={club} />
+          </TabsContent>
+          <TabsContent value="foundation">
+            <FoundationTab club={club} />
+          </TabsContent>
+          <TabsContent value="projects">
+            <ProjectsTab club={club} />
+          </TabsContent>
+          <TabsContent value="goals">
+            <GoalsTab club={club} />
+          </TabsContent>
+          <TabsContent value="dues">
+            <DuesTab club={club} />
+          </TabsContent>
+        </div>
+      </Tabs>
+
     </div>
   )
 }
