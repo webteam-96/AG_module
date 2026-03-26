@@ -1242,7 +1242,7 @@ function DuesTab({ club }) {
 // ── MAIN ClubDetail PAGE ──────────────────────────────────────────────────────
 
 export default function ClubDetail() {
-  const { id } = useParams()
+  const { clubId: id } = useParams()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('membership')
 
