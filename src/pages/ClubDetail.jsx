@@ -83,25 +83,21 @@ const INRTooltip = ({ active, payload, label }) => {
 function StatCard({ icon: Icon, iconBg, iconColor, accentColor, label, value, sub, trend }) {
   return (
     <div
-      className="rounded-xl border border-slate-200 bg-white shadow-sm p-5 hover:shadow-md transition-shadow duration-200"
-      style={{ borderTop: `3px solid ${accentColor || '#003DA5'}` }}
+      className="rounded-2xl border border-slate-200 bg-white shadow-sm hover:shadow-lg transition-shadow duration-200"
+      style={{ borderTop: `4px solid ${accentColor || '#003DA5'}` }}
     >
-      <div className="flex items-start gap-3">
-        <div
-          className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${iconBg}`}
-        >
-          <Icon size={16} className={iconColor} />
+      <div className="p-6">
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-4 ${iconBg}`}>
+          <Icon size={22} className={iconColor} />
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs text-slate-500 mb-1 leading-none">{label}</p>
-          <p className="text-2xl font-bold text-slate-900 leading-tight truncate">{value}</p>
-          {sub && <p className="text-xs text-slate-400 mt-1">{sub}</p>}
-          {trend != null && (
-            <p className={`text-xs font-semibold mt-1 ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-              {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
-            </p>
-          )}
-        </div>
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-2">{label}</p>
+        <p className="text-3xl font-bold text-slate-900 leading-tight">{value}</p>
+        {sub && <p className="text-sm text-slate-500 mt-2">{sub}</p>}
+        {trend != null && (
+          <p className={`text-sm font-semibold mt-2 ${trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+            {trend >= 0 ? '▲' : '▼'} {Math.abs(trend)}%
+          </p>
+        )}
       </div>
     </div>
   )
@@ -111,12 +107,12 @@ function StatCard({ icon: Icon, iconBg, iconColor, accentColor, label, value, su
 
 function ChartCard({ title, subtitle, children }) {
   return (
-    <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="px-5 pt-4 pb-2">
-        <h4 className="text-sm font-semibold text-slate-800">{title}</h4>
-        {subtitle && <p className="text-xs text-slate-400 mt-0.5">{subtitle}</p>}
+    <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="px-6 pt-6 pb-3">
+        <h4 className="text-base font-semibold text-slate-800">{title}</h4>
+        {subtitle && <p className="text-sm text-slate-400 mt-1">{subtitle}</p>}
       </div>
-      <div className="px-3 pb-4">{children}</div>
+      <div className="px-4 pb-6">{children}</div>
     </div>
   )
 }
@@ -143,9 +139,9 @@ function MembershipTab({ club }) {
   }))
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* 4 Key Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={Users}
           iconBg="bg-blue-50"
@@ -365,7 +361,7 @@ function FoundationTab({ club }) {
   }))
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* TRF Hero — amber info panel (no full-bleed gradient) */}
       <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl p-5">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
@@ -416,7 +412,7 @@ function FoundationTab({ club }) {
       {/* 4 Fund Breakdown Stat Cards */}
       <div>
         <SectionLabel>Fund Breakdown</SectionLabel>
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {breakdown.map((b, i) => (
             <StatCard
               key={i}
@@ -501,9 +497,9 @@ function ProjectsTab({ club }) {
   )
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* 4 Summary Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <StatCard
           icon={Briefcase}
           iconBg="bg-blue-50"
@@ -714,7 +710,7 @@ function GoalsTab({ club }) {
   }))
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* Citation Score Panel — Rotary blue card (contained, not full-bleed) */}
       <div className="bg-[#003DA5] text-white rounded-xl p-6">
         <p className="text-blue-200 text-xs font-semibold uppercase tracking-widest mb-2">Club Citation Score</p>
@@ -903,7 +899,7 @@ function DuesTab({ club }) {
   const outstanding = duesStatus?.outstanding ?? 0
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-7">
       {/* Status Banner */}
       <div className={`rounded-xl border p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 ${
         allDuesPaid
@@ -1188,53 +1184,48 @@ export default function ClubDetail() {
   const totalBeneficiaries = (club.projects || []).reduce((s, p) => s + (p.beneficiaries || 0), 0)
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
 
       {/* ── 1. Club Header Card ── */}
-      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-6">
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm p-8">
 
         {/* Top row: Back | Download */}
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-6">
           <button
             onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-1.5 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
+            className="inline-flex items-center gap-2 text-slate-500 hover:text-slate-800 text-sm font-medium transition-colors"
           >
-            <ArrowLeft size={15} />
-            <span>Back</span>
+            <ArrowLeft size={16} />
+            <span>Back to My Clubs</span>
           </button>
           <button
             onClick={() => exportClubDetail(club)}
-            className="inline-flex items-center gap-1.5 border border-slate-200 hover:border-slate-300 text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 border border-slate-200 hover:border-blue-300 text-slate-600 hover:text-blue-700 bg-white hover:bg-blue-50 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
           >
-            <Download size={13} /> Download Excel
+            <Download size={15} /> Download Excel
           </button>
         </div>
 
         {/* Club name */}
-        <h1 className="text-2xl font-bold text-[#003DA5] leading-tight mb-3">
+        <h1 className="text-3xl font-bold text-[#003DA5] leading-tight mb-2">
           RC {club.name}
         </h1>
+        <p className="text-slate-500 text-sm mb-5">Rotary Club · District {club.district} · AG: {club.ag}</p>
 
         {/* Badge row */}
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
-            <FileText size={11} /> District {club.district}
-          </span>
+        <div className="flex flex-wrap items-center gap-3 mb-6">
           {club.president?.name && (
-            <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
-              <Users size={11} /> Pres: {club.president.name}
+            <span className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 text-sm font-semibold px-4 py-2 rounded-full border border-blue-100">
+              <Award size={14} /> President: {club.president.name}
             </span>
           )}
-          <span className="inline-flex items-center gap-1 bg-slate-100 text-slate-600 text-xs font-semibold px-3 py-1 rounded-full">
-            <Users size={11} /> {club.members} members
-          </span>
           {allDuesPaid ? (
-            <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-xs font-semibold px-3 py-1 rounded-full border border-emerald-200">
-              <CheckCircle2 size={11} /> Dues Compliant
+            <span className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-700 text-sm font-semibold px-4 py-2 rounded-full border border-emerald-200">
+              <CheckCircle2 size={14} /> Dues Compliant
             </span>
           ) : (
-            <span className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-xs font-semibold px-3 py-1 rounded-full border border-red-200">
-              <AlertCircle size={11} />
+            <span className="inline-flex items-center gap-2 bg-red-50 text-red-700 text-sm font-semibold px-4 py-2 rounded-full border border-red-200">
+              <AlertCircle size={14} />
               {club.duesStatus?.outstanding
                 ? `₹${club.duesStatus.outstanding.toLocaleString('en-IN')} outstanding`
                 : `${duesPending} dues pending`}
@@ -1243,29 +1234,23 @@ export default function ClubDetail() {
         </div>
 
         {/* Quick stat chips */}
-        <div className="flex flex-wrap gap-2">
-          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Users size={12} className="text-blue-600" />
-            {club.members} Members
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Briefcase size={12} className="text-purple-600" />
-            {club.totalProjects} Projects
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Heart size={12} className="text-rose-600" />
-            {fmtINR(club.trf?.totalINR)} TRF
-          </span>
-          <span className="inline-flex items-center gap-1.5 bg-slate-100 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-full">
-            <Calendar size={12} className="text-emerald-600" />
-            {club.meetings} Meetings
-          </span>
-          {club.citationScore != null && (
-            <span className="inline-flex items-center gap-1.5 bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1.5 rounded-full">
-              <Star size={12} className="text-amber-500" />
-              {club.citationScore.toLocaleString('en-IN')} pts
-            </span>
-          )}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="bg-blue-50 rounded-2xl p-4 border border-blue-100">
+            <p className="text-xs font-semibold text-blue-400 uppercase tracking-widest mb-1">Members</p>
+            <p className="text-3xl font-bold text-blue-700">{club.members}</p>
+          </div>
+          <div className="bg-purple-50 rounded-2xl p-4 border border-purple-100">
+            <p className="text-xs font-semibold text-purple-400 uppercase tracking-widest mb-1">Projects</p>
+            <p className="text-3xl font-bold text-purple-700">{club.totalProjects}</p>
+          </div>
+          <div className="bg-rose-50 rounded-2xl p-4 border border-rose-100">
+            <p className="text-xs font-semibold text-rose-400 uppercase tracking-widest mb-1">TRF Raised</p>
+            <p className="text-3xl font-bold text-rose-700">{fmtINR(club.trf?.totalINR)}</p>
+          </div>
+          <div className="bg-emerald-50 rounded-2xl p-4 border border-emerald-100">
+            <p className="text-xs font-semibold text-emerald-400 uppercase tracking-widest mb-1">Meetings</p>
+            <p className="text-3xl font-bold text-emerald-700">{club.meetings}</p>
+          </div>
         </div>
       </div>
 
@@ -1295,7 +1280,7 @@ export default function ClubDetail() {
         </TabsList>
 
         {/* ── 3. Tab Content ── */}
-        <div className="pt-5">
+        <div className="pt-7">
           <TabsContent value="membership">
             <MembershipTab club={club} />
           </TabsContent>
