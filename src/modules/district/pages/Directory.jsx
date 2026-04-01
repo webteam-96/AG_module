@@ -90,7 +90,7 @@ export default function DistrictDirectory() {
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between mt-3">
+          {filtered.length > 0 && <div className="flex items-center justify-between mt-3">
             <p className="text-xs text-slate-500">
               Showing {((page - 1) * PAGE_SIZE) + 1}–{Math.min(page * PAGE_SIZE, filtered.length)} of {filtered.length}
             </p>
@@ -111,7 +111,10 @@ export default function DistrictDirectory() {
               <button disabled={page === totalPages} onClick={() => setPage(totalPages)}
                 className="text-xs px-2.5 py-1 rounded border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40">Last</button>
             </div>
-          </div>
+          </div>}
+          {filtered.length === 0 && search && (
+            <p className="text-xs text-slate-400 mt-3 text-center">No members match "{search}"</p>
+          )}
         </CardContent>
       </Card>
     </div>
