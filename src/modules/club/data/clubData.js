@@ -5,7 +5,7 @@ export const CLUB = {
   id: 'thane-city-view',
   name: 'Thane City View',
   district: 3142,
-  rotaryYear: '2025–26',
+  rotaryYear: '2026–27',
 }
 
 export const CLUB_STATS = {
@@ -110,30 +110,75 @@ export const CITATION_CHECKLIST = [
 ]
 
 export const MEMBERS = [
-  { id: 1, name: 'Khushboo Tadkar', role: 'President',        mobile: '+91 70456 77524', email: 'kt@gmail.com',     type: 'Full',      since: 2018, status: 'Active'   },
-  { id: 2, name: 'Rashid Shaikh',   role: 'Secretary',        mobile: '+91 93721 07897', email: 'rashid@email.com', type: 'Full',      since: 2016, status: 'Active'   },
-  { id: 3, name: 'Praveen Mestry',  role: 'Foundation Chair', mobile: '+91 98026 36809', email: 'pm@email.com',     type: 'Full',      since: 2014, status: 'Active'   },
-  { id: 4, name: 'Anita Kulkarni',  role: 'Treasurer',        mobile: '+91 99870 12345', email: 'anita@email.com',  type: 'Associate', since: 2020, status: 'Active'   },
-  { id: 5, name: 'Vijay Nair',      role: 'Member',           mobile: '+91 88001 23456', email: 'vijay@email.com',  type: 'Full',      since: 2019, status: 'Inactive' },
-  { id: 6, name: 'Sunita Patil',    role: 'Member',           mobile: '+91 77002 34567', email: 'sunita@email.com', type: 'Full',      since: 2017, status: 'Active'   },
-  { id: 7, name: 'Ramesh Joshi',    role: 'Member',           mobile: '+91 66003 45678', email: 'ramesh@email.com', type: 'Associate', since: 2021, status: 'Active'   },
-  { id: 8, name: 'Deepa Sharma',    role: 'Member',           mobile: '+91 55004 56789', email: 'deepa@email.com',  type: 'Honorary',  since: 2015, status: 'Active'   },
+  { id: 1,  name: 'Khushboo Tadkar',  designation: 'President',          mobile: '+91 70456 77524', email: 'kt@gmail.com',          type: 'Full',      since: 2018, status: 'Active',   isAdmin: true,  isRIAdmin: false },
+  { id: 2,  name: 'Rashid Shaikh',    designation: 'Secretary',          mobile: '+91 93721 07897', email: 'rashid@email.com',      type: 'Full',      since: 2016, status: 'Active',   isAdmin: true,  isRIAdmin: false },
+  { id: 3,  name: 'Praveen Mestry',   designation: 'Foundation Chair',   mobile: '+91 98026 36809', email: 'pm@email.com',          type: 'Full',      since: 2014, status: 'Active',   isAdmin: false, isRIAdmin: true  },
+  { id: 4,  name: 'Anita Kulkarni',   designation: 'Treasurer',          mobile: '+91 99870 12345', email: 'anita@email.com',       type: 'Associate', since: 2020, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 5,  name: 'Vijay Nair',       designation: 'Member',             mobile: '+91 88001 23456', email: 'vijay@email.com',       type: 'Full',      since: 2019, status: 'Inactive', isAdmin: false, isRIAdmin: false },
+  { id: 6,  name: 'Sunita Patil',     designation: 'Club Service Chair', mobile: '+91 77002 34567', email: 'sunita@email.com',      type: 'Full',      since: 2017, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 7,  name: 'Ramesh Joshi',     designation: 'Comm. Service Chair',mobile: '+91 66003 45678', email: 'ramesh@email.com',      type: 'Associate', since: 2021, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 8,  name: 'Deepa Sharma',     designation: 'Member',             mobile: '+91 55004 56789', email: 'deepa@email.com',       type: 'Honorary',  since: 2015, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 9,  name: 'Suresh Iyer',      designation: 'Sgt-at-Arms',        mobile: '+91 88012 34567', email: 'suresh@email.com',      type: 'Full',      since: 2017, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 10, name: 'Priya Desai',      designation: 'Voc. Service Chair', mobile: '+91 77009 87654', email: 'priya.d@email.com',     type: 'Full',      since: 2022, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 11, name: 'Arvind Kulkarni',  designation: 'Intl Service Chair', mobile: '+91 99001 22334', email: 'arvind@email.com',      type: 'Full',      since: 2020, status: 'Active',   isAdmin: false, isRIAdmin: true  },
+  { id: 12, name: 'Meera Shenoy',     designation: 'Membership Chair',   mobile: '+91 88007 65432', email: 'meera@email.com',       type: 'Full',      since: 2023, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 13, name: 'Anil Mehta',       designation: 'Member',             mobile: '+91 99002 33445', email: 'anil.m@email.com',      type: 'Full',      since: 2015, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 14, name: 'Seema Kapoor',     designation: 'Member',             mobile: '+91 77003 44556', email: 'seema@email.com',       type: 'Associate', since: 2019, status: 'Active',   isAdmin: false, isRIAdmin: false },
+  { id: 15, name: 'Rohit Verma',      designation: 'Youth Service Chair',mobile: '+91 88004 55667', email: 'rohit@email.com',       type: 'Full',      since: 2021, status: 'Active',   isAdmin: false, isRIAdmin: false },
 ]
 
 export const PAST_PRESIDENTS = [
-  { name: 'Khushboo Tadkar',  year: '2025–26', achievement: 'Current president'      },
-  { name: 'Jayesh Thakkar',   year: '2024–25', achievement: 'District Citation winner'},
-  { name: 'Arun Patil',       year: '2023–24', achievement: '100% attendance year'   },
-  { name: 'Khushboo Falloon', year: '2022–23', achievement: 'Best club award'        },
-  { name: 'Shrinath Wala',    year: '2021–22', achievement: 'PHF milestone'          },
-  { name: 'Priya Mehta',      year: '2020–21', achievement: 'Most projects in zone'  },
+  { name: 'Khushboo Tadkar',   year: '2026–27', achievement: 'Current president'              },
+  { name: 'Jayesh Thakkar',    year: '2025–26', achievement: 'District Citation winner'       },
+  { name: 'Arun Patil',        year: '2024–25', achievement: '100% attendance year'           },
+  { name: 'Khushboo Falloon',  year: '2023–24', achievement: 'Best club award'                },
+  { name: 'Shrinath Wala',     year: '2022–23', achievement: 'PHF milestone'                  },
+  { name: 'Priya Mehta',       year: '2021–22', achievement: 'Most projects in zone'          },
+  { name: 'Deepak Shetty',     year: '2020–21', achievement: 'Pandemic outreach leader'       },
+  { name: 'Nandita Rao',       year: '2019–20', achievement: 'Literacy campaign'              },
+  { name: 'Rajiv Kapoor',      year: '2018–19', achievement: 'Club charter expansion'         },
+  { name: 'Seema Joshi',       year: '2017–18', achievement: '25th anniversary president'    },
+  { name: 'Mohan Desai',       year: '2016–17', achievement: 'RI Citation — 3rd consecutive' },
+  { name: 'Lata Nair',         year: '2015–16', achievement: 'Club foundation award'          },
 ]
 
+// Used in Overview BOD widget (short version)
 export const BOARD = [
   { name: 'Khushboo Tadkar', role: 'President',        mobile: '+91 70456 77524', initials: 'KT', color: '#003DA5' },
   { name: 'Rashid Shaikh',   role: 'Secretary',        mobile: '+91 93721 07897', initials: 'RS', color: '#16a34a' },
   { name: 'Praveen Mestry',  role: 'Foundation Chair', mobile: '+91 98026 36809', initials: 'PM', color: '#ca8a04' },
   { name: 'Anita Kulkarni',  role: 'Treasurer',        mobile: '+91 99870 12345', initials: 'AK', color: '#9333ea' },
+]
+
+// Full BOD for the Board of Directors tab
+export const BOARD_OF_DIRECTORS = [
+  { id: 1, name: 'Khushboo Tadkar',  designation: 'Club President',             mobile: '+91 70456 77524', email: 'kt@gmail.com',       initials: 'KT', color: '#003DA5' },
+  { id: 2, name: 'Rashid Shaikh',    designation: 'Club Secretary',             mobile: '+91 93721 07897', email: 'rashid@email.com',   initials: 'RS', color: '#16a34a' },
+  { id: 3, name: 'Praveen Mestry',   designation: 'Club Foundation Chair',      mobile: '+91 98026 36809', email: 'pm@email.com',       initials: 'PM', color: '#ca8a04' },
+  { id: 4, name: 'Anita Kulkarni',   designation: 'Club Treasurer',             mobile: '+91 99870 12345', email: 'anita@email.com',    initials: 'AK', color: '#9333ea' },
+  { id: 5, name: 'Suresh Iyer',      designation: 'Sergeant-at-Arms',           mobile: '+91 88012 34567', email: 'suresh@email.com',   initials: 'SI', color: '#0891b2' },
+  { id: 6, name: 'Sunita Patil',     designation: 'Club Service Chair',         mobile: '+91 77002 34567', email: 'sunita@email.com',   initials: 'SP', color: '#e11d48' },
+  { id: 7, name: 'Ramesh Joshi',     designation: 'Community Service Chair',    mobile: '+91 66003 45678', email: 'ramesh@email.com',   initials: 'RJ', color: '#f59e0b' },
+  { id: 8, name: 'Priya Desai',      designation: 'Vocational Service Chair',   mobile: '+91 77009 87654', email: 'priya.d@email.com',  initials: 'PD', color: '#b45309' },
+  { id: 9, name: 'Arvind Kulkarni',  designation: 'International Service Chair',mobile: '+91 99001 22334', email: 'arvind@email.com',   initials: 'AK', color: '#0f172a' },
+  { id: 10,name: 'Rohit Verma',      designation: 'Youth Services Chair',       mobile: '+91 88004 55667', email: 'rohit@email.com',    initials: 'RV', color: '#7c3aed' },
+  { id: 11,name: 'Deepa Sharma',     designation: 'Public Image Chair',         mobile: '+91 55004 56789', email: 'deepa@email.com',    initials: 'DS', color: '#64748b' },
+  { id: 12,name: 'Meera Shenoy',     designation: 'Membership Chair',           mobile: '+91 88007 65432', email: 'meera@email.com',    initials: 'MS', color: '#16a34a' },
+]
+
+export const TERMINATED_MEMBERS = [
+  { id: 1, name: 'Sudhir Kapoor',   mobile: '+91 98765 43210', email: 'sudhir@email.com',  type: 'Full',      terminatedOn: 'Dec 15, 2025', reason: 'Resigned',        proposedBy: 'Rashid Shaikh'   },
+  { id: 2, name: 'Kavita Bhatia',   mobile: '+91 87654 32109', email: 'kavita@email.com',  type: 'Associate', terminatedOn: 'Nov 3, 2025',  reason: 'Relocated',       proposedBy: 'Khushboo Tadkar' },
+  { id: 3, name: 'Harish Nambiar',  mobile: '+91 76543 21098', email: 'harish@email.com',  type: 'Full',      terminatedOn: 'Sep 20, 2025', reason: 'Non-payment',     proposedBy: 'Anita Kulkarni'  },
+  { id: 4, name: 'Tanya Agarwal',   mobile: '+91 65432 10987', email: 'tanya@email.com',   type: 'Full',      terminatedOn: 'Aug 5, 2025',  reason: 'Resigned',        proposedBy: 'Rashid Shaikh'   },
+]
+
+export const POTENTIAL_MEMBERS = [
+  { id: 1, name: 'Neha Sharma',     mobile: '+91 98001 11111', email: 'neha@email.com',    referredBy: 'Praveen Mestry',  status: 'Contacted',  followUp: 'Apr 10, 2026', notes: 'Interested in community service' },
+  { id: 2, name: 'Kiran Reddy',     mobile: '+91 87002 22222', email: 'kiran@email.com',   referredBy: 'Sunita Patil',    status: 'Meeting Set',followUp: 'Apr 15, 2026', notes: 'Wants to meet board first'      },
+  { id: 3, name: 'Sanjay Patel',    mobile: '+91 76003 33333', email: 'sanjay@email.com',  referredBy: 'Ramesh Joshi',    status: 'Interested', followUp: 'Apr 20, 2026', notes: 'Vocational service background'  },
+  { id: 4, name: 'Divya Menon',     mobile: '+91 65004 44444', email: 'divya@email.com',   referredBy: 'Meera Shenoy',    status: 'Contacted',  followUp: 'Apr 25, 2026', notes: 'TRF donor, keen on Rotary'      },
+  { id: 5, name: 'Rajan Choudhary', mobile: '+91 54005 55555', email: 'rajan@email.com',   referredBy: 'Arvind Kulkarni', status: 'Proposal Sent', followUp: 'May 1, 2026', notes: 'International business contacts'},
 ]
 
 export const DUES = [

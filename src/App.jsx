@@ -53,7 +53,7 @@ export default function App() {
           <Route path="avenue" element={<AvenueOfService />} />
           <Route path="communication" element={<Communication />} />
           <Route path="egovernance" element={<EGovernance />} />
-          <Route path="payments" element={<Payments />} />
+          <Route path="payments"  element={<Payments />} />
           <Route path="directory" element={<Directory />} />
         </Route>
 
