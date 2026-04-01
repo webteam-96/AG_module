@@ -24,6 +24,13 @@ import Directory from './modules/club/pages/Directory'
 // District module
 import DistrictLayout from './modules/district/layout/DistrictLayout'
 import DistrictOverview from './modules/district/pages/Overview'
+import DistrictDirectory    from './modules/district/pages/Directory'
+import DistrictCommittee    from './modules/district/pages/Committee'
+import DistrictClubs        from './modules/district/pages/Clubs'
+import DistrictMonthlyReport from './modules/district/pages/MonthlyReport'
+import DistrictModerator    from './modules/district/pages/Moderator'
+import DistrictAG           from './modules/district/pages/AG'
+import DistrictWebsiteData  from './modules/district/pages/WebsiteData'
 
 export default function App() {
   return (
@@ -60,7 +67,14 @@ export default function App() {
         {/* District Dashboard */}
         <Route path="/districtdashboard" element={<DistrictLayout />}>
           <Route index element={<Navigate to="/districtdashboard/overview" replace />} />
-          <Route path="overview" element={<DistrictOverview />} />
+          <Route path="overview"       element={<DistrictOverview />} />
+          <Route path="directory"      element={<DistrictDirectory />} />
+          <Route path="committee"      element={<DistrictCommittee />} />
+          <Route path="clubs"          element={<DistrictClubs />} />
+          <Route path="monthly-report" element={<DistrictMonthlyReport />} />
+          <Route path="moderator"      element={<DistrictModerator />} />
+          <Route path="ag"             element={<DistrictAG />} />
+          <Route path="website-data"   element={<DistrictWebsiteData />} />
         </Route>
 
         {/* Catch-all */}
