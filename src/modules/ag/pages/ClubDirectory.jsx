@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { Search, Users, Calendar, Briefcase, Trophy, Medal } from 'lucide-react'
 import { CLUBS, AG_NAME } from '@/data/realData'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -35,16 +35,14 @@ const RankBadge = ({ rank }) => {
 // ─── Club Card ───────────────────────────────────────────────────────────────
 
 const ClubCard = ({ club }) => {
-  const navigate = useNavigate()
-
   return (
+    <Link to={`/agdashboard/clubs/${club.id}`} className="block group">
     <Card
-      onClick={() => navigate(`/clubs/${club.id}`)}
-      className="cursor-pointer border border-slate-200 hover:border-[#003DA5]/40 hover:shadow-md transition-all duration-150 group"
+      className="cursor-pointer border border-slate-200 hover:border-[#003DA5]/40 hover:shadow-md transition-all duration-150"
     >
       <CardHeader className="pb-2 pt-4 px-4">
         <div className="flex items-start justify-between gap-2">
-          <CardTitle className="text-base font-bold text-slate-800 leading-tight group-hover:text-[#003DA5] transition-colors">
+          <CardTitle className="text-base font-bold text-slate-800 leading-tight group-hover:text-[#003DA5] transition-colors group-hover:text-[#003DA5]">
             {club.name}
           </CardTitle>
           <RankBadge rank={club.projectRank} />
@@ -82,6 +80,7 @@ const ClubCard = ({ club }) => {
         </div>
       </CardContent>
     </Card>
+    </Link>
   )
 }
 
