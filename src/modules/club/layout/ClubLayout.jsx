@@ -11,7 +11,8 @@ const NAV = [
   { to: '/clubdashboard/avenue',        label: 'Avenue of Service'        },
   { to: '/clubdashboard/communication', label: 'Communication'            },
   { to: '/clubdashboard/egovernance',   label: 'E-Governance'             },
-  { to: '/clubdashboard/payments',      label: 'Payments & Dues'          },
+  { to: '/clubdashboard/payments',      label: 'Membership Dues'          },
+  { to: '/clubdashboard/website',       label: 'My Club Website'          },
 ]
 
 const PAGE_TITLES = {
@@ -19,7 +20,8 @@ const PAGE_TITLES = {
   '/clubdashboard/avenue':        'Avenue of Service',
   '/clubdashboard/communication': 'Communication',
   '/clubdashboard/egovernance':   'E-Governance & Reporting',
-  '/clubdashboard/payments':      'Payments & Dues',
+  '/clubdashboard/payments':      'Membership Dues',
+  '/clubdashboard/website':       'My Club Website',
 }
 
 export default function ClubLayout() {

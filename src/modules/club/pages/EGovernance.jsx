@@ -70,7 +70,7 @@ const OUTCOME_STYLE = {
   Pending:      { bg: 'bg-amber-50',  text: 'text-amber-700'  },
 }
 const MONTHLY_STATUS = {
-  Accepted: { bg: 'bg-green-50', text: 'text-green-700' },
+  Submitted: { bg: 'bg-green-50', text: 'text-green-700' },
   Late:     { bg: 'bg-red-50',   text: 'text-red-600'   },
   Pending:  { bg: 'bg-amber-50', text: 'text-amber-700' },
 }
@@ -144,11 +144,11 @@ export default function EGovernance() {
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        <StatCard label="Reports Submitted" value={`${CLUB_STATS.reportsSubmitted}/${CLUB_STATS.reportsTotal}`} sub="89% on time"           subColor="up"    accent="#003DA5" />
+        <StatCard label="Club Monthly Report" value={`${CLUB_STATS.reportsSubmitted}/${CLUB_STATS.reportsTotal}`} sub="89% on time"           subColor="up"    accent="#003DA5" />
         <StatCard label="Avg Attendance"    value={`${CLUB_STATS.avgAttendance}%`}                             sub="▲ 4% YoY"              subColor="up"    accent="#16a34a" />
         <StatCard label="TRF Raised"        value={fmtINR(CLUB_STATS.trfRaised)}                               sub={`${trfPct}% of goal`}  subColor="muted" accent="#ca8a04" />
-        <StatCard label="District Citation" value={`${citationPct}%`}                                          sub={`${CLUB_STATS.districtCitationScore}/${CLUB_STATS.districtCitationMax} pts`} subColor="muted" accent="#9333ea" />
-        <StatCard label="Zonal Awards"      value={CLUB_STATS.zonalAwards}                                     sub="This year"             subColor="up"    accent="#0891b2" />
+        <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`}                  sub={`of ${CLUB_STATS.districtCitationMax} max`}                              subColor="muted" accent="#9333ea" />
+        <StatCard label="OCV / GOV"          value={OCV_GOV.length}                                             sub="Projects added"        subColor="muted" accent="#0891b2" />
       </div>
 
       <Card>
@@ -383,14 +383,17 @@ export default function EGovernance() {
               {/* Overall progress */}
               <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="text-center flex-shrink-0">
-                  <p className="text-4xl font-extrabold text-rose-600 tabular-nums">{citationPct}%</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{CLUB_STATS.districtCitationScore} / {CLUB_STATS.districtCitationMax} pts</p>
+                  <p className="text-4xl font-extrabold text-rose-600 tabular-nums">{CLUB_STATS.districtCitationScore}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">of {CLUB_STATS.districtCitationMax} pts</p>
                 </div>
                 <div className="flex-1">
-                  <div className="h-3 bg-white rounded-full overflow-hidden border border-slate-200 mb-2">
+                  <div className="flex justify-between text-xs text-slate-500 mb-1">
+                    <span>{CLUB_STATS.districtCitationScore} pts earned</span>
+                    <span>{CLUB_STATS.districtCitationMax - CLUB_STATS.districtCitationScore} pts remaining</span>
+                  </div>
+                  <div className="h-3 bg-white rounded-full overflow-hidden border border-slate-200">
                     <div className="h-full rounded-full bg-rose-500" style={{ width: `${citationPct}%` }} />
                   </div>
-                  <p className="text-xs text-slate-500">{CLUB_STATS.districtCitationMax - CLUB_STATS.districtCitationScore} more points needed for full citation</p>
                 </div>
               </div>
 

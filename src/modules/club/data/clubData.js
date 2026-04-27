@@ -19,6 +19,10 @@ export const CLUB_STATS = {
   avgAttendance: 73.8,
   trfRaised: 320000,
   trfGoal: 470000,
+  trfAnnualFund: 180000,
+  trfPolioPlus: 85000,
+  trfMajorDonors: 3,
+  trfPHS: 5,
   phfContributors: 18,
   serviceProjects: 12,
   districtCitationScore: 42,
@@ -29,16 +33,16 @@ export const CLUB_STATS = {
 }
 
 export const MEMBER_GROWTH = [
-  { month: 'Jul', members: 134 },
-  { month: 'Aug', members: 135 },
-  { month: 'Sep', members: 136 },
-  { month: 'Oct', members: 137 },
-  { month: 'Nov', members: 138 },
-  { month: 'Dec', members: 139 },
-  { month: 'Jan', members: 140 },
-  { month: 'Feb', members: 141 },
-  { month: 'Mar', members: 141 },
-  { month: 'Apr', members: 142 },
+  { month: 'Jul', members: 134, male: 90, female: 25, honorary: 19 },
+  { month: 'Aug', members: 132, male: 88, female: 24, honorary: 20 },
+  { month: 'Sep', members: 137, male: 93, female: 26, honorary: 18 },
+  { month: 'Oct', members: 135, male: 91, female: 25, honorary: 19 },
+  { month: 'Nov', members: 140, male: 95, female: 27, honorary: 18 },
+  { month: 'Dec', members: 136, male: 90, female: 26, honorary: 20 },
+  { month: 'Jan', members: 143, male: 97, female: 28, honorary: 18 },
+  { month: 'Feb', members: 138, male: 92, female: 27, honorary: 19 },
+  { month: 'Mar', members: 141, male: 94, female: 28, honorary: 19 },
+  { month: 'Apr', members: 142, male: 95, female: 28, honorary: 19 },
 ]
 
 export const ATTENDANCE_DATA = [
@@ -94,11 +98,11 @@ export const DOCUMENTS = [
 
 export const MONTHLY_REPORTS = [
   { month: 'March 2026',    submitted: null,     onTime: null,  status: 'Pending'  },
-  { month: 'February 2026', submitted: 'Mar 3',  onTime: true,  status: 'Accepted' },
-  { month: 'January 2026',  submitted: 'Feb 5',  onTime: true,  status: 'Accepted' },
+  { month: 'February 2026', submitted: 'Mar 3',  onTime: true,  status: 'Submitted' },
+  { month: 'January 2026',  submitted: 'Feb 5',  onTime: true,  status: 'Submitted' },
   { month: 'December 2025', submitted: 'Jan 8',  onTime: false, status: 'Late'     },
-  { month: 'November 2025', submitted: 'Dec 2',  onTime: true,  status: 'Accepted' },
-  { month: 'October 2025',  submitted: 'Nov 3',  onTime: true,  status: 'Accepted' },
+  { month: 'November 2025', submitted: 'Dec 2',  onTime: true,  status: 'Submitted' },
+  { month: 'October 2025',  submitted: 'Nov 3',  onTime: true,  status: 'Submitted' },
 ]
 
 export const CITATION_CHECKLIST = [

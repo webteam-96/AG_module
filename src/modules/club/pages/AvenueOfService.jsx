@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import StatCard from '../components/StatCard'
-import { AVENUE_DATA, fmtINR } from '../data/clubData'
+import { fmtINR } from '../data/clubData'
 
 const YEARS = ['2026–27', '2025–26', '2024–25']
 
@@ -69,89 +68,106 @@ const MEETING_TYPE_STYLE = {
   BOD:        { bg: 'bg-amber-50',  text: 'text-amber-700'  },
 }
 
-const barData = AVENUE_DATA.map(a => ({
-  name: a.name.split(' ')[0],
-  Done: a.completed,
-  Left: a.target - a.completed,
-}))
-
 export default function AvenueOfService() {
-  const [active, setActive] = useState('CM')
+  const [active, setActive] = useState('ALL')
   const [year, setYear]     = useState('2026–27')
   const [filter, setFilter] = useState('All')
 
-  const avenue   = AVENUE_PROJECTS[active]
-  const isClub   = active === 'CM'
-  const items    = isClub ? avenue.meetings : avenue.projects
+  const isAll  = active === 'ALL'
+  const avenue = isAll ? null : AVENUE_PROJECTS[active]
+  const isClub = active === 'CM'
+  const items  = isClub ? avenue.meetings : (!isAll ? avenue.projects : [])
 
+  // Aggregate stats (used by All tab)
   const allProjects = Object.values(AVENUE_PROJECTS).flatMap(a => a.projects ?? [])
   const totalBen    = allProjects.reduce((s, p) => s + p.beneficiaries, 0)
   const totalCost   = allProjects.reduce((s, p) => s + p.cost, 0)
   const totalHours  = allProjects.reduce((s, p) => s + p.manHours, 0)
 
+  // Per-avenue stats
+  const avgAtt  = isClub ? Math.round(avenue.meetings.reduce((s, m) => s + m.pct, 0) / avenue.meetings.length) : null
+  const bestAtt = isClub ? Math.max(...avenue.meetings.map(m => m.pct)) : null
+  const avBen   = (!isClub && !isAll) ? items.reduce((s, p) => s + p.beneficiaries, 0) : null
+  const avCost  = (!isClub && !isAll) ? items.reduce((s, p) => s + p.cost, 0) : null
+  const avHours = (!isClub && !isAll) ? items.reduce((s, p) => s + p.manHours, 0) : null
+
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        <StatCard label="Total Projects"      value={allProjects.length}                   sub="Across all avenues"  subColor="up"    accent="#003DA5" />
-        <StatCard label="Total Beneficiaries" value={totalBen.toLocaleString()}            sub="Lives impacted"      subColor="up"    accent="#16a34a" />
-        <StatCard label="Total Project Cost"  value={fmtINR(totalCost)}                   sub="Funds deployed"      subColor="muted" accent="#ca8a04" />
-        <StatCard label="Man Hours"           value={totalHours}                           sub="Volunteer hours"     subColor="muted" accent="#9333ea" />
-        <StatCard label="Meetings Held"       value={AVENUE_PROJECTS.CM.meetings.length}  sub="Club service"        subColor="muted" accent="#0891b2" />
+
+      {/* Avenue tab bar — top of page */}
+      <div className="flex gap-1 flex-wrap bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
+        <button
+          onClick={() => { setActive('ALL'); setFilter('All') }}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+            isAll ? 'text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+          }`}
+          style={isAll ? { backgroundColor: '#1e3a5f' } : {}}
+        >
+          All
+        </button>
+        {Object.entries(AVENUE_PROJECTS).map(([key, av]) => (
+          <button
+            key={key}
+            onClick={() => { setActive(key); setFilter('All') }}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              active === key ? 'text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+            }`}
+            style={active === key ? { backgroundColor: av.color } : {}}
+          >
+            {av.label}
+          </button>
+        ))}
       </div>
 
-      {/* Chart */}
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm">Project Completion — All Avenues</CardTitle>
-          <CardDescription className="text-xs">Completed vs target this RY</CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <ResponsiveContainer width="100%" height={130}>
-            <BarChart data={barData} barSize={18}>
-              <CartesianGrid vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis hide domain={[0, 12]} />
-              <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6 }} />
-              <Bar dataKey="Done" fill="#003DA5" radius={[3,3,0,0]} name="Completed" />
-              <Bar dataKey="Left" fill="#e2e8f0" radius={[3,3,0,0]} name="Remaining" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* KPI strip — contextual to selected avenue */}
+      {isAll ? (
+        <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+          <StatCard label="Total Projects"      value={allProjects.length}                    sub="Across all avenues"  subColor="up"    accent="#1e3a5f" />
+          <StatCard label="Total Beneficiaries" value={totalBen.toLocaleString()}             sub="Lives impacted"      subColor="up"    accent="#16a34a" />
+          <StatCard label="Total Project Cost"  value={fmtINR(totalCost)}                    sub="Funds deployed"      subColor="muted" accent="#ca8a04" />
+          <StatCard label="Man Hours"           value={totalHours}                            sub="Volunteer hours"     subColor="muted" accent="#9333ea" />
+          <StatCard label="Meetings Held"       value={AVENUE_PROJECTS.CM.meetings.length}   sub="Club service"        subColor="muted" accent="#0891b2" />
+        </div>
+      ) : isClub ? (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard label="Meetings Held"    value={avenue.meetings.length}   sub={`RY ${year}`}              subColor="muted" accent={avenue.color} />
+          <StatCard label="Avg Attendance"   value={`${avgAtt}%`}             sub="Per meeting"               subColor="muted" accent={avenue.color} />
+          <StatCard label="Best Attendance"  value={`${bestAtt}%`}            sub="Single meeting high"       subColor="up"    accent={avenue.color} />
+          <StatCard label="Members on Roll"  value={142}                      sub="Total club members"        subColor="muted" accent={avenue.color} />
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard label="Projects"         value={items.length}             sub={`${avenue.label}`}         subColor="up"    accent={avenue.color} />
+          <StatCard label="Beneficiaries"    value={avBen.toLocaleString()}   sub="Lives impacted"            subColor="up"    accent={avenue.color} />
+          <StatCard label="Project Cost"     value={fmtINR(avCost)}           sub="Funds deployed"            subColor="muted" accent={avenue.color} />
+          <StatCard label="Man Hours"        value={avHours}                  sub="Volunteer hours"           subColor="muted" accent={avenue.color} />
+        </div>
+      )}
 
-      {/* Avenue detail */}
+      {/* Detail card */}
       <Card>
         <CardHeader className="pb-0">
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
-              <CardTitle className="text-sm">{avenue.label}</CardTitle>
-              <CardDescription className="text-xs">{isClub ? 'Meeting records' : 'Project records'} — {year}</CardDescription>
+              <CardTitle className="text-sm">{isAll ? 'All Avenues' : avenue.label}</CardTitle>
+              <CardDescription className="text-xs">{isAll ? 'Summary by avenue' : (isClub ? 'Meeting records' : 'Project records')} — {year}</CardDescription>
             </div>
-            <div className="flex gap-2 flex-wrap">
-              <select value={year} onChange={e => setYear(e.target.value)}
-                className="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-600 bg-white outline-none">
-                {YEARS.map(y => <option key={y}>{y}</option>)}
-              </select>
-              <button className="text-xs font-semibold text-white px-3 py-1.5 rounded-md" style={{ backgroundColor: avenue.color }}>
-                + {isClub ? 'Add Meeting' : 'Add Project'}
-              </button>
-            </div>
-          </div>
-
-          {/* Avenue tabs */}
-          <div className="flex gap-1 mt-3 flex-wrap">
-            {Object.entries(AVENUE_PROJECTS).map(([key, av]) => (
-              <button key={key} onClick={() => { setActive(key); setFilter('All') }}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${
-                  active === key ? 'text-white shadow-sm' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-                style={active === key ? { backgroundColor: av.color } : {}}>{av.label}</button>
-            ))}
+            {!isAll && (
+              <div className="flex gap-2 flex-wrap">
+                <select value={year} onChange={e => setYear(e.target.value)}
+                  className="text-xs border border-slate-200 rounded-md px-2.5 py-1.5 text-slate-600 bg-white outline-none">
+                  {YEARS.map(y => <option key={y}>{y}</option>)}
+                </select>
+                <button className="text-xs font-semibold text-white px-3 py-1.5 rounded-md" style={{ backgroundColor: avenue.color }}>
+                  + {isClub ? 'Add Meeting' : 'Add Project'}
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Onetime/Ongoing filter (Community Service only) */}
-          {avenue.hasFilter && (
-            <div className="flex gap-1 mt-2">
+          {!isAll && avenue.hasFilter && (
+            <div className="flex gap-1 mt-3">
               {['All', 'One-time Projects', 'Ongoing/Repeat Projects'].map(f => (
                 <button key={f} onClick={() => setFilter(f)}
                   className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
@@ -163,79 +179,131 @@ export default function AvenueOfService() {
         </CardHeader>
 
         <CardContent className="pt-4">
-          <div className="overflow-x-auto rounded-lg border border-slate-200">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 w-10">Sr.</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Date</th>
-                  {isClub && <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Meeting Type</th>}
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Title</th>
-                  {isClub ? (
-                    <>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Attendance</th>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Att. %</th>
-                    </>
-                  ) : (
-                    <>
-                      <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Cost</th>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Direct Ben.</th>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Man Hours</th>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotarians</th>
-                      <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotaractors</th>
-                    </>
-                  )}
-                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Edit</th>
-                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Delete</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {items.map((item, i) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-3 py-3 text-xs text-slate-400">{i + 1}</td>
-                    <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap">{item.date}</td>
-                    {isClub && (
-                      <td className="px-3 py-3">
-                        {(() => { const s = MEETING_TYPE_STYLE[item.type] ?? MEETING_TYPE_STYLE.Regular; return (
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${s.bg} ${s.text}`}>{item.type}</span>
-                        )})()}
-                      </td>
-                    )}
-                    <td className="px-3 py-3 font-semibold text-slate-800">{item.title}</td>
+          {isAll ? (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Avenue</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Projects</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Beneficiaries</th>
+                    <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Cost</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Man Hours</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {Object.entries(AVENUE_PROJECTS).map(([key, av]) => {
+                    if (key === 'CM') return (
+                      <tr key={key} className="hover:bg-slate-50">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: av.color }} />
+                            <span className="font-semibold text-slate-800">{av.label}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{av.meetings.length} meetings</td>
+                        <td className="px-3 py-3 text-center text-slate-400">—</td>
+                        <td className="px-3 py-3 text-right text-slate-400">—</td>
+                        <td className="px-3 py-3 text-center text-slate-400">—</td>
+                      </tr>
+                    )
+                    const ps = av.projects
+                    const ben   = ps.reduce((s, p) => s + p.beneficiaries, 0)
+                    const cost  = ps.reduce((s, p) => s + p.cost, 0)
+                    const hours = ps.reduce((s, p) => s + p.manHours, 0)
+                    return (
+                      <tr key={key} className="hover:bg-slate-50">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: av.color }} />
+                            <span className="font-semibold text-slate-800">{av.label}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{ps.length}</td>
+                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{ben.toLocaleString()}</td>
+                        <td className="px-3 py-3 text-right font-semibold text-slate-700 tabular-nums">{cost ? fmtINR(cost) : '—'}</td>
+                        <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{hours}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 w-10">Sr.</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Date</th>
+                    {isClub && <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Meeting Type</th>}
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Title</th>
                     {isClub ? (
                       <>
-                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{item.attendance}/{item.total}</td>
-                        <td className="px-3 py-3 text-center">
-                          <span className={`text-sm font-extrabold tabular-nums ${item.pct >= 75 ? 'text-green-600' : item.pct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>
-                            {item.pct}%
-                          </span>
-                        </td>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Attendance</th>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Att. %</th>
                       </>
                     ) : (
                       <>
-                        <td className="px-3 py-3 text-right font-semibold text-slate-800 tabular-nums">{item.cost ? fmtINR(item.cost) : '—'}</td>
-                        <td className="px-3 py-3 text-center font-bold text-slate-800 tabular-nums">{item.beneficiaries.toLocaleString()}</td>
-                        <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.manHours}</td>
-                        <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.rotarians}</td>
-                        <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.rotaractors}</td>
+                        <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Cost</th>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Direct Ben.</th>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Man Hours</th>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotarians</th>
+                        <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotaractors</th>
                       </>
                     )}
-                    <td className="px-3 py-3 text-center">
-                      <button className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                    </td>
-                    <td className="px-3 py-3 text-center">
-                      <button className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50">
-                        <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                      </button>
-                    </td>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Edit</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Delete</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <p className="text-xs text-slate-400 mt-2">{items.length} {isClub ? 'meetings' : 'projects'} · {year}</p>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {items.map((item, i) => (
+                    <tr key={item.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-3 text-xs text-slate-400">{i + 1}</td>
+                      <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap">{item.date}</td>
+                      {isClub && (
+                        <td className="px-3 py-3">
+                          {(() => { const s = MEETING_TYPE_STYLE[item.type] ?? MEETING_TYPE_STYLE.Regular; return (
+                            <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${s.bg} ${s.text}`}>{item.type}</span>
+                          )})()}
+                        </td>
+                      )}
+                      <td className="px-3 py-3 font-semibold text-slate-800">{item.title}</td>
+                      {isClub ? (
+                        <>
+                          <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{item.attendance}/{item.total}</td>
+                          <td className="px-3 py-3 text-center">
+                            <span className={`text-sm font-extrabold tabular-nums ${item.pct >= 75 ? 'text-green-600' : item.pct >= 65 ? 'text-amber-600' : 'text-red-600'}`}>
+                              {item.pct}%
+                            </span>
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-3 py-3 text-right font-semibold text-slate-800 tabular-nums">{item.cost ? fmtINR(item.cost) : '—'}</td>
+                          <td className="px-3 py-3 text-center font-bold text-slate-800 tabular-nums">{item.beneficiaries.toLocaleString()}</td>
+                          <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.manHours}</td>
+                          <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.rotarians}</td>
+                          <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.rotaractors}</td>
+                        </>
+                      )}
+                      <td className="px-3 py-3 text-center">
+                        <button className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <button className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50">
+                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {!isAll && <p className="text-xs text-slate-400 mt-2">{items.length} {isClub ? 'meetings' : 'projects'} · {year}</p>}
         </CardContent>
       </Card>
     </div>

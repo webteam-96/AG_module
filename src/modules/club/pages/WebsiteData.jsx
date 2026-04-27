@@ -111,9 +111,20 @@ const SOCIAL_LINKS = [
   { platform: 'LinkedIn',  url: 'linkedin.com/company/rc-thane',      icon: 'in', color: '#0a66c2' },
 ]
 
+const CLUB_WEBSITE_URL = 'https://thanecityview.rotaryindia.org'
+
 export default function WebsiteData() {
   const [activeModule, setActiveModule] = useState(null)
   const [socialLinks, setSocialLinks]   = useState(SOCIAL_LINKS)
+  const [copied, setCopied]             = useState(false)
+  const [banners, setBanners]           = useState({ filled: 3, total: 5 })
+  const [ads, setAds]                   = useState({ filled: 2, total: 4 })
+
+  function copyUrl() {
+    navigator.clipboard.writeText(CLUB_WEBSITE_URL)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   return (
     <div className="space-y-5">
@@ -122,6 +133,120 @@ export default function WebsiteData() {
         <StatCard label="Subscription"     value="Overdue"    sub="Expired Jan 31, 2026"          subColor="down"  accent="#e11d48" />
         <StatCard label="Last Updated"     value="Mar 30"     sub="Banner photos"                 subColor="muted" accent="#003DA5" />
         <StatCard label="Menu Items"       value="7"          sub="Navigation links"              subColor="muted" accent="#9333ea" />
+      </div>
+
+      {/* Share bar */}
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <svg width="14" height="14" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          <span className="text-xs font-mono text-slate-600 truncate">{CLUB_WEBSITE_URL}</span>
+        </div>
+        <div className="flex items-center gap-2 flex-shrink-0">
+          <button
+            onClick={copyUrl}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+            style={{ color: copied ? '#16a34a' : '#475569' }}
+          >
+            {copied ? (
+              <><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!</>
+            ) : (
+              <><svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy Link</>
+            )}
+          </button>
+          <a
+            href={`https://wa.me/?text=${encodeURIComponent('Visit our club website: ' + CLUB_WEBSITE_URL)}`}
+            target="_blank" rel="noreferrer"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+            style={{ backgroundColor: '#25d366' }}
+          >
+            <svg width="12" height="12" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.126 1.528 5.855L0 24l6.335-1.505A11.95 11.95 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.817 9.817 0 0 1-5.002-1.368l-.359-.214-3.722.885.936-3.617-.235-.372A9.818 9.818 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+            WhatsApp
+          </a>
+          <a
+            href={`mailto:?subject=Visit our club website&body=Visit the Rotary Club of Thane City View website: ${CLUB_WEBSITE_URL}`}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-50 text-slate-600 transition-colors"
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            Email
+          </a>
+          <a
+            href={CLUB_WEBSITE_URL} target="_blank" rel="noreferrer"
+            className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg text-white"
+            style={{ backgroundColor: '#003DA5' }}
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Visit Site
+          </a>
+        </div>
+      </div>
+
+      {/* Banner & Ad slot cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+        {/* Banner Photos */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#003DA508', color: '#003DA5' }}>
+                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                  <polyline points="21 15 16 10 5 21"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Banner Photos</p>
+                <p className="text-xs text-slate-500">{banners.filled} of {banners.total} slots used</p>
+              </div>
+            </div>
+          </div>
+          <div className="mb-3">
+            <p className="text-[11px] text-slate-400 mb-1">{banners.filled}/{banners.total}</p>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${(banners.filled / banners.total) * 100}%`, backgroundColor: banners.filled >= banners.total ? '#ef4444' : '#003DA5' }} />
+            </div>
+          </div>
+          <button
+            onClick={() => setBanners(b => b.filled < b.total ? { ...b, filled: b.filled + 1 } : b)}
+            disabled={banners.filled >= banners.total}
+            className="w-full text-xs font-semibold py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white"
+            style={{ backgroundColor: '#003DA5' }}
+          >
+            + Add Banner
+          </button>
+        </div>
+
+        {/* Advertisement Area */}
+        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+          <div className="flex items-center mb-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#9333ea08', color: '#9333ea' }}>
+                <svg width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+                  <line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/>
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Advertisement Area</p>
+                <p className="text-xs text-slate-500">{ads.filled} of {ads.total} slots used</p>
+              </div>
+            </div>
+          </div>
+          <div className="mb-3">
+            <p className="text-[11px] text-slate-400 mb-1">{ads.filled}/{ads.total}</p>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${(ads.filled / ads.total) * 100}%`, backgroundColor: ads.filled >= ads.total ? '#ef4444' : '#9333ea' }} />
+            </div>
+          </div>
+          <button
+            onClick={() => setAds(a => a.filled < a.total ? { ...a, filled: a.filled + 1 } : a)}
+            disabled={ads.filled >= ads.total}
+            className="w-full text-xs font-semibold py-2 rounded-lg transition-colors disabled:opacity-40 disabled:cursor-not-allowed text-white"
+            style={{ backgroundColor: '#9333ea' }}
+          >
+            + Add Advertisement
+          </button>
+        </div>
+
       </div>
 
       {/* Subscription alert */}
