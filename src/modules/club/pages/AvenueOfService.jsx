@@ -19,11 +19,12 @@ const AVENUE_PROJECTS = {
   },
   SP: {
     label: 'Community Service', color: '#16a34a', hasFilter: true,
+    moderator: { name: 'Jayesh', phone: '8928246907', email: 'connect@kaizeninfotech.com' },
     projects: [
-      { id:1, date:'Mar 15, 2026', title:'Blood Donation Drive',       cost:0,      beneficiaries:320, manHours:48,  rotarians:28, rotaractors:15 },
-      { id:2, date:'Feb 22, 2026', title:'Tree Plantation Drive',      cost:45000,  beneficiaries:600, manHours:120, rotarians:35, rotaractors:20 },
-      { id:3, date:'Jan 18, 2026', title:'Medical Camp',               cost:95000,  beneficiaries:450, manHours:96,  rotarians:30, rotaractors:12 },
-      { id:4, date:'Dec 5, 2025',  title:'Winter Relief Distribution', cost:35000,  beneficiaries:280, manHours:60,  rotarians:22, rotaractors:8  },
+      { id:1, date:'Mar 15, 2026', title:'Blood Donation Drive',       cost:0,      beneficiaries:320, manHours:48,  rotarians:28, rotaractors:15, projectType:'Repeat'   },
+      { id:2, date:'Feb 22, 2026', title:'Tree Plantation Drive',      cost:45000,  beneficiaries:600, manHours:120, rotarians:35, rotaractors:20, projectType:'One-time' },
+      { id:3, date:'Jan 18, 2026', title:'Medical Camp',               cost:95000,  beneficiaries:450, manHours:96,  rotarians:30, rotaractors:12, projectType:'One-time' },
+      { id:4, date:'Dec 5, 2025',  title:'Winter Relief Distribution', cost:35000,  beneficiaries:280, manHours:60,  rotarians:22, rotaractors:8,  projectType:'Repeat'   },
     ],
   },
   VS: {
@@ -73,10 +74,17 @@ export default function AvenueOfService() {
   const [year, setYear]     = useState('2026–27')
   const [filter, setFilter] = useState('All')
 
-  const isAll  = active === 'ALL'
-  const avenue = isAll ? null : AVENUE_PROJECTS[active]
-  const isClub = active === 'CM'
-  const items  = isClub ? avenue.meetings : (!isAll ? avenue.projects : [])
+  const isAll    = active === 'ALL'
+  const avenue   = isAll ? null : AVENUE_PROJECTS[active]
+  const isClub   = active === 'CM'
+  const rawItems = isClub ? avenue.meetings : (!isAll ? avenue.projects : [])
+  const items    = (!isAll && avenue?.hasFilter && filter !== 'All')
+    ? rawItems.filter(p =>
+        filter === 'One-time Projects'
+          ? p.projectType === 'One-time'
+          : p.projectType === 'Repeat'
+      )
+    : rawItems
 
   // Aggregate stats (used by All tab)
   const allProjects = Object.values(AVENUE_PROJECTS).flatMap(a => a.projects ?? [])
@@ -179,6 +187,50 @@ export default function AvenueOfService() {
         </CardHeader>
 
         <CardContent className="pt-4">
+          {/* Moderator strip — Community Service only */}
+          {!isAll && avenue.moderator && (
+            <div
+              className="flex items-center gap-4 flex-wrap mb-4 px-4 py-3 rounded-xl"
+              style={{ backgroundColor: avenue.color + '10', border: `0.5px solid ${avenue.color}40` }}
+            >
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ backgroundColor: avenue.color }}
+                >
+                  {avenue.moderator.name.slice(0, 2).toUpperCase()}
+                </div>
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: avenue.color + 'cc' }}>Club Moderator</p>
+                  <p className="text-sm font-bold text-slate-800">{avenue.moderator.name}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+                <a
+                  href={`tel:${avenue.moderator.phone}`}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 transition-colors"
+                  style={{ border: `0.5px solid ${avenue.color}50`, color: avenue.color }}
+                >
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.61 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.59a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  {avenue.moderator.phone}
+                </a>
+                <a
+                  href={`mailto:${avenue.moderator.email}`}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 transition-colors"
+                  style={{ border: `0.5px solid ${avenue.color}50`, color: avenue.color }}
+                >
+                  <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  {avenue.moderator.email}
+                </a>
+              </div>
+            </div>
+          )}
+
           {isAll ? (
             <div className="overflow-x-auto rounded-lg border border-slate-200">
               <table className="w-full text-sm border-collapse">
@@ -245,6 +297,7 @@ export default function AvenueOfService() {
                       </>
                     ) : (
                       <>
+                        {avenue?.hasFilter && <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Type</th>}
                         <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Cost</th>
                         <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Direct Ben.</th>
                         <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Man Hours</th>
@@ -280,6 +333,17 @@ export default function AvenueOfService() {
                         </>
                       ) : (
                         <>
+                          {avenue?.hasFilter && (
+                            <td className="px-3 py-3 text-center">
+                              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+                                item.projectType === 'Repeat'
+                                  ? 'bg-purple-50 text-purple-700'
+                                  : 'bg-sky-50 text-sky-700'
+                              }`}>
+                                {item.projectType === 'Repeat' ? 'Repeat' : 'One-time'}
+                              </span>
+                            </td>
+                          )}
                           <td className="px-3 py-3 text-right font-semibold text-slate-800 tabular-nums">{item.cost ? fmtINR(item.cost) : '—'}</td>
                           <td className="px-3 py-3 text-center font-bold text-slate-800 tabular-nums">{item.beneficiaries.toLocaleString()}</td>
                           <td className="px-3 py-3 text-center text-slate-600 tabular-nums">{item.manHours}</td>
@@ -303,7 +367,13 @@ export default function AvenueOfService() {
               </table>
             </div>
           )}
-          {!isAll && <p className="text-xs text-slate-400 mt-2">{items.length} {isClub ? 'meetings' : 'projects'} · {year}</p>}
+          {!isAll && (
+            <p className="text-xs text-slate-400 mt-2">
+              {items.length} {isClub ? 'meetings' : 'projects'}
+              {avenue?.hasFilter && filter !== 'All' ? ` · ${filter}` : ''}
+              {' · '}{year}
+            </p>
+          )}
         </CardContent>
       </Card>
     </div>
