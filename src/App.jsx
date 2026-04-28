@@ -22,6 +22,7 @@ import Payments from './modules/club/pages/Payments'
 import Directory from './modules/club/pages/Directory'
 import ClubWebsiteData from './modules/club/pages/WebsiteData'
 import Foundation      from './modules/club/pages/Foundation'
+import ClubMembership  from './modules/club/pages/Membership'
 
 // District module
 import DistrictLayout from './modules/district/layout/DistrictLayout'
@@ -66,6 +67,7 @@ export default function App() {
           <Route path="directory" element={<Directory />} />
           <Route path="website"     element={<ClubWebsiteData />} />
           <Route path="foundation"  element={<Foundation />} />
+          <Route path="membership"  element={<ClubMembership />} />
         </Route>
 
         {/* District Dashboard */}

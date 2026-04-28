@@ -845,9 +845,9 @@ const TABS = [
   { id: 'monthly',    label: 'Club Monthly Report' },
   { id: 'ocv',        label: 'OCV / GOV'           },
   { id: 'attendance', label: 'Attendance'           },
-  { id: 'reports',    label: 'Reports'              },
   { id: 'citation',   label: 'District Citation'    },
   { id: 'awards',     label: 'Zonal Awards'         },
+  { id: 'reports',    label: 'Reports'              },
 ]
 
 /* ── Main component ──────────────────────────────────────────────── */

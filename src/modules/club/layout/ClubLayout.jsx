@@ -9,7 +9,8 @@ import { CLUB } from '../data/clubData'
 const NAV = [
   { to: '/clubdashboard/overview',      label: 'Dashboard'                },
   { to: '/clubdashboard/foundation',    label: 'Foundation'               },
-  { to: '/clubdashboard/avenue',        label: 'Avenue of Service'        },
+  { to: '/clubdashboard/membership',    label: 'Membership'               },
+  { to: '/clubdashboard/avenue',        label: 'Service Projects & Public Image' },
   { to: '/clubdashboard/egovernance',   label: 'E-Governance'             },
   { to: '/clubdashboard/communication', label: 'Communication'            },
   { to: '/clubdashboard/website',       label: 'My Club Website'          },
@@ -18,11 +19,12 @@ const NAV = [
 
 const PAGE_TITLES = {
   '/clubdashboard/overview':      'Club Dashboard',
-  '/clubdashboard/avenue':        'Avenue of Service',
+  '/clubdashboard/avenue':        'Service Projects & Public Image',
   '/clubdashboard/communication': 'Communication',
   '/clubdashboard/egovernance':   'E-Governance & Reporting',
   '/clubdashboard/payments':      'Membership Dues',
   '/clubdashboard/foundation':    'Foundation — TRF Analysis',
+  '/clubdashboard/membership':    'Membership',
   '/clubdashboard/website':       'My Club Website',
 }
 

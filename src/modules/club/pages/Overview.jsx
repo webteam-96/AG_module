@@ -14,7 +14,6 @@ import {
 
 // Import tab content components
 import DirectoryTab     from './Directory'
-import PastPresidents   from './PastPresidents'
 import BoardOfDirectors from './BoardOfDirectors'
 import Marketplace      from './Marketplace'
 import RotaryNetwork    from './RotaryNetwork'
@@ -23,7 +22,6 @@ import RotaryNetwork    from './RotaryNetwork'
 const TABS = [
   { id: 'overview',      label: 'Overview'          },
   { id: 'directory',     label: 'Directory'         },
-  { id: 'pastpresidents',label: 'Past Presidents'   },
   { id: 'board',         label: 'Board of Directors'},
   { id: 'marketplace',   label: 'Marketplace'       },
   { id: 'network',       label: 'Rotary Network'    },
@@ -127,37 +125,52 @@ function OverviewContent() {
       {/* Row 1: 4 analytics cards — equal height */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 items-stretch">
 
-        {/* Avenue of Service */}
-        <CardWrapper id="avenue"><Card className="h-full flex flex-col">
-          <CardHeader className="pb-1">
-            <CardTitle className="text-sm">Avenue of Service</CardTitle>
-            <CardDescription className="text-xs">Project completion this RY</CardDescription>
+        {/* 1 — Membership */}
+        <CardWrapper id="membership"><Card className="h-full flex flex-col overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-start justify-between">
+              <div>
+                <CardTitle className="text-sm">Membership</CardTitle>
+                <CardDescription className="text-xs">RY 2026–27 snapshot</CardDescription>
+              </div>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">+{CLUB_STATS.newMembersThisYear} new</span>
+            </div>
           </CardHeader>
-          <CardContent className="pt-2 flex-1 flex flex-col justify-between">
-            <div className="space-y-3">
-              {AVENUE_DATA.map(a => (
-                <div key={a.name}>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-xs font-medium text-slate-700 truncate">{a.name}</span>
-                    <span className="text-xs font-semibold tabular-nums ml-1" style={{ color: a.color }}>{a.completed}</span>
+          <CardContent className="pt-0 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-end gap-1.5 mb-3">
+                <span className="text-4xl font-extrabold text-slate-900 tabular-nums leading-none">{CLUB_STATS.totalMembers}</span>
+                <span className="text-xs text-slate-400 mb-1 ml-1">total members</span>
+              </div>
+              <div className="space-y-2.5">
+                {[
+                  { label:'Active',    value: CLUB_STATS.activeMembers,                           color:'#003DA5' },
+                  { label:'Male',      value: 95,                                                 color:'#0891b2' },
+                  { label:'Female',    value: 28,                                                 color:'#e11d48' },
+                  { label:'Honorary',  value: CLUB_STATS.honoraryMembers,                         color:'#9333ea' },
+                  { label:'Associate', value: CLUB_STATS.associateMembers,                        color:'#0891b2' },
+                  { label:'Inactive',  value: CLUB_STATS.totalMembers - CLUB_STATS.activeMembers, color:'#94a3b8' },
+                ].map(s => (
+                  <div key={s.label}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs text-slate-500">{s.label}</span>
+                      <span className="text-xs font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width:`${(s.value/CLUB_STATS.totalMembers)*100}%`, backgroundColor: s.color }} />
+                    </div>
                   </div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                    <div className="h-full rounded-full transition-all"
-                      style={{ width: `${(a.completed / a.target) * 100}%`, background: a.color }} />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
             <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs text-slate-500">Total projects</span>
-              <span className="text-sm font-extrabold text-slate-800 tabular-nums">
-                {AVENUE_DATA.reduce((s, a) => s + a.completed, 0)}
-              </span>
+              <span className="text-xs text-slate-500">Terminated this RY</span>
+              <span className="text-xs font-semibold text-slate-700">{CLUB_STATS.terminatedThisYear}</span>
             </div>
           </CardContent>
         </Card></CardWrapper>
 
-        {/* TRF Goal */}
+        {/* 2 — TRF Goal */}
         <CardWrapper id="trf"><Card className="h-full flex flex-col">
           <CardHeader className="pb-0 flex flex-row items-start justify-between">
             <div>
@@ -184,7 +197,6 @@ function OverviewContent() {
               </form>
             ) : (
               <>
-                {/* Big centered percentage ring */}
                 <div className="flex flex-col items-center mb-4">
                   <div className="relative">
                     <svg width="110" height="110" viewBox="0 0 110 110">
@@ -200,15 +212,13 @@ function OverviewContent() {
                   </div>
                   <p className="text-sm font-bold text-slate-800 mt-2 tabular-nums">{fmtINR(CLUB_STATS.trfRaised)} raised</p>
                 </div>
-
-                {/* Fund breakdown with bars */}
                 <div className="flex-1 space-y-2.5">
                   {[
-                    { label:'Annual Fund', value: CLUB_STATS.trfAnnualFund, max: CLUB_STATS.trfGoal, color:'#ca8a04', display: fmtINR(CLUB_STATS.trfAnnualFund) },
-                    { label:'Polio Plus',  value: CLUB_STATS.trfPolioPlus,  max: CLUB_STATS.trfGoal, color:'#e11d48', display: fmtINR(CLUB_STATS.trfPolioPlus)  },
-                    { label:'PHF',         value: CLUB_STATS.phfContributors, max: 30,               color:'#9333ea', display: `${CLUB_STATS.phfContributors} contributors` },
-                    { label:'PHS',         value: CLUB_STATS.trfPHS,          max: 10,               color:'#0891b2', display: `${CLUB_STATS.trfPHS} members`    },
-                    { label:'Major Donor', value: CLUB_STATS.trfMajorDonors,  max: 5,                color:'#16a34a', display: `${CLUB_STATS.trfMajorDonors}`    },
+                    { label:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,   max: CLUB_STATS.trfGoal, color:'#003DA5', display: fmtINR(CLUB_STATS.trfAnnualFund)           },
+                    { label:'PHF',          value: CLUB_STATS.phfContributors, max: 30,                 color:'#9333ea', display: `${CLUB_STATS.phfContributors} members`     },
+                    { label:'PHSM',         value: CLUB_STATS.trfPhsm,         max: 5,                  color:'#0891b2', display: `${CLUB_STATS.trfPhsm} members`             },
+                    { label:'Major Donors', value: CLUB_STATS.trfMajorDonors,  max: 5,                  color:'#ca8a04', display: `${CLUB_STATS.trfMajorDonors}`              },
+                    { label:'CSR Projects', value: CLUB_STATS.trfCSR,          max: 5,                  color:'#16a34a', display: `${CLUB_STATS.trfCSR} projects`             },
                   ].map(r => (
                     <div key={r.label}>
                       <div className="flex justify-between mb-1">
@@ -222,8 +232,6 @@ function OverviewContent() {
                     </div>
                   ))}
                 </div>
-
-                {/* Remaining footer */}
                 <div className="flex justify-between text-xs border-t border-slate-100 pt-3 mt-3">
                   <span className="text-slate-500">Remaining to goal</span>
                   <span className="font-bold text-red-600 tabular-nums">{fmtINR(trfGoal - CLUB_STATS.trfRaised)}</span>
@@ -233,60 +241,43 @@ function OverviewContent() {
           </CardContent>
         </Card></CardWrapper>
 
-        {/* Membership */}
-        <CardWrapper id="membership"><Card className="h-full flex flex-col overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-sm">Membership</CardTitle>
-                <CardDescription className="text-xs">RY 2026–27 snapshot</CardDescription>
-              </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">+{CLUB_STATS.newMembersThisYear} new</span>
-            </div>
+        {/* 3 — Service Projects */}
+        <CardWrapper id="avenue"><Card className="h-full flex flex-col">
+          <CardHeader className="pb-1">
+            <CardTitle className="text-sm">Service Projects & Public Image</CardTitle>
+            <CardDescription className="text-xs">Project completion this RY</CardDescription>
           </CardHeader>
-          <CardContent className="pt-0 flex-1 flex flex-col justify-between">
-            <div>
-              <div className="flex items-end gap-1.5 mb-3">
-                <span className="text-4xl font-extrabold text-slate-900 tabular-nums leading-none">{CLUB_STATS.totalMembers}</span>
-                <span className="text-xs text-slate-400 mb-1 ml-1">total members</span>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  { label:'Active',    value: CLUB_STATS.activeMembers,                              color:'#003DA5' },
-                  { label:'Male',      value: 95,                                                    color:'#0891b2' },
-                  { label:'Female',    value: 28,                                                    color:'#e11d48' },
-                  { label:'Honorary',  value: CLUB_STATS.honoraryMembers,                            color:'#9333ea' },
-                  { label:'Associate', value: CLUB_STATS.associateMembers,                           color:'#0891b2' },
-                  { label:'Inactive',  value: CLUB_STATS.totalMembers - CLUB_STATS.activeMembers,    color:'#94a3b8' },
-                ].map(s => (
-                  <div key={s.label}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-xs text-slate-500">{s.label}</span>
-                      <span className="text-xs font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
-                    </div>
-                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width:`${(s.value/CLUB_STATS.totalMembers)*100}%`, backgroundColor: s.color }} />
-                    </div>
+          <CardContent className="pt-2 flex-1 flex flex-col justify-between">
+            <div className="space-y-3">
+              {AVENUE_DATA.map(a => (
+                <div key={a.name}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-xs font-medium text-slate-700 truncate">{a.name}</span>
+                    <span className="text-xs font-semibold tabular-nums ml-1" style={{ color: a.color }}>{a.completed}</span>
                   </div>
-                ))}
-              </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${(a.completed / a.target) * 100}%`, background: a.color }} />
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
-              <span className="text-xs text-slate-500">Terminated this RY</span>
-              <span className="text-xs font-semibold text-slate-700">{CLUB_STATS.terminatedThisYear}</span>
+              <span className="text-xs text-slate-500">Total projects</span>
+              <span className="text-sm font-extrabold text-slate-800 tabular-nums">
+                {AVENUE_DATA.reduce((s, a) => s + a.completed, 0)}
+              </span>
             </div>
           </CardContent>
         </Card></CardWrapper>
 
-        {/* District Citation */}
+        {/* 4 — District Citation */}
         <CardWrapper id="citation"><Card className="h-full flex flex-col overflow-hidden">
           <CardHeader className="pb-0">
             <CardTitle className="text-sm">District Citation</CardTitle>
             <CardDescription className="text-xs">RY 2026–27 scorecard</CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 flex flex-col justify-between">
-
-            {/* Centered ring */}
             <div className="flex flex-col items-center mb-4">
               <div className="relative">
                 <svg width="110" height="110" viewBox="0 0 110 110">
@@ -300,8 +291,6 @@ function OverviewContent() {
                 </div>
               </div>
             </div>
-
-            {/* Criteria rows with progress bars */}
             <div className="flex-1 space-y-2.5">
               {CITATION_CHECKLIST.map(c => {
                 const color = c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444'
@@ -322,8 +311,6 @@ function OverviewContent() {
                 )
               })}
             </div>
-
-            {/* Legend */}
             <div className="flex gap-3 pt-3 mt-2 border-t border-slate-100">
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[11px] text-slate-500">Complete</span></div>
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] text-slate-500">Partial</span></div>
@@ -340,7 +327,7 @@ function OverviewContent() {
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div>
                 <CardTitle className="text-sm">
-                  { activeCard === 'avenue'    ? 'Avenue of Service — Projects'
+                  { activeCard === 'avenue'    ? 'Service Projects & Public Image'
                   : activeCard === 'trf'       ? 'TRF Contribution — Breakdown'
                   : activeCard === 'membership'? 'Membership — Growth Analysis'
                   :                             'District Citation — Scorecard' }
@@ -449,9 +436,9 @@ function OverviewContent() {
             {/* ── TRF chart ─────────────────────────────────────── */}
             {activeCard === 'trf' && (() => {
               const trfData = [
-                { name:'Annual Fund',    value: CLUB_STATS.trfAnnualFund, color:'#ca8a04' },
-                { name:'Polio Plus',     value: CLUB_STATS.trfPolioPlus,  color:'#e11d48' },
-                { name:'Other / Endow.', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - CLUB_STATS.trfPolioPlus, color:'#9333ea' },
+                { name:'Annual Fund', value: CLUB_STATS.trfAnnualFund,                                          color:'#003DA5' },
+                { name:'PHF / PHSM',  value: (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000,        color:'#9333ea' },
+                { name:'CSR / Endow', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000, color:'#16a34a' },
               ]
               return (
                 <>
@@ -565,7 +552,6 @@ export default function Overview() {
       {/* Tab content */}
       {activeTab === 'overview'       && <OverviewContent />}
       {activeTab === 'directory'      && <DirectoryTab />}
-      {activeTab === 'pastpresidents' && <PastPresidents />}
       {activeTab === 'board'          && <BoardOfDirectors />}
       {activeTab === 'marketplace'    && <Marketplace />}
       {activeTab === 'network'        && <RotaryNetwork />}
