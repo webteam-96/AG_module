@@ -21,6 +21,7 @@ import EGovernance from './modules/club/pages/EGovernance'
 import Payments from './modules/club/pages/Payments'
 import Directory from './modules/club/pages/Directory'
 import ClubWebsiteData from './modules/club/pages/WebsiteData'
+import Foundation      from './modules/club/pages/Foundation'
 
 // District module
 import DistrictLayout from './modules/district/layout/DistrictLayout'
@@ -63,7 +64,8 @@ export default function App() {
           <Route path="egovernance" element={<EGovernance />} />
           <Route path="payments"  element={<Payments />} />
           <Route path="directory" element={<Directory />} />
-          <Route path="website"   element={<ClubWebsiteData />} />
+          <Route path="website"     element={<ClubWebsiteData />} />
+          <Route path="foundation"  element={<Foundation />} />
         </Route>
 
         {/* District Dashboard */}

@@ -842,19 +842,17 @@ function ReportsPanel() {
 
 /* ── Tabs config ─────────────────────────────────────────────────── */
 const TABS = [
-  { id: 'attendance', label: 'Attendance'        },
   { id: 'monthly',    label: 'Club Monthly Report' },
-  { id: 'trf',        label: 'TRF Contribution'  },
-  { id: 'citation',   label: 'District Citation' },
-  { id: 'ocv',        label: 'OCV / GOV Documents' },
-  { id: 'pph',        label: 'PPH Camp'          },
-  { id: 'awards',     label: 'Zonal Awards'      },
-  { id: 'reports',    label: 'Reports'           },
+  { id: 'ocv',        label: 'OCV / GOV'           },
+  { id: 'attendance', label: 'Attendance'           },
+  { id: 'reports',    label: 'Reports'              },
+  { id: 'citation',   label: 'District Citation'    },
+  { id: 'awards',     label: 'Zonal Awards'         },
 ]
 
 /* ── Main component ──────────────────────────────────────────────── */
 export default function EGovernance() {
-  const [activeTab, setActiveTab] = useState('attendance')
+  const [activeTab, setActiveTab] = useState('monthly')
   const trfPct      = Math.round((CLUB_STATS.trfRaised / CLUB_STATS.trfGoal) * 100)
   const citationPct = Math.round((CLUB_STATS.districtCitationScore / CLUB_STATS.districtCitationMax) * 100)
   const trfTotal    = TRF_DONORS.reduce((s, d) => s + d.amount, 0)
@@ -867,7 +865,7 @@ export default function EGovernance() {
         <StatCard label="Club Monthly Report" value={`${CLUB_STATS.reportsSubmitted}/${CLUB_STATS.reportsTotal}`} sub="89% on time"           subColor="up"    accent="#003DA5" />
         <StatCard label="Avg Attendance"    value={`${CLUB_STATS.avgAttendance}%`}                             sub="▲ 4% YoY"              subColor="up"    accent="#16a34a" />
         <StatCard label="TRF Raised"        value={fmtINR(CLUB_STATS.trfRaised)}                               sub={`${trfPct}% of goal`}  subColor="muted" accent="#ca8a04" />
-        <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`}                  sub={`of ${CLUB_STATS.districtCitationMax} max`}                              subColor="muted" accent="#9333ea" />
+        <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`}                  accent="#9333ea" />
         <StatCard label="Documents"           value={DOCUMENT_CATEGORIES.reduce((s,c) => s + c.docs.length, 0)} sub="Across 8 categories"   subColor="muted" accent="#0891b2" />
       </div>
 
@@ -1050,69 +1048,81 @@ export default function EGovernance() {
 
           {/* ── DISTRICT CITATION ────────────────────────────────── */}
           {activeTab === 'citation' && (
-            <div className="space-y-4">
-              {/* Overall progress */}
-              <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="text-center flex-shrink-0">
-                  <p className="text-4xl font-extrabold text-rose-600 tabular-nums">{CLUB_STATS.districtCitationScore}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">of {CLUB_STATS.districtCitationMax} pts</p>
+            <div className="space-y-6">
+
+              {/* Hero section — ring + stats */}
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-5 bg-slate-50 rounded-xl border border-slate-200">
+                {/* Ring */}
+                <div className="flex flex-col items-center flex-shrink-0">
+                  <div className="relative">
+                    <svg width="140" height="140" viewBox="0 0 140 140">
+                      <circle cx="70" cy="70" r="56" fill="none" stroke="#f1f5f9" strokeWidth="12" />
+                      <circle cx="70" cy="70" r="56" fill="none" stroke="#f43f5e" strokeWidth="12"
+                        strokeDasharray={`${2 * Math.PI * 56 * citationPct / 100} ${2 * Math.PI * 56}`}
+                        strokeLinecap="round" transform="rotate(-90 70 70)" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-4xl font-extrabold text-rose-600 leading-none tabular-nums">{CLUB_STATS.districtCitationScore}</span>
+                      <span className="text-sm text-slate-400 mt-1">pts scored</span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <div className="flex justify-between text-xs text-slate-500 mb-1">
-                    <span>{CLUB_STATS.districtCitationScore} pts earned</span>
-                    <span>{CLUB_STATS.districtCitationMax - CLUB_STATS.districtCitationScore} pts remaining</span>
-                  </div>
-                  <div className="h-3 bg-white rounded-full overflow-hidden border border-slate-200">
-                    <div className="h-full rounded-full bg-rose-500" style={{ width: `${citationPct}%` }} />
-                  </div>
+
+                {/* Stats */}
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 w-full">
+                  {[
+                    { label:'Score',       value: `${CLUB_STATS.districtCitationScore} pts`, color:'#f43f5e', bg:'bg-rose-50'   },
+                    { label:'Percentage',  value: `${citationPct}%`,                         color:'#f59e0b', bg:'bg-amber-50'  },
+                    { label:'Remaining',   value: `${CLUB_STATS.districtCitationMax - CLUB_STATS.districtCitationScore} pts`, color:'#64748b', bg:'bg-slate-100' },
+                    { label:'Complete',    value: `${CITATION_CHECKLIST.filter(c=>c.status==='done').length} criteria`,     color:'#16a34a', bg:'bg-green-50'  },
+                    { label:'Partial',     value: `${CITATION_CHECKLIST.filter(c=>c.status==='partial').length} criteria`,  color:'#f59e0b', bg:'bg-amber-50'  },
+                    { label:'Incomplete',  value: `${CITATION_CHECKLIST.filter(c=>c.status==='incomplete').length} criteria`,color:'#ef4444', bg:'bg-red-50'    },
+                  ].map(s => (
+                    <div key={s.label} className={`${s.bg} rounded-xl px-4 py-3`}>
+                      <p className="text-[11px] text-slate-500 font-medium">{s.label}</p>
+                      <p className="text-base font-extrabold tabular-nums mt-0.5" style={{ color: s.color }}>{s.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              {/* Checklist table */}
-              <TableWrap>
-                <thead>
-                  <tr>
-                    <TH>Sr.No.</TH>
-                    <TH>Criterion</TH>
-                    <TH>Detail / Evidence</TH>
-                    <TH center>Max Pts</TH>
-                    <TH center>Earned</TH>
-                    <TH center>Status</TH>
-                  </tr>
-                </thead>
-                <tbody>
-                  {CITATION_CHECKLIST.map((c, i) => (
-                    <tr key={i} className="hover:bg-slate-50 transition-colors">
-                      <TD muted>{i + 1}</TD>
-                      <TD bold>{c.criterion}</TD>
-                      <TD muted>{c.detail}</TD>
-                      <TD center mono muted>{c.points}</TD>
-                      <TD center>
-                        <span className="text-sm font-extrabold tabular-nums" style={{ color: CITATION_COLOR[c.status] }}>
-                          {c.earned}
-                        </span>
-                      </TD>
-                      <TD center>
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg"
-                          style={{
-                            backgroundColor: CITATION_COLOR[c.status] + '18',
-                            color: CITATION_COLOR[c.status],
-                          }}>
-                          {CITATION_ICON[c.status]}{' '}
-                          {c.status === 'done' ? 'Complete' : c.status === 'partial' ? 'Partial' : 'Incomplete'}
-                        </span>
-                      </TD>
-                    </tr>
-                  ))}
-                  {/* Totals row */}
-                  <tr className="bg-slate-50 border-t-2 border-slate-200">
-                    <td colSpan={3} className="px-4 py-3 text-sm font-bold text-slate-700">Total</td>
-                    <td className="px-4 py-3 text-center text-sm font-bold text-slate-700 tabular-nums">{CLUB_STATS.districtCitationMax}</td>
-                    <td className="px-4 py-3 text-center text-sm font-extrabold tabular-nums text-rose-600">{CLUB_STATS.districtCitationScore}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </TableWrap>
+              {/* Criteria — spacious rows with progress bars */}
+              <div className="space-y-3">
+                {CITATION_CHECKLIST.map((c, i) => {
+                  const color = CITATION_COLOR[c.status]
+                  const pct   = Math.round((c.earned / c.points) * 100)
+                  const statusLabel = c.status === 'done' ? 'Complete' : c.status === 'partial' ? 'Partial' : 'Incomplete'
+                  return (
+                    <div key={i} className="p-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition-colors">
+                      <div className="flex items-start justify-between gap-3 mb-3">
+                        <div className="flex items-start gap-3 min-w-0">
+                          <span className="text-xs text-slate-400 font-medium w-5 flex-shrink-0 mt-0.5">{i + 1}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-slate-800">{c.criterion}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{c.detail}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className="text-lg font-extrabold tabular-nums" style={{ color }}>{c.earned}</span>
+                          <span className="text-[11px] font-semibold px-2.5 py-1 rounded-lg"
+                            style={{ backgroundColor: color + '18', color }}>
+                            {CITATION_ICON[c.status]} {statusLabel}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Total footer */}
+              <div className="flex items-center justify-between px-4 py-3 bg-rose-50 rounded-xl border border-rose-100">
+                <span className="text-sm font-semibold text-slate-700">Total Score</span>
+                <span className="text-xl font-extrabold text-rose-600 tabular-nums">{CLUB_STATS.districtCitationScore} pts</span>
+              </div>
             </div>
           )}
 

@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  BarChart, Bar, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 import StatCard from '../components/StatCard'
 import {
@@ -43,13 +44,28 @@ const citationPct = Math.round((CLUB_STATS.districtCitationScore / CLUB_STATS.di
 
 function OverviewContent() {
   const navigate = useNavigate()
-  const [trfGoal, setTrfGoal] = useState(null)
+  const [trfGoal, setTrfGoal] = useState(CLUB_STATS.trfGoal)
   const [trfInput, setTrfInput] = useState('')
   const [serviceGoal, setServiceGoal] = useState(null)
   const [serviceInput, setServiceInput] = useState('')
   const [memberFilter, setMemberFilter] = useState('all')
+  const [activeCard, setActiveCard]     = useState('membership')
 
   const trfPct = trfGoal ? Math.round((CLUB_STATS.trfRaised / trfGoal) * 100) : 0
+
+  /* ── Card click wrapper ─────────────────────────────────────────── */
+  function CardWrapper({ id, children }) {
+    const isActive = activeCard === id
+    return (
+      <div
+        onClick={() => setActiveCard(id)}
+        className="cursor-pointer rounded-[inherit] transition-all"
+        style={isActive ? { outline: '2px solid #003DA5', outlineOffset: '2px', borderRadius: '0.75rem' } : {}}
+      >
+        {children}
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-5">
@@ -57,10 +73,13 @@ function OverviewContent() {
       {/* Status alerts — single bar */}
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl">
         {/* Rotary sync */}
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
           <span className="text-xs font-semibold text-amber-700 whitespace-nowrap">Rotary.org Sync: Disabled</span>
-          <button className="text-xs font-bold text-white px-3 py-1 rounded-md flex-shrink-0" style={{ backgroundColor: '#ca8a04' }}>Submit</button>
+          <span className="text-slate-300 hidden sm:inline">·</span>
+          <span className="text-xs text-amber-600">
+            To enable: go to <span className="font-semibold">rotary.org</span> → My Rotary → Club Administration → Enable Data Sync → enter your Club ID
+          </span>
         </div>
         <div className="w-px h-5 bg-slate-300 flex-shrink-0 hidden sm:block" />
         {/* Website overdue */}
@@ -102,37 +121,45 @@ function OverviewContent() {
         ) : (
           <StatCard label="Service Projects" value={`${CLUB_STATS.serviceProjects}/${serviceGoal}`} sub="▲ 3 this quarter" subColor="up" accent="#9333ea" />
         )}
-        <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`} sub={`of ${CLUB_STATS.districtCitationMax} max`} subColor="muted" accent="#e11d48" />
+        <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`} accent="#e11d48" />
       </div>
 
-      {/* Row 1: 4 analytics cards */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+      {/* Row 1: 4 analytics cards — equal height */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3 items-stretch">
 
         {/* Avenue of Service */}
-        <Card>
+        <CardWrapper id="avenue"><Card className="h-full flex flex-col">
           <CardHeader className="pb-1">
             <CardTitle className="text-sm">Avenue of Service</CardTitle>
             <CardDescription className="text-xs">Project completion this RY</CardDescription>
           </CardHeader>
-          <CardContent className="pt-2 pb-3 space-y-2.5">
-            {AVENUE_DATA.map(a => (
-              <div key={a.name}>
-                <div className="flex justify-between mb-1">
-                  <span className="text-xs font-medium text-slate-700 truncate">{a.name}</span>
-                  <span className="text-xs text-slate-500 tabular-nums ml-1">{a.completed}/{a.target}</span>
+          <CardContent className="pt-2 flex-1 flex flex-col justify-between">
+            <div className="space-y-3">
+              {AVENUE_DATA.map(a => (
+                <div key={a.name}>
+                  <div className="flex justify-between mb-1">
+                    <span className="text-xs font-medium text-slate-700 truncate">{a.name}</span>
+                    <span className="text-xs font-semibold tabular-nums ml-1" style={{ color: a.color }}>{a.completed}</span>
+                  </div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all"
+                      style={{ width: `${(a.completed / a.target) * 100}%`, background: a.color }} />
+                  </div>
                 </div>
-                <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full transition-all"
-                    style={{ width: `${(a.completed / a.target) * 100}%`, background: a.color }} />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-500">Total projects</span>
+              <span className="text-sm font-extrabold text-slate-800 tabular-nums">
+                {AVENUE_DATA.reduce((s, a) => s + a.completed, 0)}
+              </span>
+            </div>
           </CardContent>
-        </Card>
+        </Card></CardWrapper>
 
         {/* TRF Goal */}
-        <Card>
-          <CardHeader className="pb-1 flex flex-row items-start justify-between">
+        <CardWrapper id="trf"><Card className="h-full flex flex-col">
+          <CardHeader className="pb-0 flex flex-row items-start justify-between">
             <div>
               <CardTitle className="text-sm">TRF Goal</CardTitle>
               <CardDescription className="text-xs mt-0.5">
@@ -140,234 +167,342 @@ function OverviewContent() {
               </CardDescription>
             </div>
             {trfGoal && (
-              <button onClick={() => { setTrfGoal(null); setTrfInput('') }} className="text-[11px] text-slate-400 hover:text-slate-600 font-medium mt-0.5 flex-shrink-0">Edit</button>
+              <button onClick={e => { e.stopPropagation(); setTrfGoal(null); setTrfInput('') }}
+                className="text-[11px] text-slate-400 hover:text-slate-600 font-medium mt-0.5 flex-shrink-0">Edit</button>
             )}
           </CardHeader>
-          <CardContent className="pt-2 pb-3">
+          <CardContent className="pt-3 flex-1 flex flex-col justify-between">
             {trfGoal === null ? (
-              <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }} className="space-y-2">
-                <input type="number" placeholder="Enter goal amount (₹)" value={trfInput} onChange={e => setTrfInput(e.target.value)} className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
-                <button type="submit" className="w-full text-sm font-bold text-white py-2 rounded-lg" style={{ background: '#ca8a04' }}>Set TRF Goal</button>
+              <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }}
+                className="flex-1 flex flex-col justify-center space-y-3">
+                <input type="number" placeholder="Enter goal amount (₹)" value={trfInput}
+                  onChange={e => setTrfInput(e.target.value)}
+                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
+                <button type="submit" className="w-full text-sm font-bold text-white py-2.5 rounded-lg" style={{ background:'#ca8a04' }}>
+                  Set TRF Goal
+                </button>
               </form>
             ) : (
-              <div className="space-y-3">
-                <div className="flex items-end gap-2">
-                  <span className="text-3xl font-extrabold text-amber-600 tabular-nums">{trfPct}%</span>
-                  <span className="text-xs text-slate-500 mb-1">{fmtINR(CLUB_STATS.trfRaised)} raised</span>
+              <>
+                {/* Big centered percentage ring */}
+                <div className="flex flex-col items-center mb-4">
+                  <div className="relative">
+                    <svg width="110" height="110" viewBox="0 0 110 110">
+                      <circle cx="55" cy="55" r="44" fill="none" stroke="#fef3c7" strokeWidth="10" />
+                      <circle cx="55" cy="55" r="44" fill="none" stroke="#f59e0b" strokeWidth="10"
+                        strokeDasharray={`${2 * Math.PI * 44 * Math.min(trfPct,100) / 100} ${2 * Math.PI * 44}`}
+                        strokeLinecap="round" transform="rotate(-90 55 55)" />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-2xl font-extrabold text-amber-600 leading-none tabular-nums">{trfPct}%</span>
+                      <span className="text-xs text-slate-400 mt-1">of goal</span>
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-slate-800 mt-2 tabular-nums">{fmtINR(CLUB_STATS.trfRaised)} raised</p>
                 </div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-amber-500" style={{ width: `${Math.min(trfPct, 100)}%` }} />
+
+                {/* Fund breakdown with bars */}
+                <div className="flex-1 space-y-2.5">
+                  {[
+                    { label:'Annual Fund', value: CLUB_STATS.trfAnnualFund, max: CLUB_STATS.trfGoal, color:'#ca8a04', display: fmtINR(CLUB_STATS.trfAnnualFund) },
+                    { label:'Polio Plus',  value: CLUB_STATS.trfPolioPlus,  max: CLUB_STATS.trfGoal, color:'#e11d48', display: fmtINR(CLUB_STATS.trfPolioPlus)  },
+                    { label:'PHF',         value: CLUB_STATS.phfContributors, max: 30,               color:'#9333ea', display: `${CLUB_STATS.phfContributors} contributors` },
+                    { label:'PHS',         value: CLUB_STATS.trfPHS,          max: 10,               color:'#0891b2', display: `${CLUB_STATS.trfPHS} members`    },
+                    { label:'Major Donor', value: CLUB_STATS.trfMajorDonors,  max: 5,                color:'#16a34a', display: `${CLUB_STATS.trfMajorDonors}`    },
+                  ].map(r => (
+                    <div key={r.label}>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-xs text-slate-500">{r.label}</span>
+                        <span className="text-xs font-semibold tabular-nums" style={{ color: r.color }}>{r.display}</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all"
+                          style={{ width:`${Math.min((r.value/r.max)*100,100)}%`, backgroundColor: r.color }} />
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="space-y-1.5">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Annual Fund</span>
-                    <span className="font-semibold text-slate-700">{fmtINR(CLUB_STATS.trfAnnualFund)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Polio Plus</span>
-                    <span className="font-semibold text-slate-700">{fmtINR(CLUB_STATS.trfPolioPlus)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">PHF</span>
-                    <span className="font-semibold text-slate-700">{CLUB_STATS.phfContributors} contributors</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">PHS</span>
-                    <span className="font-semibold text-slate-700">{CLUB_STATS.trfPHS} members</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-500">Major Donor</span>
-                    <span className="font-semibold text-slate-700">{CLUB_STATS.trfMajorDonors}</span>
-                  </div>
-                  <div className="flex justify-between text-xs border-t border-slate-100 pt-1.5 mt-0.5">
-                    <span className="text-slate-500">Remaining</span>
-                    <span className="font-semibold text-red-600">{fmtINR(trfGoal - CLUB_STATS.trfRaised)}</span>
-                  </div>
+
+                {/* Remaining footer */}
+                <div className="flex justify-between text-xs border-t border-slate-100 pt-3 mt-3">
+                  <span className="text-slate-500">Remaining to goal</span>
+                  <span className="font-bold text-red-600 tabular-nums">{fmtINR(trfGoal - CLUB_STATS.trfRaised)}</span>
                 </div>
-              </div>
+              </>
             )}
           </CardContent>
-        </Card>
+        </Card></CardWrapper>
 
-        {/* Meeting Attendance */}
-        <Card className="overflow-hidden">
+        {/* Membership */}
+        <CardWrapper id="membership"><Card className="h-full flex flex-col overflow-hidden">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <div>
-                <CardTitle className="text-sm">Meeting Attendance</CardTitle>
-                <CardDescription className="text-xs">Last 6 sessions</CardDescription>
+                <CardTitle className="text-sm">Membership</CardTitle>
+                <CardDescription className="text-xs">RY 2026–27 snapshot</CardDescription>
               </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">▲ 4% YoY</span>
+              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-green-50 text-green-700">+{CLUB_STATS.newMembersThisYear} new</span>
             </div>
           </CardHeader>
-          <CardContent className="pt-0 pb-3">
-            {/* Big avg stat */}
-            <div className="flex items-end gap-1.5 mb-3">
-              <span className="text-4xl font-extrabold text-slate-900 tabular-nums leading-none">{CLUB_STATS.avgAttendance}</span>
-              <span className="text-lg font-bold text-slate-400 mb-0.5">%</span>
-              <span className="text-xs text-slate-400 mb-1 ml-1">avg</span>
-            </div>
-            {/* Session bars — custom HTML */}
-            <div className="flex items-end gap-1.5 h-14 mb-2">
-              {ATTENDANCE_DATA.map((d, i) => (
-                <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-bold tabular-nums" style={{ color: attendanceBg(d.pct) }}>{d.pct}</span>
-                  <div className="w-full rounded-t-sm" style={{ height: `${(d.pct / 100) * 36}px`, backgroundColor: attendanceBg(d.pct), minHeight: 4 }} />
-                </div>
-              ))}
-            </div>
-            <div className="flex items-end gap-1.5">
-              {ATTENDANCE_DATA.map((d, i) => (
-                <div key={i} className="flex-1 text-center">
-                  <span className="text-[9px] text-slate-400 leading-none">{d.date.split(' ')[1]}</span>
-                </div>
-              ))}
-            </div>
-            {/* Legend */}
-            <div className="flex gap-3 mt-3 pt-2.5 border-t border-slate-100">
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[11px] text-slate-500">Good ≥75%</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] text-slate-500">Avg ≥65%</span></div>
-              <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[11px] text-slate-500">Low</span></div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* District Citation */}
-        <Card className="overflow-hidden">
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <div>
-                <CardTitle className="text-sm">District Citation</CardTitle>
-                <CardDescription className="text-xs">RY 2026–27 scorecard</CardDescription>
+          <CardContent className="pt-0 flex-1 flex flex-col justify-between">
+            <div>
+              <div className="flex items-end gap-1.5 mb-3">
+                <span className="text-4xl font-extrabold text-slate-900 tabular-nums leading-none">{CLUB_STATS.totalMembers}</span>
+                <span className="text-xs text-slate-400 mb-1 ml-1">total members</span>
               </div>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600">{citationPct}%</span>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0 pb-3">
-            {/* Ring + score */}
-            <div className="flex items-center gap-4 mb-3">
-              <div className="relative flex-shrink-0">
-                <svg width="72" height="72" viewBox="0 0 72 72">
-                  <circle cx="36" cy="36" r="28" fill="none" stroke="#f1f5f9" strokeWidth="7" />
-                  <circle cx="36" cy="36" r="28" fill="none" stroke="#f43f5e" strokeWidth="7"
-                    strokeDasharray={`${2 * Math.PI * 28 * citationPct / 100} ${2 * Math.PI * 28}`}
-                    strokeLinecap="round" transform="rotate(-90 36 36)" />
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-lg font-extrabold text-rose-600 leading-none tabular-nums">{CLUB_STATS.districtCitationScore}</span>
-                  <span className="text-[9px] text-slate-400 leading-none mt-0.5">/{CLUB_STATS.districtCitationMax}</span>
-                </div>
-              </div>
-              <div className="flex-1 space-y-1.5">
-                {CITATION_CHECKLIST.map(c => (
-                  <div key={c.criterion} className="flex items-center justify-between gap-1">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                        style={{ background: c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444' }} />
-                      <span className="text-[11px] text-slate-600 truncate">{c.criterion.split(' ')[0]}</span>
+              <div className="space-y-2.5">
+                {[
+                  { label:'Active',    value: CLUB_STATS.activeMembers,                              color:'#003DA5' },
+                  { label:'Male',      value: 95,                                                    color:'#0891b2' },
+                  { label:'Female',    value: 28,                                                    color:'#e11d48' },
+                  { label:'Honorary',  value: CLUB_STATS.honoraryMembers,                            color:'#9333ea' },
+                  { label:'Associate', value: CLUB_STATS.associateMembers,                           color:'#0891b2' },
+                  { label:'Inactive',  value: CLUB_STATS.totalMembers - CLUB_STATS.activeMembers,    color:'#94a3b8' },
+                ].map(s => (
+                  <div key={s.label}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs text-slate-500">{s.label}</span>
+                      <span className="text-xs font-semibold tabular-nums" style={{ color: s.color }}>{s.value}</span>
                     </div>
-                    <span className="text-[11px] font-bold tabular-nums flex-shrink-0"
-                      style={{ color: c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444' }}>
-                      {c.earned}/{c.points}
-                    </span>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width:`${(s.value/CLUB_STATS.totalMembers)*100}%`, backgroundColor: s.color }} />
+                    </div>
                   </div>
                 ))}
               </div>
             </div>
-            <div className="flex gap-2 pt-2 border-t border-slate-100">
+            <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-xs text-slate-500">Terminated this RY</span>
+              <span className="text-xs font-semibold text-slate-700">{CLUB_STATS.terminatedThisYear}</span>
+            </div>
+          </CardContent>
+        </Card></CardWrapper>
+
+        {/* District Citation */}
+        <CardWrapper id="citation"><Card className="h-full flex flex-col overflow-hidden">
+          <CardHeader className="pb-0">
+            <CardTitle className="text-sm">District Citation</CardTitle>
+            <CardDescription className="text-xs">RY 2026–27 scorecard</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-3 flex-1 flex flex-col justify-between">
+
+            {/* Centered ring */}
+            <div className="flex flex-col items-center mb-4">
+              <div className="relative">
+                <svg width="110" height="110" viewBox="0 0 110 110">
+                  <circle cx="55" cy="55" r="44" fill="none" stroke="#f1f5f9" strokeWidth="10" />
+                  <circle cx="55" cy="55" r="44" fill="none" stroke="#f43f5e" strokeWidth="10"
+                    strokeDasharray={`${2 * Math.PI * 44 * citationPct / 100} ${2 * Math.PI * 44}`}
+                    strokeLinecap="round" transform="rotate(-90 55 55)" />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-extrabold text-rose-600 leading-none tabular-nums">{CLUB_STATS.districtCitationScore}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Criteria rows with progress bars */}
+            <div className="flex-1 space-y-2.5">
+              {CITATION_CHECKLIST.map(c => {
+                const color = c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444'
+                const pct   = Math.round((c.earned / c.points) * 100)
+                return (
+                  <div key={c.criterion}>
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                        <span className="text-xs text-slate-600 truncate">{c.criterion}</span>
+                      </div>
+                      <span className="text-xs font-bold tabular-nums ml-2 flex-shrink-0" style={{ color }}>{c.earned}</span>
+                    </div>
+                    <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* Legend */}
+            <div className="flex gap-3 pt-3 mt-2 border-t border-slate-100">
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[11px] text-slate-500">Complete</span></div>
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] text-slate-500">Partial</span></div>
               <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[11px] text-slate-500">Incomplete</span></div>
             </div>
           </CardContent>
-        </Card>
+        </Card></CardWrapper>
       </div>
 
-      {/* Row 2: Member Growth + Events */}
+      {/* Row 2: Dynamic chart + Events */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-3">
         <Card className="xl:col-span-2">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between flex-wrap gap-2">
               <div>
-                <CardTitle className="text-sm">Membership</CardTitle>
-                <CardDescription className="text-xs">RY 2026–27 analysis</CardDescription>
+                <CardTitle className="text-sm">
+                  { activeCard === 'avenue'    ? 'Avenue of Service — Projects'
+                  : activeCard === 'trf'       ? 'TRF Contribution — Breakdown'
+                  : activeCard === 'membership'? 'Membership — Growth Analysis'
+                  :                             'District Citation — Scorecard' }
+                </CardTitle>
+                <CardDescription className="text-xs">
+                  { activeCard === 'avenue'    ? 'Completed projects per avenue this RY'
+                  : activeCard === 'trf'       ? 'Fund-wise contribution vs goal'
+                  : activeCard === 'membership'? 'RY 2026–27 member trend'
+                  :                             'Points earned per criterion' }
+                </CardDescription>
               </div>
-              {/* Filter tabs */}
-              <div className="flex gap-1 flex-wrap">
-                {[
-                  { key: 'all',      label: 'All',       color: '#003DA5' },
-                  { key: 'male',     label: 'Male',      color: '#0891b2' },
-                  { key: 'female',   label: 'Female',    color: '#e11d48' },
-                  { key: 'honorary', label: 'Honorary',  color: '#9333ea' },
-                ].map(f => (
-                  <button key={f.key} onClick={() => setMemberFilter(f.key)}
-                    className="px-3 py-1 rounded-md text-xs font-semibold transition-all"
-                    style={memberFilter === f.key
-                      ? { backgroundColor: f.color, color: '#fff' }
-                      : { backgroundColor: '#f1f5f9', color: '#64748b' }}>
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+              {/* Membership filter tabs (only visible for membership card) */}
+              {activeCard === 'membership' && (
+                <div className="flex gap-1 flex-wrap">
+                  {[
+                    { key:'all',      label:'All',      color:'#003DA5' },
+                    { key:'male',     label:'Male',     color:'#0891b2' },
+                    { key:'female',   label:'Female',   color:'#e11d48' },
+                    { key:'honorary', label:'Honorary', color:'#9333ea' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setMemberFilter(f.key)}
+                      className="px-3 py-1 rounded-md text-xs font-semibold transition-all"
+                      style={memberFilter === f.key
+                        ? { backgroundColor: f.color, color: '#fff' }
+                        : { backgroundColor: '#f1f5f9', color: '#64748b' }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </CardHeader>
+
           <CardContent className="pt-0">
-            {/* Summary strip */}
-            <div className="grid grid-cols-3 gap-2 mb-3">
-              {[
-                { label: 'Male',     value: 95, new: 5, color: '#0891b2', key: 'male'     },
-                { label: 'Female',   value: 28, new: 3, color: '#e11d48', key: 'female'   },
-                { label: 'Honorary', value: 19, new: 0, color: '#9333ea', key: 'honorary' },
-              ].map(s => (
-                <div key={s.key}
-                  onClick={() => setMemberFilter(memberFilter === s.key ? 'all' : s.key)}
-                  className="rounded-lg px-3 py-2 cursor-pointer transition-all border"
-                  style={memberFilter === s.key || memberFilter === 'all'
-                    ? { borderColor: s.color, background: s.color + '10' }
-                    : { borderColor: '#e2e8f0', background: '#f8fafc', opacity: 0.5 }}>
-                  <p className="text-xs font-medium text-slate-500">{s.label}</p>
-                  <p className="text-xl font-extrabold tabular-nums leading-tight" style={{ color: s.color }}>{s.value}</p>
-                  {s.new > 0 && <p className="text-[10px] text-green-600 font-semibold">+{s.new} new</p>}
-                  {s.new === 0 && <p className="text-[10px] text-slate-400">No change</p>}
-                </div>
-              ))}
-            </div>
-            {/* Chart */}
-            <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={MEMBER_GROWTH}>
-                <defs>
+
+            {/* ── MEMBERSHIP chart ─────────────────────────────── */}
+            {activeCard === 'membership' && (
+              <>
+                <div className="grid grid-cols-3 gap-2 mb-3">
                   {[
-                    { id: 'gradMale', color: '#0891b2' },
-                    { id: 'gradFem',  color: '#e11d48' },
-                    { id: 'gradHon',  color: '#9333ea' },
-                  ].map(g => (
-                    <linearGradient key={g.id} id={g.id} x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={g.color} stopOpacity={0.12} />
-                      <stop offset="100%" stopColor={g.color} stopOpacity={0} />
-                    </linearGradient>
+                    { label:'Male',     value:95, new:5, color:'#0891b2', key:'male'     },
+                    { label:'Female',   value:28, new:3, color:'#e11d48', key:'female'   },
+                    { label:'Honorary', value:19, new:0, color:'#9333ea', key:'honorary' },
+                  ].map(s => (
+                    <div key={s.key} onClick={() => setMemberFilter(memberFilter === s.key ? 'all' : s.key)}
+                      className="rounded-lg px-3 py-2 cursor-pointer transition-all border"
+                      style={memberFilter === s.key || memberFilter === 'all'
+                        ? { borderColor: s.color, background: s.color + '10' }
+                        : { borderColor: '#e2e8f0', background: '#f8fafc', opacity: 0.5 }}>
+                      <p className="text-xs font-medium text-slate-500">{s.label}</p>
+                      <p className="text-xl font-extrabold tabular-nums leading-tight" style={{ color: s.color }}>{s.value}</p>
+                      {s.new > 0 ? <p className="text-[10px] text-green-600 font-semibold">+{s.new} new</p>
+                                 : <p className="text-[10px] text-slate-400">No change</p>}
+                    </div>
                   ))}
-                </defs>
-                <CartesianGrid vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="month" tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6 }} />
-                {[
-                  { key: 'male',     stroke: '#0891b2', fill: 'url(#gradMale)', name: 'Male'     },
-                  { key: 'female',   stroke: '#e11d48', fill: 'url(#gradFem)',  name: 'Female'   },
-                  { key: 'honorary', stroke: '#9333ea', fill: 'url(#gradHon)',  name: 'Honorary' },
-                ].map(({ key, stroke, fill, name }) => {
-                  const active = memberFilter === 'all' || memberFilter === key
-                  return (
-                    <Area key={key} type="monotone" dataKey={key} stroke={stroke} name={name}
-                      strokeWidth={active ? 2.5 : 1}
-                      strokeOpacity={active ? 1 : 0.2}
-                      fill={active ? fill : 'transparent'}
-                      dot={active ? { r: 3, fill: stroke, strokeWidth: 1.5, stroke: 'white' } : false}
-                      activeDot={{ r: 5 }} />
-                  )
-                })}
-              </AreaChart>
-            </ResponsiveContainer>
+                </div>
+                <ResponsiveContainer width="100%" height={180}>
+                  <AreaChart data={MEMBER_GROWTH}>
+                    <defs>
+                      {[['gradMale','#0891b2'],['gradFem','#e11d48'],['gradHon','#9333ea']].map(([id,c]) => (
+                        <linearGradient key={id} id={id} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={c} stopOpacity={0.12} />
+                          <stop offset="100%" stopColor={c} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="month" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} width={28} />
+                    <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} />
+                    {[
+                      { key:'male',     stroke:'#0891b2', fill:'url(#gradMale)', name:'Male'     },
+                      { key:'female',   stroke:'#e11d48', fill:'url(#gradFem)',  name:'Female'   },
+                      { key:'honorary', stroke:'#9333ea', fill:'url(#gradHon)',  name:'Honorary' },
+                    ].map(({ key, stroke, fill, name }) => {
+                      const on = memberFilter === 'all' || memberFilter === key
+                      return (
+                        <Area key={key} type="monotone" dataKey={key} stroke={stroke} name={name}
+                          strokeWidth={on ? 2.5 : 1} strokeOpacity={on ? 1 : 0.2}
+                          fill={on ? fill : 'transparent'}
+                          dot={on ? { r:3, fill:stroke, strokeWidth:1.5, stroke:'white' } : false}
+                          activeDot={{ r:5 }} />
+                      )
+                    })}
+                  </AreaChart>
+                </ResponsiveContainer>
+              </>
+            )}
+
+            {/* ── AVENUE OF SERVICE chart ───────────────────────── */}
+            {activeCard === 'avenue' && (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={AVENUE_DATA} layout="vertical" margin={{ left:8, right:24 }}>
+                  <CartesianGrid horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis type="category" dataKey="name" width={130} tick={{ fontSize:11, fill:'#64748b' }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} />
+                  <Bar dataKey="completed" name="Completed" radius={[0,4,4,0]}>
+                    {AVENUE_DATA.map((a, i) => <Cell key={i} fill={a.color} />)}
+                  </Bar>
+                  <Bar dataKey="target" name="Target" radius={[0,4,4,0]} fill="#f1f5f9" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+
+            {/* ── TRF chart ─────────────────────────────────────── */}
+            {activeCard === 'trf' && (() => {
+              const trfData = [
+                { name:'Annual Fund',    value: CLUB_STATS.trfAnnualFund, color:'#ca8a04' },
+                { name:'Polio Plus',     value: CLUB_STATS.trfPolioPlus,  color:'#e11d48' },
+                { name:'Other / Endow.', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - CLUB_STATS.trfPolioPlus, color:'#9333ea' },
+              ]
+              return (
+                <>
+                  <div className="grid grid-cols-3 gap-2 mb-3">
+                    {trfData.map(t => (
+                      <div key={t.name} className="rounded-lg px-3 py-2 border border-slate-100" style={{ background: t.color + '10' }}>
+                        <p className="text-[11px] text-slate-500">{t.name}</p>
+                        <p className="text-lg font-extrabold tabular-nums" style={{ color: t.color }}>{fmtINR(t.value)}</p>
+                      </div>
+                    ))}
+                  </div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={trfData} margin={{ left:0, right:16 }}>
+                      <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                      <XAxis dataKey="name" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} width={48} tickFormatter={v => `₹${(v/1000).toFixed(0)}K`} />
+                      <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} formatter={v => fmtINR(v)} />
+                      <Bar dataKey="value" name="Amount" radius={[4,4,0,0]}>
+                        {trfData.map((t, i) => <Cell key={i} fill={t.color} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </>
+              )
+            })()}
+
+            {/* ── DISTRICT CITATION chart ───────────────────────── */}
+            {activeCard === 'citation' && (() => {
+              const citData = CITATION_CHECKLIST.map(c => ({
+                name:   c.criterion.split(' ')[0],
+                earned: c.earned,
+                max:    c.points,
+                color:  c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444',
+              }))
+              return (
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart data={citData} margin={{ left:0, right:16 }}>
+                    <CartesianGrid vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} width={24} />
+                    <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} />
+                    <Legend wrapperStyle={{ fontSize:11 }} />
+                    <Bar dataKey="earned" name="Earned" radius={[4,4,0,0]}>
+                      {citData.map((c, i) => <Cell key={i} fill={c.color} />)}
+                    </Bar>
+                    <Bar dataKey="max" name="Max" fill="#f1f5f9" radius={[4,4,0,0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )
+            })()}
+
           </CardContent>
         </Card>
 

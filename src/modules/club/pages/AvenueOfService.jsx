@@ -61,6 +61,14 @@ const AVENUE_PROJECTS = {
       { id:4, date:'Nov 1, 2025',  title:'Press Conference — Awards',  cost:8000,   beneficiaries:150, manHours:12,  rotarians:10, rotaractors:0  },
     ],
   },
+  PPH: {
+    label: 'PPH Camp', color: '#0891b2',
+    camps: [
+      { id:1, date:'Jan 25, 2026', location:'Kopri, Thane East',   children:280, rotarians:12, rotaractors:8,  coordinator:'Sunita Patil'  },
+      { id:2, date:'Nov 2, 2025',  location:'Wagle Estate, Thane', children:320, rotarians:15, rotaractors:10, coordinator:'Ramesh Joshi'  },
+      { id:3, date:'Feb 2, 2025',  location:'Mumbra, Thane',       children:210, rotarians:10, rotaractors:6,  coordinator:'Priya Desai'   },
+    ],
+  },
 }
 
 const MEETING_TYPE_STYLE = {
@@ -70,15 +78,18 @@ const MEETING_TYPE_STYLE = {
 }
 
 export default function AvenueOfService() {
-  const [active, setActive] = useState('ALL')
-  const [year, setYear]     = useState('2026–27')
-  const [filter, setFilter] = useState('All')
+  const [active, setActive]   = useState('ALL')
+  const [year, setYear]       = useState('2026–27')
+  const [filter, setFilter]   = useState('All')
+  const [popup, setPopup]     = useState(null)   // 'trial' | 'demo'
+  const [success, setSuccess] = useState(null)
 
   const isAll    = active === 'ALL'
   const avenue   = isAll ? null : AVENUE_PROJECTS[active]
   const isClub   = active === 'CM'
-  const rawItems = isClub ? avenue.meetings : (!isAll ? avenue.projects : [])
-  const items    = (!isAll && avenue?.hasFilter && filter !== 'All')
+  const isPPH    = active === 'PPH'
+  const rawItems = isClub ? avenue.meetings : isPPH ? avenue.camps : (!isAll ? avenue.projects : [])
+  const items    = (!isAll && !isPPH && avenue?.hasFilter && filter !== 'All')
     ? rawItems.filter(p =>
         filter === 'One-time Projects'
           ? p.projectType === 'One-time'
@@ -95,12 +106,42 @@ export default function AvenueOfService() {
   // Per-avenue stats
   const avgAtt  = isClub ? Math.round(avenue.meetings.reduce((s, m) => s + m.pct, 0) / avenue.meetings.length) : null
   const bestAtt = isClub ? Math.max(...avenue.meetings.map(m => m.pct)) : null
-  const avBen   = (!isClub && !isAll) ? items.reduce((s, p) => s + p.beneficiaries, 0) : null
-  const avCost  = (!isClub && !isAll) ? items.reduce((s, p) => s + p.cost, 0) : null
-  const avHours = (!isClub && !isAll) ? items.reduce((s, p) => s + p.manHours, 0) : null
+  const avBen   = (!isClub && !isAll && !isPPH) ? items.reduce((s, p) => s + p.beneficiaries, 0) : null
+  const avCost  = (!isClub && !isAll && !isPPH) ? items.reduce((s, p) => s + p.cost, 0) : null
+  const avHours = (!isClub && !isAll && !isPPH) ? items.reduce((s, p) => s + p.manHours, 0) : null
+
+  // PPH stats
+  const pphChildren   = isPPH ? items.reduce((s, c) => s + c.children,   0) : 0
+  const pphRotarians  = isPPH ? items.reduce((s, c) => s + c.rotarians,  0) : 0
+  const pphRotaractors= isPPH ? items.reduce((s, c) => s + c.rotaractors,0) : 0
 
   return (
     <div className="space-y-5">
+
+      {/* Free Trial banner */}
+      <div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-xl" style={{ background:'linear-gradient(135deg,#16a34a,#15803d)' }}>
+        <div className="text-white">
+          <p className="text-sm font-bold">Avenue of Service Module</p>
+          <p className="text-xs opacity-80 mt-0.5">Track projects, beneficiaries and man hours across all six avenues</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={() => setPopup('demo')}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/40 text-white hover:bg-white/10 transition-colors"
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Demo / Tutorial
+          </button>
+          <button
+            onClick={() => setPopup('trial')}
+            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-white hover:opacity-90 transition-opacity"
+            style={{ color:'#16a34a' }}
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Free Trial — 1 Month
+          </button>
+        </div>
+      </div>
 
       {/* Avenue tab bar — top of page */}
       <div className="flex gap-1 flex-wrap bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
@@ -143,6 +184,13 @@ export default function AvenueOfService() {
           <StatCard label="Best Attendance"  value={`${bestAtt}%`}            sub="Single meeting high"       subColor="up"    accent={avenue.color} />
           <StatCard label="Members on Roll"  value={142}                      sub="Total club members"        subColor="muted" accent={avenue.color} />
         </div>
+      ) : isPPH ? (
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+          <StatCard label="Total Camps"          value={items.length}             sub={`RY ${year}`}              subColor="up"    accent={avenue.color} />
+          <StatCard label="Children Vaccinated"  value={pphChildren.toLocaleString()} sub="Lives impacted"       subColor="up"    accent={avenue.color} />
+          <StatCard label="Rotarians Involved"   value={pphRotarians}             sub="Volunteers"                subColor="muted" accent={avenue.color} />
+          <StatCard label="Rotaractors"          value={pphRotaractors}           sub="Youth volunteers"          subColor="muted" accent={avenue.color} />
+        </div>
       ) : (
         <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           <StatCard label="Projects"         value={items.length}             sub={`${avenue.label}`}         subColor="up"    accent={avenue.color} />
@@ -158,7 +206,9 @@ export default function AvenueOfService() {
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <CardTitle className="text-sm">{isAll ? 'All Avenues' : avenue.label}</CardTitle>
-              <CardDescription className="text-xs">{isAll ? 'Summary by avenue' : (isClub ? 'Meeting records' : 'Project records')} — {year}</CardDescription>
+              <CardDescription className="text-xs">
+                {isAll ? 'Summary by avenue' : isClub ? 'Meeting records' : isPPH ? 'Camp records' : 'Project records'} — {year}
+              </CardDescription>
             </div>
             {!isAll && (
               <div className="flex gap-2 flex-wrap">
@@ -167,7 +217,7 @@ export default function AvenueOfService() {
                   {YEARS.map(y => <option key={y}>{y}</option>)}
                 </select>
                 <button className="text-xs font-semibold text-white px-3 py-1.5 rounded-md" style={{ backgroundColor: avenue.color }}>
-                  + {isClub ? 'Add Meeting' : 'Add Project'}
+                  + {isClub ? 'Add Meeting' : isPPH ? 'Add Camp' : 'Add Project'}
                 </button>
               </div>
             )}
@@ -259,6 +309,20 @@ export default function AvenueOfService() {
                         <td className="px-3 py-3 text-center text-slate-400">—</td>
                       </tr>
                     )
+                    if (key === 'PPH') return (
+                      <tr key={key} className="hover:bg-slate-50">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: av.color }} />
+                            <span className="font-semibold text-slate-800">{av.label}</span>
+                          </div>
+                        </td>
+                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{av.camps.length} camps</td>
+                        <td className="px-3 py-3 text-center font-semibold text-slate-700 tabular-nums">{av.camps.reduce((s,c)=>s+c.children,0).toLocaleString()} children</td>
+                        <td className="px-3 py-3 text-right text-slate-400">—</td>
+                        <td className="px-3 py-3 text-center text-slate-400">—</td>
+                      </tr>
+                    )
                     const ps = av.projects
                     const ben   = ps.reduce((s, p) => s + p.beneficiaries, 0)
                     const cost  = ps.reduce((s, p) => s + p.cost, 0)
@@ -278,6 +342,49 @@ export default function AvenueOfService() {
                       </tr>
                     )
                   })}
+                </tbody>
+              </table>
+            </div>
+          ) : isPPH ? (
+            <div className="overflow-x-auto rounded-lg border border-slate-200">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-200">
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 w-10">Sr.</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Camp Date</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Location</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Children Vaccinated</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotarians</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Rotaractors</th>
+                    <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Coordinator</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Edit</th>
+                    <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Delete</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {items.map((camp, i) => (
+                    <tr key={camp.id} className="hover:bg-slate-50">
+                      <td className="px-3 py-3 text-xs text-slate-400">{i + 1}</td>
+                      <td className="px-3 py-3 text-slate-500 text-xs whitespace-nowrap">{camp.date}</td>
+                      <td className="px-3 py-3 font-semibold text-slate-800">{camp.location}</td>
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-lg font-extrabold text-cyan-600 tabular-nums">{camp.children}</span>
+                      </td>
+                      <td className="px-3 py-3 text-center tabular-nums text-slate-600">{camp.rotarians}</td>
+                      <td className="px-3 py-3 text-center tabular-nums text-slate-600">{camp.rotaractors}</td>
+                      <td className="px-3 py-3 text-slate-600 text-xs">{camp.coordinator}</td>
+                      <td className="px-3 py-3 text-center">
+                        <button className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50">
+                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                        </button>
+                      </td>
+                      <td className="px-3 py-3 text-center">
+                        <button className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50">
+                          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -369,13 +476,67 @@ export default function AvenueOfService() {
           )}
           {!isAll && (
             <p className="text-xs text-slate-400 mt-2">
-              {items.length} {isClub ? 'meetings' : 'projects'}
-              {avenue?.hasFilter && filter !== 'All' ? ` · ${filter}` : ''}
+              {items.length} {isClub ? 'meetings' : isPPH ? `camps · ${pphChildren} children vaccinated` : 'projects'}
+              {!isClub && !isPPH && avenue?.hasFilter && filter !== 'All' ? ` · ${filter}` : ''}
               {' · '}{year}
             </p>
           )}
         </CardContent>
       </Card>
+
+      {/* Popups */}
+      {popup === 'trial' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Start your 1-month free trial?</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">You'll get full access to the Avenue of Service module for 30 days at no cost.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setPopup(null); setSuccess(true) }} className="flex-1 text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#16a34a' }}>Yes, Proceed</button>
+              <button onClick={() => setPopup(null)} className="flex-1 text-xs font-semibold text-slate-600 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {popup === 'demo' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#16a34a" strokeWidth="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Request a demo / tutorial?</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Our team will schedule a live walkthrough of the Avenue of Service module at a time convenient for you.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setPopup(null); setSuccess(true) }} className="flex-1 text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#16a34a' }}>Yes, Proceed</button>
+              <button onClick={() => setPopup(null)} className="flex-1 text-xs font-semibold text-slate-600 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {success && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+              <svg width="28" height="28" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Request Received!</p>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Our team will contact you shortly.</p>
+            </div>
+            <button onClick={() => setSuccess(null)} className="w-full text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#16a34a' }}>Got it</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

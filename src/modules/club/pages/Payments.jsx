@@ -70,10 +70,12 @@ const ExcelIcon = () => (
 
 /* ── Main component ───────────────────────────────────────────────── */
 export default function Payments() {
-  const [search, setSearch]       = useState('')
+  const [search, setSearch]         = useState('')
   const [typeFilter, setTypeFilter] = useState('All')
-  const [duesYear, setDuesYear]   = useState('2026–27')
-  const [copied, setCopied]       = useState(null)
+  const [duesYear, setDuesYear]     = useState('2026–27')
+  const [copied, setCopied]         = useState(null)
+  const [popup, setPopup]           = useState(null)
+  const [success, setSuccess]       = useState(null)
 
   const dues = DUES_DATA[duesYear] ?? []
   const filtered = dues.filter(d => {
@@ -97,6 +99,32 @@ export default function Payments() {
   /* ── KPI strip ──────────────────────────────────────────────────── */
   return (
     <div className="space-y-5">
+
+      {/* Free Trial banner */}
+      <div className="flex items-center justify-between flex-wrap gap-3 px-4 py-3 rounded-xl" style={{ background:'linear-gradient(135deg,#003DA5,#1e5fb5)' }}>
+        <div className="text-white">
+          <p className="text-sm font-bold">Membership Dues Module</p>
+          <p className="text-xs opacity-80 mt-0.5">Digital dues collection, reminders, payment links and receipts</p>
+        </div>
+        <div className="flex gap-2 flex-shrink-0">
+          <button
+            onClick={() => setPopup('demo')}
+            className="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-2 rounded-xl border border-white/40 text-white hover:bg-white/10 transition-colors"
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Demo / Tutorial
+          </button>
+          <button
+            onClick={() => setPopup('trial')}
+            className="flex items-center gap-1.5 text-xs font-bold px-3.5 py-2 rounded-xl bg-white hover:opacity-90 transition-opacity"
+            style={{ color:'#003DA5' }}
+          >
+            <svg width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Free Trial — 1 Month
+          </button>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Dues Collected"  value={fmtINR(collected)} sub={`${pct}% of members paid`}                               subColor="up"    accent="#16a34a" />
         <StatCard label="Dues Pending"    value={fmtINR(pending)}   sub={`${payable.length - paidCount} members outstanding`}      subColor="down"  accent="#e11d48" />
@@ -355,6 +383,60 @@ export default function Payments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Popups */}
+      {popup === 'trial' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#003DA5" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Start your 1-month free trial?</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">You'll get full access to the Membership Dues module for 30 days at no cost.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setPopup(null); setSuccess(true) }} className="flex-1 text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#003DA5' }}>Yes, Proceed</button>
+              <button onClick={() => setPopup(null)} className="flex-1 text-xs font-semibold text-slate-600 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {popup === 'demo' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" fill="none" stroke="#003DA5" strokeWidth="2" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-800">Request a demo / tutorial?</p>
+                <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">Our team will schedule a live walkthrough of the Membership Dues module at a time convenient for you.</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setPopup(null); setSuccess(true) }} className="flex-1 text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#003DA5' }}>Yes, Proceed</button>
+              <button onClick={() => setPopup(null)} className="flex-1 text-xs font-semibold text-slate-600 py-2.5 rounded-xl border border-slate-200 hover:bg-slate-50">Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {success && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor:'rgba(15,23,42,0.45)' }}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+              <svg width="28" height="28" fill="none" stroke="#16a34a" strokeWidth="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div>
+              <p className="text-sm font-bold text-slate-800">Request Received!</p>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">Our team will contact you shortly.</p>
+            </div>
+            <button onClick={() => setSuccess(null)} className="w-full text-xs font-bold text-white py-2.5 rounded-xl" style={{ backgroundColor:'#003DA5' }}>Got it</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
