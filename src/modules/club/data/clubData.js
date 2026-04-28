@@ -23,7 +23,7 @@ export const CLUB_STATS = {
   trfMajorDonors: 3,
   phfContributors: 18,
   trfPhsm: 1,
-  trfCSR: 2,
+  trfEPF: 1,
   trfEndowment: 1,
   serviceProjects: 12,
   districtCitationScore: 42,
@@ -56,12 +56,13 @@ export const ATTENDANCE_DATA = [
 ]
 
 export const AVENUE_DATA = [
-  { name: 'Club Service',          completed: 9,  target: 10, color: '#003DA5', beneficiaries: 380 },
-  { name: 'Community Service',     completed: 8,  target: 10, color: '#16a34a', beneficiaries: 2400 },
-  { name: 'New Generation',        completed: 6,  target: 10, color: '#f59e0b', beneficiaries: 1100 },
-  { name: 'Vocational Service',    completed: 5,  target: 10, color: '#0891b2', beneficiaries: 720 },
-  { name: 'Public Image',          completed: 4,  target: 10, color: '#e11d48', beneficiaries: 150 },
-  { name: 'International Service', completed: 3,  target: 10, color: '#9333ea', beneficiaries: 220 },
+  { name: 'Club Service',          completed: 6,  target: 10, color: '#003DA5', beneficiaries: 380  },
+  { name: 'Community Service',     completed: 4,  target: 10, color: '#16a34a', beneficiaries: 1650 },
+  { name: 'New Generation',        completed: 4,  target: 10, color: '#f59e0b', beneficiaries: 309  },
+  { name: 'Vocational Service',    completed: 3,  target: 10, color: '#0891b2', beneficiaries: 260  },
+  { name: 'Public Image',          completed: 4,  target: 10, color: '#e11d48', beneficiaries: 2710 },
+  { name: 'International Service', completed: 3,  target: 10, color: '#9333ea', beneficiaries: 228  },
+  { name: 'PPH Camp',              completed: 3,  target: 5,  color: '#0891b2', beneficiaries: 810  },
 ]
 
 export const PROJECTS = [

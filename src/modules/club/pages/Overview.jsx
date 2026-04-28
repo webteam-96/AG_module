@@ -214,11 +214,12 @@ function OverviewContent() {
                 </div>
                 <div className="flex-1 space-y-2.5">
                   {[
-                    { label:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,   max: CLUB_STATS.trfGoal, color:'#003DA5', display: fmtINR(CLUB_STATS.trfAnnualFund)           },
-                    { label:'PHF',          value: CLUB_STATS.phfContributors, max: 30,                 color:'#9333ea', display: `${CLUB_STATS.phfContributors} members`     },
-                    { label:'PHSM',         value: CLUB_STATS.trfPhsm,         max: 5,                  color:'#0891b2', display: `${CLUB_STATS.trfPhsm} members`             },
-                    { label:'Major Donors', value: CLUB_STATS.trfMajorDonors,  max: 5,                  color:'#ca8a04', display: `${CLUB_STATS.trfMajorDonors}`              },
-                    { label:'CSR Projects', value: CLUB_STATS.trfCSR,          max: 5,                  color:'#16a34a', display: `${CLUB_STATS.trfCSR} projects`             },
+                    { label:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,   max: CLUB_STATS.trfGoal, color:'#003DA5', display: fmtINR(CLUB_STATS.trfAnnualFund)       },
+                    { label:'PHF',          value: CLUB_STATS.phfContributors, max: 30,                 color:'#9333ea', display: `${CLUB_STATS.phfContributors} members` },
+                    { label:'PHSM',         value: CLUB_STATS.trfPhsm,         max: 5,                  color:'#0891b2', display: `${CLUB_STATS.trfPhsm} members`         },
+                    { label:'Major Donors', value: CLUB_STATS.trfMajorDonors,  max: 5,                  color:'#ca8a04', display: `${CLUB_STATS.trfMajorDonors}`          },
+                    { label:'EPF',          value: CLUB_STATS.trfEPF,          max: 5,                  color:'#f59e0b', display: `${CLUB_STATS.trfEPF}`                   },
+                    { label:'Endowment',    value: CLUB_STATS.trfEndowment,    max: 5,                  color:'#e11d48', display: `${CLUB_STATS.trfEndowment}`             },
                   ].map(r => (
                     <div key={r.label}>
                       <div className="flex justify-between mb-1">
@@ -436,9 +437,9 @@ function OverviewContent() {
             {/* ── TRF chart ─────────────────────────────────────── */}
             {activeCard === 'trf' && (() => {
               const trfData = [
-                { name:'Annual Fund', value: CLUB_STATS.trfAnnualFund,                                          color:'#003DA5' },
-                { name:'PHF / PHSM',  value: (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000,        color:'#9333ea' },
-                { name:'CSR / Endow', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000, color:'#16a34a' },
+                { name:'Annual Fund', value: CLUB_STATS.trfAnnualFund,                                                      color:'#003DA5' },
+                { name:'PHF / PHSM',  value: (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000,                    color:'#9333ea' },
+                { name:'EPF / Endow', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000, color:'#f59e0b' },
               ]
               return (
                 <>
