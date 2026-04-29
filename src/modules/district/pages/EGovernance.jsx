@@ -61,6 +61,9 @@ function MonthlyReportTab() {
   const [expandedId, setExpandedId] = useState(null)
   const [year, setYear]             = useState('2025-2026')
   const [whatsapp, setWhatsapp]     = useState(false)
+  const [mrSearch, setMrSearch]     = useState('')
+  const [mrPage,   setMrPage]       = useState(0)
+  const MR_PER_PAGE = 20
 
   const onTimeSlots   = CLUB_MONTHLY_REPORTS.reduce((s, c) => s + c.months.filter(m => m === 'S').length, 0)
   const pendingSlots  = CLUB_MONTHLY_REPORTS.reduce((s, c) => s + c.months.filter(m => m === 'P').length, 0)
@@ -68,6 +71,11 @@ function MonthlyReportTab() {
   const compliancePct = Math.round((onTimeSlots / (CLUB_MONTHLY_REPORTS.length * 9)) * 100)
 
   const statuses = MONTHS.map(m => ({ ...m, ...MONTHLY_STATUS[m.id] }))
+
+  const mrFiltered   = CLUB_MONTHLY_REPORTS.filter(c => c.name.toLowerCase().includes(mrSearch.toLowerCase()))
+  const mrTotalPages = Math.ceil(mrFiltered.length / MR_PER_PAGE)
+  const mrSafePage   = Math.min(mrPage, Math.max(0, mrTotalPages - 1))
+  const mrRows       = mrFiltered.slice(mrSafePage * MR_PER_PAGE, (mrSafePage + 1) * MR_PER_PAGE)
 
   return (
     <div className="space-y-5">
@@ -145,6 +153,16 @@ function MonthlyReportTab() {
           <CardDescription className="text-xs">Click any club to see month-by-month detail</CardDescription>
         </CardHeader>
         <CardContent className="pt-0 space-y-2">
+          {/* Search */}
+          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 max-w-sm mb-3">
+            <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input value={mrSearch} onChange={e => { setMrSearch(e.target.value); setMrPage(0) }}
+              placeholder="Search club..."
+              className="flex-1 bg-transparent text-sm outline-none text-slate-600 placeholder-slate-400" />
+          </div>
+
           {/* Legend */}
           <div className="flex gap-4 flex-wrap mb-2">
             {[['S','Submitted','bg-green-500'],['L','Late','bg-red-400'],['P','Pending','bg-amber-400'],['N','Not Started','bg-slate-200']].map(([k,l,c]) => (
@@ -155,7 +173,7 @@ function MonthlyReportTab() {
             ))}
           </div>
 
-          {CLUB_MONTHLY_REPORTS.map(club => {
+          {mrRows.map(club => {
             const submitted = club.months.filter(m => m === 'S').length
             const late      = club.months.filter(m => m === 'L').length
             const pending   = club.months.filter(m => m === 'P').length
@@ -223,6 +241,22 @@ function MonthlyReportTab() {
               </div>
             )
           })}
+          {mrFiltered.length === 0 && (
+            <p className="text-xs text-slate-400 text-center py-6">No clubs match your search.</p>
+          )}
+          {mrTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+              <span className="text-xs text-slate-400">
+                {mrSafePage * MR_PER_PAGE + 1}–{Math.min((mrSafePage + 1) * MR_PER_PAGE, mrFiltered.length)} of {mrFiltered.length} clubs
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setMrPage(p => Math.max(0, p - 1))} disabled={mrSafePage === 0}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">←</button>
+                <button onClick={() => setMrPage(p => Math.min(mrTotalPages - 1, p + 1))} disabled={mrSafePage >= mrTotalPages - 1}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">→</button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
@@ -233,12 +267,19 @@ function MonthlyReportTab() {
    TAB 2 — PPH Camp
 ═══════════════════════════════════════════════════════════════════ */
 function PPHCampTab() {
-  const [search, setSearch] = useState('')
+  const [search,   setSearch]   = useState('')
+  const [pphPage,  setPphPage]  = useState(0)
+  const PPH_PER_PAGE = 15
+
   const filtered = PPH_CAMPS.filter(c =>
     c.club.toLowerCase().includes(search.toLowerCase()) ||
     c.location.toLowerCase().includes(search.toLowerCase()) ||
     c.coordinator.toLowerCase().includes(search.toLowerCase())
   )
+  const pphTotalPages = Math.ceil(filtered.length / PPH_PER_PAGE)
+  const pphSafePage   = Math.min(pphPage, Math.max(0, pphTotalPages - 1))
+  const pphRows       = filtered.slice(pphSafePage * PPH_PER_PAGE, (pphSafePage + 1) * PPH_PER_PAGE)
+
   const totalChildren    = PPH_CAMPS.reduce((s, c) => s + c.children, 0)
   const totalRotarians   = PPH_CAMPS.reduce((s, c) => s + c.rotarians, 0)
   const totalRotaractors = PPH_CAMPS.reduce((s, c) => s + c.rotaractors, 0)
@@ -273,7 +314,7 @@ function PPHCampTab() {
             <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24">
               <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input value={search} onChange={e => setSearch(e.target.value)}
+            <input value={search} onChange={e => { setSearch(e.target.value); setPphPage(0) }}
               placeholder="Search club, location or coordinator..."
               className="flex-1 bg-transparent text-sm outline-none text-slate-600 placeholder-slate-400" />
           </div>
@@ -288,7 +329,7 @@ function PPHCampTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((c, i) => (
+                {pphRows.map((c, i) => (
                   <tr key={c.id} className="hover:bg-slate-50">
                     <td className="px-3 py-3 text-xs text-slate-400 text-center tabular-nums">{i + 1}</td>
                     <td className="px-3 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">{c.club}</td>
@@ -314,6 +355,19 @@ function PPHCampTab() {
               </tfoot>
             </table>
           </div>
+          {pphTotalPages > 1 && (
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100 mt-2">
+              <span className="text-xs text-slate-400">
+                {pphSafePage * PPH_PER_PAGE + 1}–{Math.min((pphSafePage + 1) * PPH_PER_PAGE, filtered.length)} of {filtered.length} camps
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setPphPage(p => Math.max(0, p - 1))} disabled={pphSafePage === 0}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">←</button>
+                <button onClick={() => setPphPage(p => Math.min(pphTotalPages - 1, p + 1))} disabled={pphSafePage >= pphTotalPages - 1}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">→</button>
+              </div>
+            </div>
+          )}
           <p className="text-xs text-slate-400">{filtered.length} of {PPH_CAMPS.length} camps · {totalChildren} children vaccinated total</p>
         </CardContent>
       </Card>
@@ -325,74 +379,110 @@ function PPHCampTab() {
    TAB 3 — District Citation
 ═══════════════════════════════════════════════════════════════════ */
 function CitationTab() {
+  const [search,     setSearch]     = useState('')
+  const [expandedId, setExpandedId] = useState(null)
+  const [page,       setPage]       = useState(0)
+  const CIT_PER_PAGE = 15
+
   const sorted    = [...CLUB_CITATIONS].sort((a, b) => b.total - a.total)
   const distAvg   = Math.round(CLUB_CITATIONS.reduce((s, c) => s + c.total, 0) / CLUB_CITATIONS.length)
   const qualified = CLUB_CITATIONS.filter(c => c.total >= 40).length
 
+  const filtered   = sorted.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
+  const totalPages = Math.ceil(filtered.length / CIT_PER_PAGE)
+  const safePage   = Math.min(page, Math.max(0, totalPages - 1))
+  const pageRows   = filtered.slice(safePage * CIT_PER_PAGE, (safePage + 1) * CIT_PER_PAGE)
+
+  const citPctColor = p => p >= 80 ? '#16a34a' : p >= 50 ? '#f59e0b' : '#ef4444'
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Total Clubs"       value={CLUB_CITATIONS.length} sub="Participating"       subColor="muted" accent="#003DA5" />
-        <StatCard label="District Average"  value={`${distAvg}/50`}       sub="Citation score"      subColor={distAvg >= 40 ? 'up' : 'down'} accent="#9333ea" />
-        <StatCard label="Qualified"         value={qualified}             sub="≥ 40 pts (citation)" subColor="up"    accent="#16a34a" />
-        <StatCard label="Max Score"         value="50"                    sub="Points possible"     subColor="muted" accent="#0891b2" />
+        <StatCard label="Total Clubs"      value={CLUB_CITATIONS.length} sub="Participating"       subColor="muted" accent="#003DA5" />
+        <StatCard label="District Average" value={`${distAvg}/50`}       sub="Citation score"      subColor={distAvg >= 40 ? 'up' : 'down'} accent="#9333ea" />
+        <StatCard label="Qualified"        value={qualified}             sub="≥ 40 pts (citation)" subColor="up"    accent="#16a34a" />
+        <StatCard label="Max Score"        value="50"                    sub="Points possible"     subColor="muted" accent="#0891b2" />
       </div>
 
-      {/* Per-club scorecards */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        {sorted.map((club, rank) => {
-          const pct   = Math.round((club.total / club.max) * 100)
-          const color = ragColor(pct)
-          const isTop = rank < 2
-          return (
-            <Card key={club.id} className={isTop ? 'border-green-200' : ''}>
-              <CardContent className="pt-4 pb-4">
-                {/* Club header */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center text-white flex-shrink-0`}
-                      style={{ backgroundColor: color }}>
-                      {rank + 1}
-                    </span>
-                    <span className="text-sm font-semibold text-slate-800">{club.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl font-extrabold tabular-nums" style={{ color }}>{club.total}</span>
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between flex-wrap gap-3">
+            <div>
+              <CardTitle className="text-sm">Citation Scores — All Clubs</CardTitle>
+              <CardDescription className="text-xs">Ranked by total score · click a row to expand</CardDescription>
+            </div>
+            <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
+              placeholder="Search club..."
+              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-slate-400 placeholder-slate-400 w-48" />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-2">
+          {pageRows.map(club => {
+            const rank   = filtered.indexOf(club)
+            const pct    = Math.round((club.total / club.max) * 100)
+            const color  = citPctColor(pct)
+            const isOpen = expandedId === club.id
+            return (
+              <div key={club.id} className="rounded-xl border border-slate-200 overflow-hidden">
+                <button
+                  onClick={() => setExpandedId(isOpen ? null : club.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left"
+                >
+                  <span className="text-xs font-bold w-6 text-center flex-shrink-0" style={{ color }}>{rank + 1}</span>
+                  <span className="flex-1 text-sm font-semibold text-slate-800 truncate">{club.name}</span>
+                  <div className="flex items-center gap-3 flex-shrink-0">
+                    <div className="w-24 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                      <div className="h-full rounded-full" style={{ width:`${pct}%`, backgroundColor: color }} />
+                    </div>
+                    <span className="text-sm font-extrabold tabular-nums" style={{ color }}>{club.total}</span>
                     <span className="text-xs text-slate-400">/ {club.max}</span>
-                    <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                      style={{ backgroundColor: color + '18', color }}>{pct}%</span>
+                    <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"
+                      className="transition-transform" style={{ transform: isOpen ? 'rotate(90deg)' : 'none' }}>
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
                   </div>
-                </div>
-                {/* Overall bar */}
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden mb-3">
-                  <div className="h-full rounded-full transition-all" style={{ width:`${pct}%`, backgroundColor: color }} />
-                </div>
-                {/* Per-criterion breakdown */}
-                <div className="space-y-2">
-                  {CITATION_CRITERIA.map((crit, i) => {
-                    const earned  = club.criteria[i]
-                    const cPct    = Math.round((earned / crit.points) * 100)
-                    const cColor  = cPct === 100 ? '#16a34a' : cPct >= 60 ? '#f59e0b' : '#ef4444'
-                    return (
-                      <div key={i}>
-                        <div className="flex justify-between mb-0.5">
-                          <span className="text-[11px] text-slate-500 truncate">{crit.criterion}</span>
-                          <span className="text-[11px] font-bold tabular-nums ml-2 flex-shrink-0" style={{ color: cColor }}>
-                            {earned}/{crit.points}
-                          </span>
+                </button>
+                {isOpen && (
+                  <div className="border-t border-slate-100 px-4 pb-3 pt-2 bg-slate-50 space-y-2">
+                    {CITATION_CRITERIA.map((crit, i) => {
+                      const earned = club.criteria[i]
+                      const cPct   = Math.round((earned / crit.points) * 100)
+                      const cColor = citPctColor(cPct)
+                      return (
+                        <div key={i}>
+                          <div className="flex justify-between mb-0.5">
+                            <span className="text-[11px] text-slate-500">{crit.criterion}</span>
+                            <span className="text-[11px] font-bold tabular-nums ml-2" style={{ color: cColor }}>{earned}/{crit.points}</span>
+                          </div>
+                          <div className="h-1 bg-slate-200 rounded-full overflow-hidden">
+                            <div className="h-full rounded-full" style={{ width:`${cPct}%`, backgroundColor: cColor }} />
+                          </div>
                         </div>
-                        <div className="h-1 bg-slate-100 rounded-full overflow-hidden">
-                          <div className="h-full rounded-full" style={{ width:`${cPct}%`, backgroundColor: cColor }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
-      </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+          {filtered.length === 0 && (
+            <p className="text-sm text-slate-400 text-center py-10">No clubs match your search.</p>
+          )}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between pt-3 border-t border-slate-100">
+              <span className="text-xs text-slate-400">
+                {safePage * CIT_PER_PAGE + 1}–{Math.min((safePage + 1) * CIT_PER_PAGE, filtered.length)} of {filtered.length} clubs
+              </span>
+              <div className="flex gap-1">
+                <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">←</button>
+                <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}
+                  className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">→</button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
