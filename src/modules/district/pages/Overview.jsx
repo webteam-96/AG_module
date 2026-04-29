@@ -52,23 +52,6 @@ const avgProjects   = avgOf('serviceProjects')
 const INR_TO_USD = 84
 const fmtUSD = v => v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`
 
-// ── RAG helpers ──────────────────────────────────────────────────
-const rag = pct => pct > 75 ? 'green' : pct >= 50 ? 'amber' : 'red'
-const RAG = {
-  green: { dot:'bg-green-500', text:'text-green-700' },
-  amber: { dot:'bg-amber-400', text:'text-amber-700' },
-  red:   { dot:'bg-red-500',   text:'text-red-600'   },
-}
-function RagCell({ pct, label }) {
-  const s = RAG[rag(pct)]
-  return (
-    <div className="flex items-center gap-1.5">
-      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${s.dot}`} />
-      <span className={`text-xs font-semibold tabular-nums ${s.text}`}>{label}</span>
-    </div>
-  )
-}
-
 // ── Pagination ───────────────────────────────────────────────────
 function Pagination({ page, total, perPage, setPage }) {
   const totalPages = Math.ceil(total / perPage)
@@ -109,19 +92,12 @@ export default function DistrictOverview() {
   const [activeCard, setActiveCard] = useState('membership')
   const [lbSearch,   setLbSearch]   = useState('')
   const [lbPage,     setLbPage]     = useState(0)
-  const [matSearch,  setMatSearch]  = useState('')
-  const [matPage,    setMatPage]    = useState(0)
+
 
   const LB_PER_PAGE  = 10
-  const MAT_PER_PAGE = 15
-
   const lbFiltered  = ranked.filter(c => c.name.toLowerCase().includes(lbSearch.toLowerCase()))
   const lbSafePage  = Math.min(lbPage, Math.max(0, Math.ceil(lbFiltered.length / LB_PER_PAGE) - 1))
   const lbRows      = lbFiltered.slice(lbSafePage * LB_PER_PAGE, (lbSafePage + 1) * LB_PER_PAGE)
-
-  const matFiltered = withComposite.filter(c => c.name.toLowerCase().includes(matSearch.toLowerCase()))
-  const matSafePage = Math.min(matPage, Math.max(0, Math.ceil(matFiltered.length / MAT_PER_PAGE) - 1))
-  const matRows     = matFiltered.slice(matSafePage * MAT_PER_PAGE, (matSafePage + 1) * MAT_PER_PAGE)
 
   return (
     <div className="space-y-4">
@@ -422,57 +398,6 @@ export default function DistrictOverview() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Row 3: Comparison Matrix */}
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between flex-wrap gap-3">
-            <CardTitle className="text-sm">Club Comparison Matrix</CardTitle>
-            <input value={matSearch} onChange={e => { setMatSearch(e.target.value); setMatPage(0) }}
-              placeholder="Search club..."
-              className="border border-slate-200 rounded-lg px-3 py-1.5 text-xs outline-none focus:border-slate-400 placeholder-slate-400 w-48" />
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm border-collapse">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200">
-                  {['Club','Members','Citation','Reports','Attendance','TRF','Projects'].map(h => (
-                    <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {matRows.map(c => {
-                  const projPct  = c.serviceProjects >= avgProjects ? 100 : c.serviceProjects >= avgProjects * 0.8 ? 65 : 40
-                  const trfColor = c.trfPct > 75 ? '#16a34a' : c.trfPct >= 50 ? '#f59e0b' : '#e11d48'
-                  return (
-                    <tr key={c.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 font-semibold text-slate-800 text-xs whitespace-nowrap">{c.name}</td>
-                      <td className="px-3 py-3"><RagCell pct={c.memberPct}     label={`${c.members}/${c.memberTarget}`} /></td>
-                      <td className="px-3 py-3"><RagCell pct={c.citationPct}   label={`${c.citationPct}%`} /></td>
-                      <td className="px-3 py-3"><RagCell pct={c.compliancePct} label={`${c.reportsSubmitted}/${c.reportsTotal}`} /></td>
-                      <td className="px-3 py-3"><RagCell pct={c.avgAttendance} label={`${c.avgAttendance}%`} /></td>
-                      <td className="px-3 py-3">
-                        <RagCell pct={c.trfPct} label={`${c.trfPct}%`} />
-                        <div className="h-1 bg-slate-100 rounded-full overflow-hidden w-16 mt-1">
-                          <div className="h-full rounded-full" style={{ width:`${c.trfPct}%`, backgroundColor: trfColor }} />
-                        </div>
-                      </td>
-                      <td className="px-3 py-3"><RagCell pct={projPct} label={String(c.serviceProjects)} /></td>
-                    </tr>
-                  )
-                })}
-                {matFiltered.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-10 text-center text-sm text-slate-400">No clubs match your search.</td></tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-          <Pagination page={matSafePage} total={matFiltered.length} perPage={MAT_PER_PAGE} setPage={setMatPage} />
-        </CardContent>
-      </Card>
 
     </div>
   )

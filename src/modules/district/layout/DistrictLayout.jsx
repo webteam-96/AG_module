@@ -10,7 +10,6 @@ const NAV = [
   { to: '/districtdashboard/foundation',     label: 'Foundation'          },
   { to: '/districtdashboard/communication',  label: 'Communication'       },
   { to: '/districtdashboard/egovernance',    label: 'E-Governance'        },
-  { to: '/districtdashboard/website-data',   label: 'Website Data'        },
 ]
 
 const PAGE_TITLES = {
