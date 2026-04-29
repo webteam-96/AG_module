@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import StatCard from '../components/StatCard'
 import { fmtINR } from '../data/clubData'
 
 /* ── Extended mock data for this page ─────────────────────────────── */
@@ -35,10 +34,10 @@ const EVENT_LINKS = [
 
 /* ── Style maps ───────────────────────────────────────────────────── */
 const STATUS_STYLE = {
-  Paid:    { bg: 'bg-green-50',  text: 'text-green-700',  dot: '#16a34a' },
-  Pending: { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: '#f59e0b' },
-  Overdue: { bg: 'bg-red-50',    text: 'text-red-600',    dot: '#ef4444' },
-  Exempt:  { bg: 'bg-slate-100', text: 'text-slate-500',  dot: '#94a3b8' },
+  Paid:    { bg: 'bg-green-50',  text: 'text-green-700',  dot: '#16a34a', label: 'Full Paid'      },
+  Pending: { bg: 'bg-amber-50',  text: 'text-amber-700',  dot: '#f59e0b', label: 'Partially Paid' },
+  Overdue: { bg: 'bg-red-50',    text: 'text-red-600',    dot: '#ef4444', label: 'Not Paid'       },
+  Exempt:  { bg: 'bg-slate-100', text: 'text-slate-500',  dot: '#94a3b8', label: 'Exempt'         },
 }
 const LINK_STYLE = {
   Active: { bg: 'bg-green-50',  text: 'text-green-700'  },
@@ -71,7 +70,7 @@ const ExcelIcon = () => (
 /* ── Main component ───────────────────────────────────────────────── */
 export default function Payments() {
   const [search, setSearch]         = useState('')
-  const [typeFilter, setTypeFilter] = useState('All')
+  const [statusFilter, setStatusFilter] = useState('All')
   const [duesYear, setDuesYear]     = useState('2026–27')
   const [copied, setCopied]         = useState(null)
   const [popup, setPopup]           = useState(null)
@@ -80,8 +79,12 @@ export default function Payments() {
   const dues = DUES_DATA[duesYear] ?? []
   const filtered = dues.filter(d => {
     const matchSearch = d.name.toLowerCase().includes(search.toLowerCase())
-    const matchType   = typeFilter === 'All' || d.type === typeFilter
-    return matchSearch && matchType
+    const matchStatus =
+      statusFilter === 'All'          ? true :
+      statusFilter === 'Full Paid'    ? d.status === 'Paid' :
+      statusFilter === 'Partially Paid' ? d.status === 'Pending' :
+      statusFilter === 'Not Paid'     ? d.status === 'Overdue' : true
+    return matchSearch && matchStatus
   })
 
   const payable   = dues.filter(d => d.status !== 'Exempt')
@@ -123,13 +126,6 @@ export default function Payments() {
             Free Trial — 1 Month
           </button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Dues Collected"  value={fmtINR(collected)} sub={`${pct}% of members paid`}                               subColor="up"    accent="#16a34a" />
-        <StatCard label="Dues Pending"    value={fmtINR(pending)}   sub={`${payable.length - paidCount} members outstanding`}      subColor="down"  accent="#e11d48" />
-        <StatCard label="Event Revenue"   value="₹2.1L"             sub="4 active event links"                                     subColor="muted" accent="#003DA5" />
-        <StatCard label="Total Registered" value="261"              sub="Across all events this RY"                                subColor="muted" accent="#9333ea" />
       </div>
 
       {/* ── Membership Dues Table ─────────────────────────────────── */}
@@ -176,12 +172,12 @@ export default function Payments() {
                 className="flex-1 bg-transparent text-sm outline-none text-slate-600 placeholder-slate-400"
               />
             </div>
-            {['All', 'Full', 'Associate', 'Honorary'].map(t => (
+            {['All', 'Full Paid', 'Partially Paid', 'Not Paid'].map(t => (
               <button
                 key={t}
-                onClick={() => setTypeFilter(t)}
+                onClick={() => setStatusFilter(t)}
                 className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  typeFilter === t ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  statusFilter === t ? 'bg-blue-700 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >{t}</button>
             ))}
@@ -189,29 +185,28 @@ export default function Payments() {
 
           {/* Collection summary strip */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-3">
+              <p className="text-xs text-blue-600 font-semibold uppercase tracking-wider">Total Amount</p>
+              <p className="text-xl font-extrabold text-blue-700 tabular-nums mt-0.5">{fmtINR(collected + pending)}</p>
+              <p className="text-xs text-blue-500 mt-0.5">{payable.length} members payable</p>
+            </div>
             <div className="bg-green-50 border border-green-100 rounded-xl px-4 py-3">
               <p className="text-xs text-green-600 font-semibold uppercase tracking-wider">Collected</p>
               <p className="text-xl font-extrabold text-green-700 tabular-nums mt-0.5">{fmtINR(collected)}</p>
-              <p className="text-xs text-green-600 mt-0.5">{paidCount} members</p>
+              <p className="text-xs text-green-600 mt-0.5">{paidCount} members paid</p>
             </div>
             <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3">
               <p className="text-xs text-red-500 font-semibold uppercase tracking-wider">Outstanding</p>
               <p className="text-xl font-extrabold text-red-600 tabular-nums mt-0.5">{fmtINR(pending)}</p>
-              <p className="text-xs text-red-500 mt-0.5">{payable.length - paidCount} members</p>
+              <p className="text-xs text-red-500 mt-0.5">{payable.length - paidCount} members unpaid</p>
             </div>
             <div className="bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
               <p className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Collection Rate</p>
-              <p className="text-xl font-extrabold text-slate-800 tabular-nums mt-0.5">{pct}%</p>
+              <p className="text-xl font-extrabold text-slate-800 tabular-nums mt-0.5">{paidCount} of {payable.length}</p>
+              <p className="text-xs text-slate-500 mt-0.5">members have paid</p>
               <div className="mt-1.5 h-1.5 bg-slate-200 rounded-full overflow-hidden">
                 <div className="h-full rounded-full bg-blue-600" style={{ width: `${pct}%` }} />
               </div>
-            </div>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
-              <p className="text-xs text-amber-600 font-semibold uppercase tracking-wider">RI Dues Share</p>
-              <p className="text-xl font-extrabold text-amber-700 tabular-nums mt-0.5">
-                {fmtINR(dues.filter(d => d.status === 'Paid').reduce((s, d) => s + d.ri, 0))}
-              </p>
-              <p className="text-xs text-amber-600 mt-0.5">Remitted to RI</p>
             </div>
           </div>
 
@@ -220,7 +215,7 @@ export default function Payments() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  {['#', 'Member', 'Type', 'RI Dues', 'Local Dues', 'Total', 'Due Date', 'Paid On', 'Status', 'Actions'].map(h => (
+                  {['#', 'Member', 'Dues', 'Amount Paid', 'Due Date', 'Paid On', 'Status', 'Actions'].map(h => (
                     <th key={h} className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5 whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -238,18 +233,18 @@ export default function Payments() {
                           <span className="font-semibold text-slate-800 whitespace-nowrap">{d.name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="text-xs font-medium text-slate-600 px-2 py-0.5 bg-slate-100 rounded">{d.type}</span>
+                      <td className="px-4 py-3 font-semibold tabular-nums text-xs text-red-600">
+                        {d.status === 'Exempt' || d.status === 'Paid' ? '—' : (d.total ? `₹${d.total.toLocaleString()}` : '—')}
                       </td>
-                      <td className="px-4 py-3 text-slate-600 tabular-nums text-xs">{d.ri ? `₹${d.ri.toLocaleString()}` : '—'}</td>
-                      <td className="px-4 py-3 text-slate-600 tabular-nums text-xs">{d.local ? `₹${d.local.toLocaleString()}` : '—'}</td>
-                      <td className="px-4 py-3 font-bold text-slate-900 tabular-nums">{d.total ? `₹${d.total.toLocaleString()}` : '—'}</td>
+                      <td className="px-4 py-3 font-semibold tabular-nums text-xs text-green-700">
+                        {d.status === 'Paid' ? (d.total ? `₹${d.total.toLocaleString()}` : '—') : '—'}
+                      </td>
                       <td className={`px-4 py-3 text-xs tabular-nums ${d.status === 'Overdue' ? 'text-red-600 font-semibold' : 'text-slate-500'}`}>{d.dueDate}</td>
                       <td className="px-4 py-3 text-xs text-slate-500 tabular-nums">{d.paidOn ?? '—'}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1.5">
                           <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: s.dot }} />
-                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${s.bg} ${s.text}`}>{d.status}</span>
+                          <span className={`text-xs font-semibold px-2.5 py-1 rounded-md ${s.bg} ${s.text}`}>{s.label}</span>
                         </div>
                       </td>
                       <td className="px-4 py-3">

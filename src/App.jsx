@@ -26,14 +26,12 @@ import ClubMembership  from './modules/club/pages/Membership'
 
 // District module
 import DistrictLayout from './modules/district/layout/DistrictLayout'
-import DistrictOverview from './modules/district/pages/Overview'
-import DistrictDirectory    from './modules/district/pages/Directory'
-import DistrictCommittee    from './modules/district/pages/Committee'
-import DistrictClubs        from './modules/district/pages/Clubs'
-import DistrictMonthlyReport from './modules/district/pages/MonthlyReport'
-import DistrictModerator    from './modules/district/pages/Moderator'
-import DistrictAG           from './modules/district/pages/AG'
-import DistrictWebsiteData  from './modules/district/pages/WebsiteData'
+import DistrictOverview       from './modules/district/pages/Overview'
+import DistrictMembership     from './modules/district/pages/Membership'
+import DistrictFoundation     from './modules/district/pages/Foundation'
+import DistrictCommunication  from './modules/district/pages/Communication'
+import DistrictEGovernance    from './modules/district/pages/EGovernance'
+import DistrictWebsiteData    from './modules/district/pages/WebsiteData'
 
 export default function App() {
   return (
@@ -74,12 +72,16 @@ export default function App() {
         <Route path="/districtdashboard" element={<DistrictLayout />}>
           <Route index element={<Navigate to="/districtdashboard/overview" replace />} />
           <Route path="overview"       element={<DistrictOverview />} />
-          <Route path="directory"      element={<DistrictDirectory />} />
-          <Route path="committee"      element={<DistrictCommittee />} />
-          <Route path="clubs"          element={<DistrictClubs />} />
-          <Route path="monthly-report" element={<DistrictMonthlyReport />} />
-          <Route path="moderator"      element={<DistrictModerator />} />
-          <Route path="ag"             element={<DistrictAG />} />
+          <Route path="membership"     element={<DistrictMembership />} />
+          <Route path="foundation"     element={<DistrictFoundation />} />
+          <Route path="communication"  element={<DistrictCommunication />} />
+          <Route path="egovernance"    element={<DistrictEGovernance />} />
+          <Route path="monthly-report" element={<Navigate to="/districtdashboard/egovernance" replace />} />
+          <Route path="directory"      element={<Navigate to="/districtdashboard/membership" replace />} />
+          <Route path="committee"      element={<Navigate to="/districtdashboard/membership" replace />} />
+          <Route path="moderator"      element={<Navigate to="/districtdashboard/membership" replace />} />
+          <Route path="ag"             element={<Navigate to="/districtdashboard/membership" replace />} />
+          <Route path="clubs"          element={<Navigate to="/districtdashboard/membership" replace />} />
           <Route path="website-data"   element={<DistrictWebsiteData />} />
         </Route>
 

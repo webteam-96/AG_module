@@ -9,8 +9,6 @@ const PAGE_SIZE = 8
 
 export default function Directory() {
   const [search, setSearch]         = useState('')
-  const [adminStates, setAdminStates]   = useState(() => Object.fromEntries(MEMBERS.map(m => [m.id, m.isAdmin])))
-  const [riAdminStates, setRIAdminStates] = useState(() => Object.fromEntries(MEMBERS.map(m => [m.id, m.isRIAdmin])))
   const [page, setPage]             = useState(1)
 
   const filtered = MEMBERS.filter(m =>
@@ -22,17 +20,13 @@ export default function Directory() {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const paged = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const toggleAdmin = (id) => setAdminStates(s => ({ ...s, [id]: !s[id] }))
-  const toggleRIAdmin = (id) => setRIAdminStates(s => ({ ...s, [id]: !s[id] }))
-
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Total Members"   value={CLUB_STATS.totalMembers}     sub="▲ 8 this RY"    subColor="up"    accent="#003DA5" />
         <StatCard label="Full Members"    value={CLUB_STATS.fullMembers}      sub="68% of total"   subColor="muted" accent="#16a34a" />
-        <StatCard label="Associates"      value={CLUB_STATS.associateMembers} sub="18% of total"   subColor="muted" accent="#60a5fa" />
         <StatCard label="Honorary"        value={CLUB_STATS.honoraryMembers}  sub="13% of total"   subColor="muted" accent="#9333ea" />
-        <StatCard label="Club Admins"     value={Object.values(adminStates).filter(Boolean).length} sub="With portal access" subColor="muted" accent="#ca8a04" />
+        <StatCard label="Club Admins"     value={MEMBERS.filter(m => m.isAdmin).length} sub="With portal access" subColor="muted" accent="#ca8a04" />
       </div>
 
       <Card>
@@ -60,34 +54,18 @@ export default function Directory() {
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 w-32">Action</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 w-10">Photo</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Name</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">Mobile No.</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Email</th>
                   <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Change</th>
-                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5">Delete</th>
-                  <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-3 py-2.5 whitespace-nowrap">RI Admin</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {paged.map((m, i) => {
-                  const idx      = (page - 1) * PAGE_SIZE + i
-                  const isAdmin  = adminStates[m.id]
-                  const isRIAdmin = riAdminStates[m.id]
+                  const idx = (page - 1) * PAGE_SIZE + i
                   return (
                     <tr key={m.id} className="hover:bg-slate-50">
-                      {/* Admin toggle */}
-                      <td className="px-3 py-3">
-                        <button
-                          onClick={() => toggleAdmin(m.id)}
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors whitespace-nowrap ${
-                            isAdmin
-                              ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                              : 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100'
-                          }`}
-                        >{isAdmin ? 'Remove Admin' : 'Make Admin'}</button>
-                      </td>
                       {/* Avatar */}
                       <td className="px-3 py-3">
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
@@ -109,23 +87,6 @@ export default function Directory() {
                         <button className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit">
                           <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                         </button>
-                      </td>
-                      {/* Delete */}
-                      <td className="px-3 py-3 text-center">
-                        <button className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50" title="Delete">
-                          <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                        </button>
-                      </td>
-                      {/* RI Admin */}
-                      <td className="px-3 py-3">
-                        <button
-                          onClick={() => toggleRIAdmin(m.id)}
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-md border transition-colors whitespace-nowrap ${
-                            isRIAdmin
-                              ? 'bg-red-50 text-red-600 border-red-200 hover:bg-red-100'
-                              : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'
-                          }`}
-                        >{isRIAdmin ? 'Remove RI Admin' : 'Make RI Admin'}</button>
                       </td>
                     </tr>
                   )

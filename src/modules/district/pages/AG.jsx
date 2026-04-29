@@ -89,7 +89,7 @@ export default function DistrictAG() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between flex-wrap gap-3">
           <div>
-            <CardTitle className="text-sm">Zones & Assistant Governors</CardTitle>
+            <CardTitle className="text-sm">Assistant Governors</CardTitle>
             <CardDescription className="text-xs">District 5656 — zone assignments</CardDescription>
           </div>
           <button onClick={() => { setShowForm(s => !s); setEditId(null); setForm(EMPTY_FORM) }}

@@ -5,24 +5,20 @@ import { Separator } from '@/components/ui/separator'
 import { Menu, X } from 'lucide-react'
 
 const NAV = [
-  { to: '/districtdashboard/overview',       label: 'Overview'              },
-  { to: '/districtdashboard/directory',      label: 'Directory',   badge: 29 },
-  { to: '/districtdashboard/committee',      label: 'District Committee'    },
-  { to: '/districtdashboard/clubs',          label: 'Clubs',       badge: 6  },
-  { to: '/districtdashboard/monthly-report', label: 'Club Monthly Report'   },
-  { to: '/districtdashboard/moderator',      label: 'Club Moderator'        },
-  { to: '/districtdashboard/ag',             label: 'AG / Zones'            },
-  { to: '/districtdashboard/website-data',   label: 'Website Data'          },
+  { to: '/districtdashboard/overview',       label: 'Overview'            },
+  { to: '/districtdashboard/membership',     label: 'Membership'          },
+  { to: '/districtdashboard/foundation',     label: 'Foundation'          },
+  { to: '/districtdashboard/communication',  label: 'Communication'       },
+  { to: '/districtdashboard/egovernance',    label: 'E-Governance'        },
+  { to: '/districtdashboard/website-data',   label: 'Website Data'        },
 ]
 
 const PAGE_TITLES = {
   '/districtdashboard/overview':       'District Dashboard',
-  '/districtdashboard/directory':      'Directory',
-  '/districtdashboard/committee':      'District Committee',
-  '/districtdashboard/clubs':          'Clubs',
-  '/districtdashboard/monthly-report': 'Club Monthly Report',
-  '/districtdashboard/moderator':      'Club Moderator',
-  '/districtdashboard/ag':             'AG / Zones',
+  '/districtdashboard/membership':     'Membership',
+  '/districtdashboard/foundation':     'Foundation',
+  '/districtdashboard/communication':  'Communication',
+  '/districtdashboard/egovernance':    'E-Governance & Reporting',
   '/districtdashboard/website-data':   'Website Data',
 }
 

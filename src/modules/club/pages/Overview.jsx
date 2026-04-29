@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
@@ -11,6 +11,13 @@ import {
   CLUB_STATS, MEMBER_GROWTH, ATTENDANCE_DATA, AVENUE_DATA,
   EVENTS, CITATION_CHECKLIST, fmtINR, attendanceBg,
 } from '../data/clubData'
+
+const INR_TO_USD = 84
+const fmtUSD = (inr) => {
+  const usd = inr / INR_TO_USD
+  if (usd >= 1000) return `$${(usd / 1000).toFixed(1)}K`
+  return `$${usd.toFixed(0)}`
+}
 
 // Import tab content components
 import DirectoryTab     from './Directory'
@@ -26,6 +33,51 @@ const TABS = [
   { id: 'marketplace',   label: 'Marketplace'       },
   { id: 'network',       label: 'Rotary Network'    },
 ]
+
+/* ─── How To Enable Sync popover ───────────────────────────────────── */
+function HowToEnableSync() {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    if (!open) return
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [open])
+
+  return (
+    <div className="relative inline-flex" ref={ref}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="text-xs font-semibold text-amber-700 border border-amber-400 bg-amber-50 hover:bg-amber-100 px-2.5 py-1 rounded-md whitespace-nowrap transition-colors"
+      >
+        How to Enable?
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-2 z-50 w-72 bg-white border border-slate-200 rounded-xl shadow-lg p-4">
+          <p className="text-xs font-semibold text-slate-700 mb-2">Steps to enable Rotary.org Sync</p>
+          <ol className="space-y-1.5">
+            {[
+              <>Go to <span className="font-semibold">rotary.org</span> and sign in</>,
+              <>Click <span className="font-semibold">My Rotary</span></>,
+              <>Open <span className="font-semibold">Club Administration</span></>,
+              <>Select <span className="font-semibold">Enable Data Sync</span></>,
+              <>Enter your <span className="font-semibold">Club ID</span> and save</>,
+            ].map((step, i) => (
+              <li key={i} className="flex gap-2 text-xs text-slate-600">
+                <span className="flex-shrink-0 w-4 h-4 rounded-full bg-amber-100 text-amber-700 font-bold flex items-center justify-center text-[10px]">{i + 1}</span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /* ─── Overview tab content ─────────────────────────────────────────── */
 const EVENT_COLORS = {
@@ -74,10 +126,7 @@ function OverviewContent() {
         <div className="flex items-center gap-2 flex-1 min-w-0 flex-wrap">
           <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse flex-shrink-0" />
           <span className="text-xs font-semibold text-amber-700 whitespace-nowrap">Rotary.org Sync: Disabled</span>
-          <span className="text-slate-300 hidden sm:inline">·</span>
-          <span className="text-xs text-amber-600">
-            To enable: go to <span className="font-semibold">rotary.org</span> → My Rotary → Club Administration → Enable Data Sync → enter your Club ID
-          </span>
+          <HowToEnableSync />
         </div>
         <div className="w-px h-5 bg-slate-300 flex-shrink-0 hidden sm:block" />
         {/* Website overdue */}
@@ -99,12 +148,12 @@ function OverviewContent() {
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">TRF Contribution</p>
             <p className="text-sm text-amber-600 font-medium">Goal not set</p>
             <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }} className="flex gap-1.5 mt-2">
-              <input type="number" placeholder="₹ amount" value={trfInput} onChange={e => setTrfInput(e.target.value)} className="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400" />
+              <input type="number" placeholder="$ amount" value={trfInput} onChange={e => setTrfInput(e.target.value)} className="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400" />
               <button type="submit" className="text-xs font-bold text-white px-2 py-1 rounded flex-shrink-0" style={{ background: '#ca8a04' }}>Set</button>
             </form>
           </div>
         ) : (
-          <StatCard label="TRF Contribution" value={fmtINR(CLUB_STATS.trfRaised)} sub={`${trfPct}% of ${fmtINR(trfGoal)}`} subColor="muted" accent="#ca8a04" />
+          <StatCard label="TRF Contribution" value={fmtUSD(CLUB_STATS.trfRaised)} sub={`${trfPct}% of ${fmtUSD(trfGoal)}`} subColor="muted" accent="#ca8a04" />
         )}
         {serviceGoal === null ? (
           <div className="bg-white rounded-xl border border-dashed border-purple-300 px-4 py-4 relative overflow-hidden">
@@ -176,7 +225,7 @@ function OverviewContent() {
             <div>
               <CardTitle className="text-sm">TRF Goal</CardTitle>
               <CardDescription className="text-xs mt-0.5">
-                {trfGoal ? `${fmtINR(trfGoal)} target this year` : 'Set your contribution target'}
+                {trfGoal ? `${fmtUSD(trfGoal)} target this year` : 'Set your contribution target'}
               </CardDescription>
             </div>
             {trfGoal && (
@@ -188,7 +237,7 @@ function OverviewContent() {
             {trfGoal === null ? (
               <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }}
                 className="flex-1 flex flex-col justify-center space-y-3">
-                <input type="number" placeholder="Enter goal amount (₹)" value={trfInput}
+                <input type="number" placeholder="Enter goal amount ($)" value={trfInput}
                   onChange={e => setTrfInput(e.target.value)}
                   className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
                 <button type="submit" className="w-full text-sm font-bold text-white py-2.5 rounded-lg" style={{ background:'#ca8a04' }}>
@@ -210,16 +259,15 @@ function OverviewContent() {
                       <span className="text-xs text-slate-400 mt-1">of goal</span>
                     </div>
                   </div>
-                  <p className="text-sm font-bold text-slate-800 mt-2 tabular-nums">{fmtINR(CLUB_STATS.trfRaised)} raised</p>
+                  <p className="text-sm font-bold text-slate-800 mt-2 tabular-nums">{fmtUSD(CLUB_STATS.trfRaised)} raised</p>
                 </div>
                 <div className="flex-1 space-y-2.5">
                   {[
-                    { label:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,   max: CLUB_STATS.trfGoal, color:'#003DA5', display: fmtINR(CLUB_STATS.trfAnnualFund)       },
-                    { label:'PHF',          value: CLUB_STATS.phfContributors, max: 30,                 color:'#9333ea', display: `${CLUB_STATS.phfContributors} members` },
-                    { label:'PHSM',         value: CLUB_STATS.trfPhsm,         max: 5,                  color:'#0891b2', display: `${CLUB_STATS.trfPhsm} members`         },
-                    { label:'Major Donors', value: CLUB_STATS.trfMajorDonors,  max: 5,                  color:'#ca8a04', display: `${CLUB_STATS.trfMajorDonors}`          },
-                    { label:'EPF',          value: CLUB_STATS.trfEPF,          max: 5,                  color:'#f59e0b', display: `${CLUB_STATS.trfEPF}`                   },
+                    { label:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,   max: CLUB_STATS.trfGoal, color:'#003DA5', display: fmtUSD(CLUB_STATS.trfAnnualFund)       },
+                    { label:'Polio Fund',   value: CLUB_STATS.phfContributors, max: 30,                 color:'#9333ea', display: `${CLUB_STATS.phfContributors} members` },
                     { label:'Endowment',    value: CLUB_STATS.trfEndowment,    max: 5,                  color:'#e11d48', display: `${CLUB_STATS.trfEndowment}`             },
+                    { label:'Major Donors', value: CLUB_STATS.trfMajorDonors,  max: 5,                  color:'#ca8a04', display: `${CLUB_STATS.trfMajorDonors}`          },
+                    { label:'CSR',          value: 3,                          max: 5,                  color:'#16a34a', display: '3 projects'                            },
                   ].map(r => (
                     <div key={r.label}>
                       <div className="flex justify-between mb-1">
@@ -235,7 +283,7 @@ function OverviewContent() {
                 </div>
                 <div className="flex justify-between text-xs border-t border-slate-100 pt-3 mt-3">
                   <span className="text-slate-500">Remaining to goal</span>
-                  <span className="font-bold text-red-600 tabular-nums">{fmtINR(trfGoal - CLUB_STATS.trfRaised)}</span>
+                  <span className="font-bold text-red-600 tabular-nums">{fmtUSD(trfGoal - CLUB_STATS.trfRaised)}</span>
                 </div>
               </>
             )}
@@ -437,9 +485,11 @@ function OverviewContent() {
             {/* ── TRF chart ─────────────────────────────────────── */}
             {activeCard === 'trf' && (() => {
               const trfData = [
-                { name:'Annual Fund', value: CLUB_STATS.trfAnnualFund,                                                      color:'#003DA5' },
-                { name:'PHF / PHSM',  value: (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000,                    color:'#9333ea' },
-                { name:'EPF / Endow', value: CLUB_STATS.trfRaised - CLUB_STATS.trfAnnualFund - (CLUB_STATS.phfContributors + CLUB_STATS.trfPhsm) * 10000, color:'#f59e0b' },
+                { name:'Annual Fund',  value: CLUB_STATS.trfAnnualFund,                                                    color:'#003DA5' },
+                { name:'Polio Fund',   value: CLUB_STATS.phfContributors * 10000,                                          color:'#9333ea' },
+                { name:'Endowment',    value: CLUB_STATS.trfEndowment * 50000,                                             color:'#e11d48' },
+                { name:'Major Donors', value: CLUB_STATS.trfMajorDonors * 25000,                                           color:'#ca8a04' },
+                { name:'CSR',          value: 30000,                                                                       color:'#16a34a' },
               ]
               return (
                 <>
@@ -447,7 +497,7 @@ function OverviewContent() {
                     {trfData.map(t => (
                       <div key={t.name} className="rounded-lg px-3 py-2 border border-slate-100" style={{ background: t.color + '10' }}>
                         <p className="text-[11px] text-slate-500">{t.name}</p>
-                        <p className="text-lg font-extrabold tabular-nums" style={{ color: t.color }}>{fmtINR(t.value)}</p>
+                        <p className="text-lg font-extrabold tabular-nums" style={{ color: t.color }}>{fmtUSD(t.value)}</p>
                       </div>
                     ))}
                   </div>
@@ -455,8 +505,8 @@ function OverviewContent() {
                     <BarChart data={trfData} margin={{ left:0, right:16 }}>
                       <CartesianGrid vertical={false} stroke="#f1f5f9" />
                       <XAxis dataKey="name" tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} width={48} tickFormatter={v => `₹${(v/1000).toFixed(0)}K`} />
-                      <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} formatter={v => fmtINR(v)} />
+                      <YAxis tick={{ fontSize:11, fill:'#94a3b8' }} axisLine={false} tickLine={false} width={48} tickFormatter={v => fmtUSD(v)} />
+                      <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} formatter={v => fmtUSD(v)} />
                       <Bar dataKey="value" name="Amount" radius={[4,4,0,0]}>
                         {trfData.map((t, i) => <Cell key={i} fill={t.color} />)}
                       </Bar>

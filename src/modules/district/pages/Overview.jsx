@@ -1,5 +1,4 @@
 // src/modules/district/pages/Overview.jsx
-import { useNavigate } from 'react-router-dom'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend,
@@ -61,20 +60,8 @@ const chartData = withComposite.map(c => ({
   'Attendance %': c.avgAttendance,
 }))
 
-// ─── Quick access nav ────────────────────────────────────────────────────────
-const QUICK_ACCESS = [
-  { label: 'Directory',      badge: 29,   route: '/districtdashboard/directory'      },
-  { label: 'Committee',      badge: null, route: '/districtdashboard/committee'      },
-  { label: 'Clubs',          badge: 6,    route: '/districtdashboard/clubs'          },
-  { label: 'Monthly Report', badge: null, route: '/districtdashboard/monthly-report' },
-  { label: 'Moderator',      badge: null, route: '/districtdashboard/moderator'      },
-  { label: 'AG / Zones',     badge: null, route: '/districtdashboard/ag'             },
-  { label: 'Website Data',   badge: null, route: '/districtdashboard/website-data'   },
-]
-
 // ─── Component ───────────────────────────────────────────────────────────────
 export default function DistrictOverview() {
-  const navigate = useNavigate()
 
   return (
     <div className="space-y-4">
@@ -198,22 +185,6 @@ export default function DistrictOverview() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Quick Access Strip */}
-      <div>
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Quick Access</p>
-        <div className="flex flex-wrap gap-2">
-          {QUICK_ACCESS.map(({ label, badge, route }) => (
-            <button key={route} onClick={() => navigate(route)}
-              className="flex items-center gap-1.5 border border-slate-200 rounded-full px-3 py-1.5 text-xs font-medium text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-colors">
-              {label}
-              {badge != null && (
-                <span className="bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">{badge}</span>
-              )}
-            </button>
-          ))}
-        </div>
-      </div>
 
     </div>
   )

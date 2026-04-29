@@ -5,36 +5,33 @@ import {
 
 /* ── Real data from Excel — District 3142, March 2026 ───────────── */
 const METRICS = [
-  { id:'af',    name:'Annual Fund',                    short:'AF',   value:257711, avg:94553, max:486784, rank:3,  total:43, color:'#003DA5', unit:'$' },
-  { id:'phf',   name:'PHF',                            short:'PHF',  value:148,    avg:110,   max:701,    rank:7,  total:43, color:'#9333ea', unit:''  },
-  { id:'md',    name:'Major Donors',                   short:'MD',   value:20,     avg:10,    max:81,     rank:5,  total:41, color:'#ca8a04', unit:''  },
-  { id:'epf',   name:'EPF',                            short:'EPF',  value:4,      avg:5,     max:42,     rank:8,  total:28, color:'#f59e0b', unit:''  },
-  { id:'phsm',  name:'PHSM',                           short:'PHSM', value:3,      avg:5,     max:31,     rank:11, total:27, color:'#0891b2', unit:''  },
-  { id:'ef',    name:'Endowment',                      short:'EF',   value:2,      avg:2,     max:8,      rank:11, total:28, color:'#e11d48', unit:''  },
-  { id:'aks',   name:'Arch Klump Society',             short:'AKS',  value:0,      avg:1,     max:1,      rank:5,  total:4,  color:'#64748b', unit:''  },
-  { id:'bs',    name:'Bequest Society',                short:'BS',   value:0,      avg:1,     max:1,      rank:2,  total:1,  color:'#64748b', unit:''  },
-  { id:'dg',    name:'Directed Gift',                  short:'DG',   value:0,      avg:3,     max:8,      rank:16, total:15, color:'#64748b', unit:''  },
-  { id:'pps',   name:'Polio Plus Society',             short:'PPS',  value:0,      avg:0,     max:0,      rank:0,  total:0,  color:'#64748b', unit:''  },
+  { id:'af',   name:'Annual Fund',   short:'AF',  value:257711, avg:94553, max:486784, rank:3,  total:43, color:'#003DA5', unit:'$' },
+  { id:'pf',   name:'Polio Fund',    short:'PF',  value:148,    avg:110,   max:701,    rank:7,  total:43, color:'#9333ea', unit:''  },
+  { id:'ef',   name:'Endowment',     short:'EF',  value:2,      avg:2,     max:8,      rank:11, total:28, color:'#e11d48', unit:''  },
+  { id:'md',   name:'Major Donors',  short:'MD',  value:20,     avg:10,    max:81,     rank:5,  total:41, color:'#ca8a04', unit:''  },
+  { id:'csr',  name:'CSR',           short:'CSR', value:15000,  avg:8000,  max:45000,  rank:3,  total:43, color:'#16a34a', unit:'$' },
 ]
 
-/* comparison chart — metrics with D3142 value > 0, normalised as % of national max */
 const COMPARE_DATA = [
   { name:'Annual Fund',  d3142: Math.round((257711/486784)*100), avg: Math.round((94553/486784)*100), color:'#003DA5' },
-  { name:'PHF',          d3142: Math.round((148/701)*100),       avg: Math.round((110/701)*100),      color:'#9333ea' },
-  { name:'Major Donors', d3142: Math.round((20/81)*100),         avg: Math.round((10/81)*100),        color:'#ca8a04' },
-  { name:'EPF',          d3142: Math.round((4/42)*100),          avg: Math.round((5/42)*100),         color:'#f59e0b' },
-  { name:'PHSM',         d3142: Math.round((3/31)*100),          avg: Math.round((5/31)*100),         color:'#0891b2' },
+  { name:'Polio Fund',   d3142: Math.round((148/701)*100),       avg: Math.round((110/701)*100),      color:'#9333ea' },
   { name:'Endowment',    d3142: Math.round((2/8)*100),           avg: Math.round((2/8)*100),          color:'#e11d48' },
+  { name:'Major Donors', d3142: Math.round((20/81)*100),         avg: Math.round((10/81)*100),        color:'#ca8a04' },
+  { name:'CSR',          d3142: Math.round((15000/45000)*100),   avg: Math.round((8000/45000)*100),   color:'#16a34a' },
 ]
 
-const USD_TO_INR = 84
+const SPECIAL_REMARKS = [
+  { id:1, label:'100% PHF'                                                   },
+  { id:2, label:'100% MPHF'                                                  },
+  { id:3, label:'100% Major Donor Clubs'                                     },
+  { id:4, label:'Special Major Donor / District Event / Multi District Event'},
+  { id:5, label:'Any other Special Remarks', placeholder: true               },
+]
 
-const toINR   = (usd) => usd * USD_TO_INR
-const fmtINRv = (v) => {
-  const inr = toINR(v)
-  if (inr >= 10000000) return `₹${(inr / 10000000).toFixed(2)} Cr`
-  if (inr >= 100000)   return `₹${(inr / 100000).toFixed(2)}L`
-  return `₹${inr.toLocaleString()}`
+const fmtUSD = (v) => {
+  if (v >= 1000000) return `$${(v / 1000000).toFixed(2)}M`
+  if (v >= 1000)    return `$${(v / 1000).toFixed(1)}K`
+  return `$${v.toLocaleString()}`
 }
 
 const rankBadge = (rank) => {
@@ -45,9 +42,9 @@ const rankBadge = (rank) => {
   return { bg:'#f1f5f9', text:'#64748b', label:`#${rank}` }
 }
 
-const fmtVal = (m) => m.unit === '$' ? fmtINRv(m.value) : m.value.toLocaleString()
-const fmtAvg = (m) => m.unit === '$' ? fmtINRv(m.avg)  : m.avg.toString()
-const fmtMax = (m) => m.unit === '$' ? fmtINRv(m.max)  : m.max.toString()
+const fmtVal = (m) => m.unit === '$' ? fmtUSD(m.value) : m.value.toLocaleString()
+const fmtAvg = (m) => m.unit === '$' ? fmtUSD(m.avg)  : m.avg.toString()
+const fmtMax = (m) => m.unit === '$' ? fmtUSD(m.max)  : m.max.toString()
 
 /* ── Main component ──────────────────────────────────────────────── */
 export default function Foundation() {
@@ -74,7 +71,7 @@ export default function Foundation() {
         <div>
           <p className="text-sm font-extrabold">District 3142 ranks 3rd nationally for Annual Fund</p>
           <p className="text-xs opacity-80 mt-0.5">
-            {fmtINRv(257711)} raised — 2.7× the national average of {fmtINRv(94553)} across 43 districts
+            {fmtUSD(257711)} raised — 2.7× the national average of {fmtUSD(94553)} across 43 districts
           </p>
         </div>
         <div className="ml-auto flex gap-2 flex-wrap">
@@ -84,9 +81,9 @@ export default function Foundation() {
         </div>
       </div>
 
-      {/* KPI Cards — top 4 metrics */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        {METRICS.slice(0, 4).map(m => {
+      {/* KPI Cards — all 5 metrics */}
+      <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
+        {METRICS.map(m => {
           const rb = rankBadge(m.rank)
           return (
             <div key={m.id} className="bg-white rounded-xl px-4 py-4 border border-slate-200">
@@ -236,6 +233,27 @@ export default function Foundation() {
                 })}
               </tbody>
             </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Special Remarks */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-sm">Special Remarks</CardTitle>
+          <CardDescription className="text-xs">District 3142 — notable achievements & annotations</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-2">
+            {SPECIAL_REMARKS.map(r => (
+              <div key={r.id} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${r.placeholder ? 'border-dashed border-slate-200 bg-slate-50' : 'border-slate-100 bg-white'}`}>
+                {r.placeholder
+                  ? <svg width="14" height="14" fill="none" stroke="#94a3b8" strokeWidth="2" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  : <span className="w-5 h-5 rounded-full bg-green-100 text-green-700 flex items-center justify-center text-[11px] font-bold flex-shrink-0">✓</span>
+                }
+                <span className={`text-sm ${r.placeholder ? 'text-slate-400 italic' : 'text-slate-700 font-medium'}`}>{r.label}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

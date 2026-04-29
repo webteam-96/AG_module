@@ -142,24 +142,6 @@ const PPH_CAMPS = [
   { id:3, date:'Feb 2, 2025',  location:'Mumbra, Thane',       children:210, rotarians:10, rotaractors:6,  coordinator:'Priya Desai'    },
 ]
 
-const AUTO_POINTS_ROWS = [
-  { id:1, award:'Membership Strength',    description:'Active & paid-up members above district threshold',      criteria:'142 members · 100% paid-up',       team:142, points:18000, maxPoints:20000 },
-  { id:2, award:'Meeting Attendance',     description:'Average weekly meeting attendance across all sessions',  criteria:'82% avg · 6 sessions tracked',      team:116, points:9840,  maxPoints:12000 },
-  { id:3, award:'TRF Contributions',      description:'Total Rotary Foundation funds raised this Rotary Year',  criteria:'₹1,58,000 raised · 8 donors',       team:8,   points:7900,  maxPoints:10000 },
-  { id:4, award:'Monthly Reports',        description:'Secretary monthly reports submitted on time to district', criteria:'9 of 10 months on time',            team:2,   points:4500,  maxPoints:5000  },
-  { id:5, award:'Service Projects',       description:'Community & vocational service projects completed',      criteria:'12 projects · 4 avenues covered',   team:38,  points:3600,  maxPoints:4000  },
-  { id:6, award:'New Members Inducted',   description:'Net new members inducted during the Rotary Year',        criteria:'8 new members this RY',             team:8,   points:1270,  maxPoints:2000  },
-]
-
-const MANUAL_POINTS_ROWS = [
-  { id:1, award:'Best Club Newsletter',       description:'Zonal award for best monthly club publication',           criteria:'Thane City View · Apr 2025 – Mar 2026', team:3,  points:5000, maxPoints:5000 },
-  { id:2, award:'Community Service Excellence',description:'Recognition for flagship community service project',    criteria:'Blood Donation Drive · 280 units',       team:12, points:4880, maxPoints:5000 },
-  { id:3, award:'Youth Service Program',      description:'Best youth empowerment initiative by the club',          criteria:'RYLA Local Chapter · 45 youth',          team:6,  points:4200, maxPoints:5000 },
-  { id:4, award:'Vocational Service Award',   description:'Outstanding contribution to vocational training',        criteria:'Industry Visit Program · 3 sessions',    team:9,  points:3300, maxPoints:4000 },
-  { id:5, award:'Environmental Initiative',   description:'Green projects and sustainability efforts',               criteria:'Tree Plantation · 200 saplings',         team:20, points:1000, maxPoints:4000 },
-  { id:6, award:'International Service',      description:'Cross-border humanitarian or fellowship project',         criteria:'No submission this RY',                 team:0,  points:0,    maxPoints:3000 },
-]
-
 /* ── Style helpers ──────────────────────────────────────────────── */
 const CITATION_ICON  = { done: '✓', partial: '~', incomplete: '✕' }
 const CITATION_COLOR = { done: '#16a34a', partial: '#f59e0b', incomplete: '#ef4444' }
@@ -180,169 +162,15 @@ const OUTCOME_STYLE = {
   Satisfactory: { bg: 'bg-blue-50',   text: 'text-blue-700'   },
   Pending:      { bg: 'bg-amber-50',  text: 'text-amber-700'  },
 }
-/* ── Zonal Awards — Points table ───────────────────────────────── */
-function PointsTable({ rows, pointsColor, progressColor, total }) {
-  const borderStyle = { borderWidth: '0.5px', borderColor: '#e2e8f0' }
-  const rowBorderStyle = { borderWidth: '0.5px', borderColor: '#f1f5f9' }
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr>
-            {['Award', 'Criteria', 'Team', 'Progress', 'Points'].map((h, i) => (
-              <th
-                key={h}
-                className={`px-4 py-2.5 text-xs font-semibold text-slate-400 uppercase tracking-wider bg-slate-50 border-b ${
-                  i === 2 ? 'text-center' : i === 4 ? 'text-right' : 'text-left'
-                }`}
-                style={borderStyle}
-              >{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row, i) => {
-            const isLast = i === rows.length - 1
-            const pct = row.maxPoints > 0 ? Math.round((row.points / row.maxPoints) * 100) : 0
-            const isZero = row.points === 0
-            return (
-              <tr key={row.id} className="hover:bg-slate-50 transition-colors">
-                <td className={`px-4 py-3 ${isLast ? '' : 'border-b'}`} style={rowBorderStyle}>
-                  <p className="text-[13px] font-medium text-slate-700 leading-snug">{row.award}</p>
-                  <p className="text-[12px] text-slate-400 mt-0.5">{row.description}</p>
-                </td>
-                <td className={`px-4 py-3 text-xs text-slate-500 whitespace-nowrap ${isLast ? '' : 'border-b'}`} style={rowBorderStyle}>{row.criteria}</td>
-                <td className={`px-4 py-3 text-center text-sm font-medium text-slate-600 ${isLast ? '' : 'border-b'}`} style={rowBorderStyle}>{row.team}</td>
-                <td className={`px-4 py-3 ${isLast ? '' : 'border-b'}`} style={rowBorderStyle}>
-                  <div className="w-[60px] h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: `${pct}%`, backgroundColor: isZero ? '#ef4444' : progressColor }}
-                    />
-                  </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">{pct}%</p>
-                </td>
-                <td
-                  className={`px-4 py-3 text-right font-bold tabular-nums text-sm ${isLast ? '' : 'border-b'}`}
-                  style={{ ...rowBorderStyle, color: isZero ? '#ef4444' : pointsColor }}
-                >
-                  {isZero ? '—' : row.points.toLocaleString()}
-                </td>
-              </tr>
-            )
-          })}
-          <tr className="bg-slate-50" style={{ borderTop: '0.5px solid #e2e8f0' }}>
-            <td colSpan={4} className="px-4 py-2.5 text-xs font-semibold text-slate-500">Section Total</td>
-            <td className="px-4 py-2.5 text-right text-sm font-extrabold tabular-nums" style={{ color: pointsColor }}>
-              {total.toLocaleString()}
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-/* ── Zonal Awards — main panel ──────────────────────────────────── */
-function ZonalAwardsPanel() {
-  const [autoOpen,   setAutoOpen]   = useState(true)
-  const [manualOpen, setManualOpen] = useState(true)
-
-  const autoTotal  = AUTO_POINTS_ROWS.reduce((s, r) => s + r.points, 0)
-  const manualTotal = MANUAL_POINTS_ROWS.reduce((s, r) => s + r.points, 0)
-  const grandTotal  = autoTotal + manualTotal
-  const autoPct    = Math.round((autoTotal  / grandTotal) * 100)
-  const manualPct  = 100 - autoPct
-
-  const Chevron = ({ open, color }) => (
-    <svg
-      width="16" height="16" fill="none" stroke={color} strokeWidth="2" viewBox="0 0 24 24"
-      style={{ transition: 'transform 0.2s', transform: open ? 'rotate(0deg)' : 'rotate(-90deg)', flexShrink: 0 }}
-    >
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  )
-
-  return (
-    <div className="space-y-5">
-      {/* ── Summary cards ── */}
-      <div className="grid grid-cols-3 gap-3">
-        {[
-          { label:'Total Points',    value:grandTotal,  sub:'Combined score',        color:'#185FA5', bg:'bg-blue-50'  },
-          { label:'Auto-generated',  value:autoTotal,   sub:`${autoPct}% of total`,  color:'#0F6E56', bg:'bg-green-50' },
-          { label:'Manual Points',   value:manualTotal, sub:`${manualPct}% of total`,color:'#854F0B', bg:'bg-amber-50' },
-        ].map(s => (
-          <div key={s.label} className={`${s.bg} rounded-xl px-5 py-4`} style={{ border: '0.5px solid transparent' }}>
-            <p className="text-xs text-slate-400 mb-1">{s.label}</p>
-            <p className="text-3xl font-extrabold tabular-nums" style={{ color: s.color }}>
-              {s.value.toLocaleString()}
-            </p>
-            <p className="text-xs mt-1" style={{ color: s.color + '99' }}>{s.sub}</p>
-          </div>
-        ))}
-      </div>
-
-      {/* ── Auto-generated section ── */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '0.5px solid #e2e8f0' }}>
-        <button
-          onClick={() => setAutoOpen(o => !o)}
-          className="w-full flex items-center justify-between px-4 py-3 text-left"
-          style={{ backgroundColor: '#E1F5EE' }}
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#1D9E75' }} />
-            <span className="text-sm font-semibold" style={{ color: '#0F6E56' }}>Auto-generated Points</span>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#9FE1CB', color: '#0F6E56' }}>
-              {autoTotal.toLocaleString()} pts
-            </span>
-          </div>
-          <Chevron open={autoOpen} color="#0F6E56" />
-        </button>
-        {autoOpen && (
-          <PointsTable rows={AUTO_POINTS_ROWS} pointsColor="#0F6E56" progressColor="#1D9E75" total={autoTotal} />
-        )}
-      </div>
-
-      {/* ── Manual section ── */}
-      <div className="rounded-xl overflow-hidden" style={{ border: '0.5px solid #e2e8f0' }}>
-        <button
-          onClick={() => setManualOpen(o => !o)}
-          className="w-full flex items-center justify-between px-4 py-3 text-left"
-          style={{ backgroundColor: '#FAEEDA' }}
-        >
-          <div className="flex items-center gap-2.5">
-            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#EF9F27' }} />
-            <span className="text-sm font-semibold" style={{ color: '#854F0B' }}>Manual Points</span>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full" style={{ backgroundColor: '#FAC775', color: '#854F0B' }}>
-              {manualTotal.toLocaleString()} pts
-            </span>
-          </div>
-          <Chevron open={manualOpen} color="#854F0B" />
-        </button>
-        {manualOpen && (
-          <PointsTable rows={MANUAL_POINTS_ROWS} pointsColor="#854F0B" progressColor="#EF9F27" total={manualTotal} />
-        )}
-      </div>
-
-      {/* ── Deadline banner ── */}
-      <div className="flex items-center gap-3 p-3 bg-amber-50 rounded-xl" style={{ border: '0.5px solid #fde68a' }}>
-        <svg width="15" height="15" fill="none" stroke="#ca8a04" strokeWidth="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-        </svg>
-        <p className="text-xs text-amber-700">
-          Zonal award submissions close on <span className="font-semibold">April 30, 2026</span>. Ensure all entries are submitted before the deadline.
-        </p>
-      </div>
-    </div>
-  )
-}
-
 /* ── Document type badge colors ────────────────────────────────── */
 const DOC_TYPE_STYLE = {
   PDF:  { bg: 'bg-red-50',   text: 'text-red-600'   },
   XLSX: { bg: 'bg-green-50', text: 'text-green-700'  },
   DOCX: { bg: 'bg-blue-50',  text: 'text-blue-700'   },
 }
+
+const DOC_CATEGORIES      = DOCUMENT_CATEGORIES.filter(c => c.id !== 'newsletters')
+const NEWSLETTER_CATEGORY = DOCUMENT_CATEGORIES.find(c => c.id === 'newsletters')
 
 /* ── Document category card ─────────────────────────────────────── */
 function DocCategoryCard({ cat }) {
@@ -419,6 +247,74 @@ function DocCategoryCard({ cat }) {
           Upload
         </button>
       </div>
+    </div>
+  )
+}
+
+/* ── Documents & Newsletters panel ─────────────────────────────── */
+function DocumentsPanel() {
+  const [docTab, setDocTab] = useState('documents')
+
+  return (
+    <div className="space-y-5">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <p className="text-sm font-semibold text-slate-700">Documents &amp; Newsletters</p>
+          <p className="text-xs text-slate-400 mt-0.5">All club files organised by category</p>
+        </div>
+        <button
+          className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-lg shadow-sm"
+          style={{ backgroundColor: '#003DA5' }}
+        >
+          <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="9" y1="15" x2="15" y2="15"/>
+          </svg>
+          Generate OCV Report
+        </button>
+      </div>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm w-fit">
+        {[
+          { id: 'documents',   label: 'Documents',   count: DOC_CATEGORIES.reduce((s, c) => s + c.docs.length, 0) },
+          { id: 'newsletters', label: 'Newsletter',  count: NEWSLETTER_CATEGORY?.docs.length ?? 0 },
+        ].map(t => (
+          <button
+            key={t.id}
+            onClick={() => setDocTab(t.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+              docTab === t.id
+                ? 'text-white shadow-sm font-semibold'
+                : 'text-slate-500 hover:text-slate-800 hover:bg-slate-50'
+            }`}
+            style={docTab === t.id ? { backgroundColor: '#003DA5' } : {}}
+          >
+            {t.label}
+            <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full ${
+              docTab === t.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+            }`}>{t.count}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Documents grid */}
+      {docTab === 'documents' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          {DOC_CATEGORIES.map(cat => (
+            <DocCategoryCard key={cat.id} cat={cat} />
+          ))}
+        </div>
+      )}
+
+      {/* Newsletter grid */}
+      {docTab === 'newsletters' && NEWSLETTER_CATEGORY && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+          <DocCategoryCard cat={NEWSLETTER_CATEGORY} />
+        </div>
+      )}
     </div>
   )
 }
@@ -517,7 +413,6 @@ function ClubMonthlyReportPanel() {
   const submitted  = CMR_MONTHS.filter(m => m.status === 'Submitted').length
   const inProgress = CMR_MONTHS.filter(m => m.status === 'In Progress').length
   const notStarted = CMR_MONTHS.filter(m => m.status === 'Not Started').length
-  const detailed   = CMR_MONTHS.filter(m => m.hasDetailed).length
   const total      = CMR_MONTHS.length
   const pct        = Math.round((submitted / total) * 100)
 
@@ -545,12 +440,11 @@ function ClubMonthlyReportPanel() {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label:'Total Months',     value:total,               color:'#003DA5', bg:'bg-blue-50'   },
-          { label:'Submitted',        value:submitted,            color:'#16a34a', bg:'bg-green-50'  },
-          { label:'Pending',          value:inProgress+notStarted,color:'#d97706', bg:'bg-amber-50'  },
-          { label:'Detailed Reports', value:detailed,             color:'#9333ea', bg:'bg-purple-50' },
+          { label:'Total Months', value:total,                color:'#003DA5', bg:'bg-blue-50'  },
+          { label:'Submitted',    value:submitted,             color:'#16a34a', bg:'bg-green-50' },
+          { label:'Pending',      value:inProgress+notStarted, color:'#d97706', bg:'bg-amber-50' },
         ].map(s => (
           <div key={s.label} className={`${s.bg} rounded-xl px-4 py-3.5 text-center`} style={{ border:'0.5px solid transparent' }}>
             <p className="text-2xl font-extrabold tabular-nums" style={{ color: s.color }}>{s.value}</p>
@@ -626,9 +520,6 @@ function ClubMonthlyReportPanel() {
                       />
                       <CMRActionBtn label="Club Report" color="#9333ea" enabled={isSubmitted}
                         icon={<svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>}
-                      />
-                      <CMRActionBtn label="Detailed" color="#d97706" enabled={r.hasDetailed}
-                        icon={<svg width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>}
                       />
                     </div>
                   </td>
@@ -846,7 +737,6 @@ const TABS = [
   { id: 'ocv',        label: 'OCV / GOV'           },
   { id: 'attendance', label: 'Attendance'           },
   { id: 'citation',   label: 'District Citation'    },
-  { id: 'awards',     label: 'Zonal Awards'         },
   { id: 'reports',    label: 'Reports'              },
 ]
 
@@ -1062,7 +952,7 @@ export default function EGovernance() {
                         strokeLinecap="round" transform="rotate(-90 70 70)" />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-4xl font-extrabold text-rose-600 leading-none tabular-nums">{CLUB_STATS.districtCitationScore}</span>
+                      <span className="text-xl font-extrabold text-rose-600 leading-none tabular-nums">{CLUB_STATS.districtCitationScore.toLocaleString()}</span>
                       <span className="text-sm text-slate-400 mt-1">pts scored</span>
                     </div>
                   </div>
@@ -1126,36 +1016,8 @@ export default function EGovernance() {
             </div>
           )}
 
-          {/* ── OCV / GOV — DOCUMENTS ────────────────────────────── */}
-          {activeTab === 'ocv' && (
-            <div className="space-y-5">
-              {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-slate-700">Club Documents</p>
-                  <p className="text-xs text-slate-400 mt-0.5">All club documents organised by category</p>
-                </div>
-                <button
-                  className="flex items-center gap-2 text-xs font-semibold text-white px-4 py-2 rounded-lg shadow-sm"
-                  style={{ backgroundColor: '#003DA5' }}
-                >
-                  <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="9" y1="15" x2="15" y2="15"/>
-                  </svg>
-                  Generate OCV Report
-                </button>
-              </div>
-
-              {/* 8 Category Cards — 4 per row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {DOCUMENT_CATEGORIES.map(cat => (
-                  <DocCategoryCard key={cat.id} cat={cat} />
-                ))}
-              </div>
-            </div>
-          )}
+          {/* ── DOCUMENTS & NEWSLETTERS ──────────────────────────── */}
+          {activeTab === 'ocv' && <DocumentsPanel />}
 
           {/* ── PPH CAMP ─────────────────────────────────────────── */}
           {activeTab === 'pph' && (
@@ -1215,9 +1077,6 @@ export default function EGovernance() {
               <p className="text-xs text-slate-400">{PPH_CAMPS.length} camps · {PPH_CAMPS.reduce((s,c) => s + c.children, 0)} children vaccinated total</p>
             </div>
           )}
-
-          {/* ── ZONAL AWARDS ─────────────────────────────────────── */}
-          {activeTab === 'awards' && <ZonalAwardsPanel />}
 
           {/* ── REPORTS ──────────────────────────────────────────── */}
           {activeTab === 'reports' && <ReportsPanel />}

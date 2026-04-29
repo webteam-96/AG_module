@@ -1,26 +1,20 @@
 import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import StatCard from '../components/StatCard'
-import { EVENTS, ANNOUNCEMENTS, DOCUMENTS } from '../data/clubData'
+import StatCard from '../../club/components/StatCard'
+import {
+  DISTRICT_EVENTS_COMM,
+  DISTRICT_ANNOUNCEMENTS,
+  DISTRICT_GREETINGS,
+  DISTRICT_DOCUMENTS,
+} from '../data/communicationData'
 
-/* ── Greetings data ─────────────────────────────────────────────── */
-const GREETINGS = [
-  { id:1,  name:'Deepa Sharma',      role:'Member',              initials:'DS', color:'#9333ea', type:'Birthday',           date:'Apr 28', section:'today' },
-  { id:2,  name:'Suresh Iyer',       role:'Sgt-at-Arms',         initials:'SI', color:'#0891b2', type:'Anniversary',        date:'Apr 28', section:'today' },
-  { id:3,  name:'Anita Kulkarni',    role:'Treasurer',           initials:'AK', color:'#16a34a', type:'Birthday',           date:'Apr 30', section:'week'  },
-  { id:4,  name:'Ramesh Joshi',      role:'Comm. Service Chair', initials:'RJ', color:'#f59e0b', type:'Rotary Anniversary', date:'May 1',  section:'week'  },
-  { id:5,  name:'Khushboo Tadkar',   role:'President',           initials:'KT', color:'#003DA5', type:'Anniversary',        date:'May 2',  section:'week'  },
-  { id:6,  name:'Praveen Mestry',    role:'Foundation Chair',    initials:'PM', color:'#ca8a04', type:'Birthday',           date:'May 6',  section:'month' },
-  { id:7,  name:'Meera Shenoy',      role:'Membership Chair',    initials:'MS', color:'#e11d48', type:'Birthday',           date:'May 10', section:'month' },
-  { id:8,  name:'Rohit Verma',       role:'Youth Service Chair', initials:'RV', color:'#0891b2', type:'Rotary Anniversary', date:'May 14', section:'month' },
-  { id:9,  name:'Seema Kapoor',      role:'Member',              initials:'SK', color:'#9333ea', type:'Anniversary',        date:'May 19', section:'month' },
-  { id:10, name:'Anil Mehta',        role:'Member',              initials:'AM', color:'#16a34a', type:'Birthday',           date:'May 24', section:'month' },
-]
-
-const TYPE_STYLE = {
-  'Birthday':           { bg:'bg-rose-50',   text:'text-rose-600',  icon:'🎂' },
-  'Anniversary':        { bg:'bg-pink-50',   text:'text-pink-700',  icon:'💍' },
-  'Rotary Anniversary': { bg:'bg-blue-50',   text:'text-blue-700',  icon:'⭐' },
+/* ── Style maps ─────────────────────────────────────────────────── */
+const EVENT_COLORS = {
+  District:  { bg: 'bg-blue-50',   text: 'text-blue-700'   },
+  TRF:       { bg: 'bg-amber-50',  text: 'text-amber-700'  },
+  'New Gen': { bg: 'bg-purple-50', text: 'text-purple-700' },
+  Service:   { bg: 'bg-green-50',  text: 'text-green-700'  },
+  Meeting:   { bg: 'bg-slate-100', text: 'text-slate-600'  },
 }
 
 const ANN_COLORS = { urgent:'#f59e0b', normal:'#003DA5', info:'#16a34a', action:'#e11d48' }
@@ -32,21 +26,19 @@ const ANN_BADGE  = {
   action: 'bg-red-50   text-red-600',
 }
 
-const EVENT_COLORS = {
-  Meeting:   { bg:'bg-blue-50',   text:'text-blue-700'   },
-  Service:   { bg:'bg-red-50',    text:'text-red-700'    },
-  TRF:       { bg:'bg-amber-50',  text:'text-amber-700'  },
-  'New Gen': { bg:'bg-purple-50', text:'text-purple-700' },
-  District:  { bg:'bg-slate-100', text:'text-slate-600'  },
+const TYPE_STYLE = {
+  'Birthday':           { bg:'bg-rose-50',   text:'text-rose-600',  icon:'🎂' },
+  'Anniversary':        { bg:'bg-pink-50',   text:'text-pink-700',  icon:'💍' },
+  'Rotary Anniversary': { bg:'bg-blue-50',   text:'text-blue-700',  icon:'⭐' },
 }
 
 const DOC_STYLE = {
-  PDF: { bg:'bg-red-50',   text:'text-red-600',   accent:'#ef4444' },
-  XLS: { bg:'bg-green-50', text:'text-green-700', accent:'#16a34a' },
-  DOC: { bg:'bg-blue-50',  text:'text-blue-700',  accent:'#003DA5' },
+  PDF:  { bg:'bg-red-50',   text:'text-red-600',   accent:'#ef4444' },
+  XLSX: { bg:'bg-green-50', text:'text-green-700', accent:'#16a34a' },
+  DOC:  { bg:'bg-blue-50',  text:'text-blue-700',  accent:'#003DA5' },
 }
 
-/* ── Shared card header action button ───────────────────────────── */
+/* ── Shared action button ───────────────────────────────────────── */
 function ActionBtn({ label }) {
   return (
     <button className="text-xs font-medium text-blue-700 hover:bg-blue-50 px-3 py-1.5 rounded-md border border-blue-200 flex-shrink-0">
@@ -55,38 +47,43 @@ function ActionBtn({ label }) {
   )
 }
 
-export default function Communication() {
+/* ── Main component ─────────────────────────────────────────────── */
+export default function DistrictCommunication() {
   const [greetSection, setGreetSection] = useState('today')
-  const [docTab, setDocTab] = useState('documents')
-  const todayCount = GREETINGS.filter(g => g.section === 'today').length
-  const greetRows  = GREETINGS.filter(g => g.section === greetSection)
+  const [docTab, setDocTab]             = useState('documents')
+
+  const todayCount = DISTRICT_GREETINGS.filter(g => g.section === 'today').length
+  const greetRows  = DISTRICT_GREETINGS.filter(g => g.section === greetSection)
+
+  const newsletters = DISTRICT_DOCUMENTS.filter(d => d.name.toLowerCase().includes('newsletter'))
+  const documents   = DISTRICT_DOCUMENTS.filter(d => !d.name.toLowerCase().includes('newsletter'))
 
   return (
     <div className="space-y-4">
 
-      {/* ── KPI strip ── */}
+      {/* KPI strip */}
       <div className="grid grid-cols-2 xl:grid-cols-5 gap-3">
-        <StatCard label="Upcoming Events"      value={EVENTS.length}        sub="Next 30 days"             subColor="muted" accent="#003DA5" />
-        <StatCard label="Active Announcements" value={ANNOUNCEMENTS.length} sub="Active"                   subColor="muted" accent="#f59e0b" />
-        <StatCard label="Newsletters"          value={9}                    sub="This RY"                  subColor="muted" accent="#0891b2" />
-        <StatCard label="Shared Documents"     value={DOCUMENTS.length}     sub="Files"                    subColor="muted" accent="#16a34a" />
-        <StatCard label="Greetings Today"      value={todayCount}           sub="Birthdays & anniversaries" subColor="up"    accent="#e11d48" />
+        <StatCard label="Upcoming Events"      value={DISTRICT_EVENTS_COMM.length}      sub="Next 30 days"              subColor="muted" accent="#003DA5" />
+        <StatCard label="Active Announcements" value={DISTRICT_ANNOUNCEMENTS.length}    sub="District-wide"             subColor="muted" accent="#f59e0b" />
+        <StatCard label="Newsletters"          value={newsletters.length}               sub="This RY"                   subColor="muted" accent="#0891b2" />
+        <StatCard label="Shared Documents"     value={documents.length}                 sub="Files"                     subColor="muted" accent="#16a34a" />
+        <StatCard label="Greetings Today"      value={todayCount}                       sub="Birthdays & anniversaries" subColor={todayCount > 0 ? 'up' : 'muted'} accent="#e11d48" />
       </div>
 
-      {/* ── Row 1: Events · Announcements · Greetings ── */}
+      {/* Row 1: Events · Announcements · Greetings */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
 
         {/* Events */}
         <Card className="flex flex-col">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-sm">Upcoming Events</CardTitle>
-              <CardDescription className="text-xs">Next 30 days</CardDescription>
+              <CardTitle className="text-sm">District Events</CardTitle>
+              <CardDescription className="text-xs">Upcoming district calendar</CardDescription>
             </div>
             <ActionBtn label="+ Add" />
           </CardHeader>
           <CardContent className="pt-0 flex-1 divide-y divide-slate-100">
-            {EVENTS.map(ev => {
+            {DISTRICT_EVENTS_COMM.map(ev => {
               const d   = ev.date.split('-')[2]
               const mon = new Date(ev.date).toLocaleString('default', { month: 'short' })
               const col = EVENT_COLORS[ev.type] ?? EVENT_COLORS.District
@@ -112,12 +109,12 @@ export default function Communication() {
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
               <CardTitle className="text-sm">Announcements</CardTitle>
-              <CardDescription className="text-xs">Active notices for members</CardDescription>
+              <CardDescription className="text-xs">Active notices for all clubs</CardDescription>
             </div>
             <ActionBtn label="+ Post" />
           </CardHeader>
           <CardContent className="pt-0 flex-1 divide-y divide-slate-100">
-            {ANNOUNCEMENTS.map(a => (
+            {DISTRICT_ANNOUNCEMENTS.map(a => (
               <div key={a.id} className="py-3 space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
                   <p className="text-[13px] text-slate-700 leading-snug flex-1">{a.text}</p>
@@ -147,11 +144,10 @@ export default function Communication() {
                     </span>
                   )}
                 </CardTitle>
-                <CardDescription className="text-xs mt-0.5">Birthdays & anniversaries</CardDescription>
+                <CardDescription className="text-xs mt-0.5">District committee birthdays & anniversaries</CardDescription>
               </div>
               <ActionBtn label="Send All" />
             </div>
-            {/* Section mini-tabs */}
             <div className="flex gap-1 mt-3">
               {[
                 { id:'today', label:'Today' },
@@ -162,15 +158,13 @@ export default function Communication() {
                   key={s.id}
                   onClick={() => setGreetSection(s.id)}
                   className={`flex-1 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${
-                    greetSection === s.id
-                      ? 'text-white'
-                      : 'text-slate-500 bg-slate-100 hover:bg-slate-200'
+                    greetSection === s.id ? 'text-white' : 'text-slate-500 bg-slate-100 hover:bg-slate-200'
                   }`}
-                  style={greetSection === s.id ? { backgroundColor:'#003DA5' } : {}}
+                  style={greetSection === s.id ? { backgroundColor: '#003DA5' } : {}}
                 >
                   {s.label}
                   <span className={`ml-1 text-[10px] ${greetSection === s.id ? 'opacity-75' : 'text-slate-400'}`}>
-                    {GREETINGS.filter(g => g.section === s.id).length}
+                    {DISTRICT_GREETINGS.filter(g => g.section === s.id).length}
                   </span>
                 </button>
               ))}
@@ -193,7 +187,7 @@ export default function Communication() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-semibold text-slate-800 leading-snug truncate">{g.name}</p>
-                        <p className="text-[11px] text-slate-400">{g.role}</p>
+                        <p className="text-[11px] text-slate-400 truncate">{g.role} · {g.club}</p>
                       </div>
                       <div className="flex flex-col items-end gap-1 flex-shrink-0">
                         <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${ts.bg} ${ts.text}`}>
@@ -201,7 +195,6 @@ export default function Communication() {
                         </span>
                         <span className="text-[10px] text-slate-400">{g.date}</span>
                       </div>
-                      {/* Send buttons */}
                       <div className="flex gap-1 flex-shrink-0">
                         <button title="WhatsApp" className="w-6 h-6 rounded-md flex items-center justify-center bg-green-50 hover:bg-green-100 transition-colors">
                           <svg width="12" height="12" viewBox="0 0 24 24" fill="#16a34a">
@@ -225,27 +218,24 @@ export default function Communication() {
         </Card>
       </div>
 
-      {/* ── Row 2: Documents & Newsletters ── */}
+      {/* Row 2: Documents & Newsletters */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-3 flex-wrap gap-3">
           <div>
             <CardTitle className="text-sm">Documents &amp; Newsletters</CardTitle>
-            <CardDescription className="text-xs">Shared with club members</CardDescription>
+            <CardDescription className="text-xs">District 5656 — shared with all clubs</CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            {/* Sub-tabs */}
             <div className="flex gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1">
               {[
-                { id: 'documents',   label: 'Documents',  count: DOCUMENTS.filter(d => !d.name.toLowerCase().includes('newsletter')).length },
-                { id: 'newsletters', label: 'Newsletter', count: DOCUMENTS.filter(d => d.name.toLowerCase().includes('newsletter')).length  },
+                { id: 'documents',   label: 'Documents',  count: documents.length   },
+                { id: 'newsletters', label: 'Newsletter', count: newsletters.length },
               ].map(t => (
                 <button
                   key={t.id}
                   onClick={() => setDocTab(t.id)}
                   className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
-                    docTab === t.id
-                      ? 'text-white shadow-sm font-semibold'
-                      : 'text-slate-500 hover:text-slate-800 hover:bg-white'
+                    docTab === t.id ? 'text-white shadow-sm font-semibold' : 'text-slate-500 hover:text-slate-800 hover:bg-white'
                   }`}
                   style={docTab === t.id ? { backgroundColor: '#003DA5' } : {}}
                 >
@@ -261,26 +251,19 @@ export default function Communication() {
         </CardHeader>
         <CardContent className="pt-0">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {DOCUMENTS.filter(d =>
-              docTab === 'newsletters'
-                ? d.name.toLowerCase().includes('newsletter')
-                : !d.name.toLowerCase().includes('newsletter')
-            ).map(doc => {
+            {(docTab === 'documents' ? documents : newsletters).map(doc => {
               const ds = DOC_STYLE[doc.type] ?? DOC_STYLE.PDF
               return (
                 <div
                   key={doc.id}
                   className="rounded-xl p-4 flex flex-col gap-3 hover:shadow-sm transition-shadow cursor-pointer"
-                  style={{ border:'0.5px solid #e2e8f0' }}
+                  style={{ border: '0.5px solid #e2e8f0' }}
                 >
                   <div className="flex items-center justify-between">
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${ds.bg} ${ds.text}`}>
                       {doc.type}
                     </span>
-                    <button
-                      className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors"
-                      title="Download"
-                    >
+                    <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-slate-100 transition-colors" title="Download">
                       <svg width="13" height="13" fill="none" stroke="#64748b" strokeWidth="2" viewBox="0 0 24 24">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                         <polyline points="7 10 12 15 17 10"/>

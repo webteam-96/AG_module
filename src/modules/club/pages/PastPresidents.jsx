@@ -22,8 +22,6 @@ export default function PastPresidents() {
     setNewName(''); setNewYear(''); setShowAdd(false)
   }
 
-  const handleDelete = (idx) => setRecords(r => r.filter((_, i) => i !== idx))
-
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
@@ -77,7 +75,6 @@ export default function PastPresidents() {
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Name</th>
                   <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Year</th>
                   <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Edit</th>
-                  <th className="text-center text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Delete</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -98,12 +95,6 @@ export default function PastPresidents() {
                       <button onClick={() => setEditId(i)}
                         className="text-blue-600 hover:text-blue-800 p-1 rounded hover:bg-blue-50" title="Edit">
                         <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                      </button>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button onClick={() => handleDelete(i)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded hover:bg-red-50" title="Delete">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                       </button>
                     </td>
                   </tr>
