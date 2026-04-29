@@ -28,8 +28,8 @@ const distServiceProjects = CLUB_ANALYTICS.reduce((s, c) => s + c.serviceProject
 const distBeneficiaries   = CLUB_ANALYTICS.reduce((s, c) => s + c.beneficiaries, 0)
 
 const distCitationAvg     = Math.round(CLUB_ANALYTICS.reduce((s, c) => s + c.citationScore, 0) / CLUB_ANALYTICS.length)
-const distCitationPct     = Math.round((distCitationAvg / 50) * 100)
-const distQualified       = CLUB_ANALYTICS.filter(c => c.citationScore >= 40).length
+const distCitationPct     = Math.round((distCitationAvg / 1000) * 100)
+const distQualified       = CLUB_ANALYTICS.filter(c => c.citationScore >= 800).length
 
 // ── Derived & ranked data ────────────────────────────────────────
 const enriched = CLUB_ANALYTICS.map(c => ({
@@ -135,7 +135,7 @@ export default function DistrictOverview() {
         <StatCard label="Total Clubs"       value={CLUB_ANALYTICS.length}              sub="District 5656"        subColor="muted" accent="#003DA5" />
         <StatCard label="Total Members"     value={distTotalMembers}                   sub="Across all clubs"     subColor="muted" accent="#16a34a" />
         <StatCard label="TRF Contribution"  value={fmtUSD(distTrfRaised / INR_TO_USD)} sub={`${distTrfPct}% of goal`} subColor="muted" accent="#ca8a04" />
-        <StatCard label="District Citation" value={`${distCitationAvg} pts`}           sub={`${distQualified} clubs qualified`} subColor={distCitationAvg >= 40 ? 'up' : 'down'} accent="#e11d48" />
+        <StatCard label="District Citation" value={`${distCitationAvg} pts`}           sub={`${distQualified} clubs qualified`} subColor={distCitationAvg >= 800 ? 'up' : 'down'} accent="#e11d48" />
       </div>
 
       {/* Row 1: 4 analytical cards */}
@@ -283,7 +283,7 @@ export default function DistrictOverview() {
                   </svg>
                   <div className="absolute inset-0 flex flex-col items-center justify-center">
                     <span className="text-2xl font-extrabold text-rose-600 leading-none tabular-nums">{distCitationAvg}</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">avg / 50</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">avg / 1000</span>
                   </div>
                 </div>
               </div>
@@ -382,7 +382,7 @@ export default function DistrictOverview() {
                   <Tooltip contentStyle={{ fontSize:12, borderRadius:6 }} />
                   <Bar dataKey="Score" radius={[4,4,0,0]}>
                     {top20('citationScore', 'Score').map((d, i) => (
-                      <Cell key={i} fill={d.Score >= 40 ? '#16a34a' : d.Score >= 25 ? '#f59e0b' : '#ef4444'} />
+                      <Cell key={i} fill={d.Score >= 800 ? '#16a34a' : d.Score >= 500 ? '#f59e0b' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>

@@ -32,7 +32,7 @@ const PPH_DATES    = ['Nov 2, 2025','Nov 28, 2025','Dec 10, 2025','Jan 18, 2026'
 
 let campId = 0
 export const PPH_CAMPS = CLUB_ANALYTICS.flatMap((c, ci) => {
-  const campCount = c.citationScore >= 40 ? 2 : c.citationScore >= 25 ? 1 : (ci % 3 === 0 ? 1 : 0)
+  const campCount = c.citationScore >= 800 ? 2 : c.citationScore >= 500 ? 1 : (ci % 3 === 0 ? 1 : 0)
   return Array.from({ length: campCount }, (_, i) => {
     const seed   = ci * 3 + i
     const coords = seed % 3 === 0 ? PPH_COORDS_F : PPH_COORDS_M
@@ -50,17 +50,17 @@ export const PPH_CAMPS = CLUB_ANALYTICS.flatMap((c, ci) => {
 })
 
 export const CITATION_CRITERIA = [
-  { criterion:'Membership Growth',       points:10 },
-  { criterion:'Service Projects (≥10)',  points:10 },
-  { criterion:'TRF Contribution',        points:10 },
-  { criterion:'Attendance (≥75%)',       points:10 },
-  { criterion:'Public Image Initiative', points:10 },
+  { criterion:'Membership Growth',       points:200 },
+  { criterion:'Service Projects (≥10)',  points:200 },
+  { criterion:'TRF Contribution',        points:200 },
+  { criterion:'Attendance (≥75%)',       points:200 },
+  { criterion:'Public Image Initiative', points:200 },
 ]
 
 function makeCriteria(club, seed) {
   return CITATION_CRITERIA.map((crit, i) => {
     const maxPts  = crit.points
-    const pctBase = club.citationScore / 50
+    const pctBase = club.citationScore / 1000
     const raw     = Math.round(maxPts * (pctBase + ((seed + i * 3) % 5) * 0.02 - 0.04))
     return Math.max(0, Math.min(maxPts, raw))
   })

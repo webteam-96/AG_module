@@ -53,7 +53,7 @@ function makeClub(name, tier, seed) {
   const beneficiaries   = hi ? 1500 + (s * 7 % 1501) : lo ? 100 + (s * 3 % 401) : 400 + (s * 5 % 1101)
   const manHours        = serviceProjects * (30 + s % 50)
 
-  const citationScore    = hi ? 40 + (s % 11) : lo ? 8 + (s % 17) : 22 + (s % 18)
+  const citationScore    = hi ? (40 + (s % 11)) * 20 : lo ? (8 + (s % 17)) * 20 : (22 + (s % 18)) * 20
   const reportsSubmitted = hi ? 9 + (s % 3)  : lo ? 2 + (s % 5)  : 5 + (s % 5)
   const avgAttendance    = hi ? 78 + (s % 18) : lo ? 30 + (s % 26) : 52 + (s % 27)
 
@@ -69,7 +69,7 @@ function makeClub(name, tier, seed) {
     newThisYear, terminated,
     trfRaised, trfGoal, annualFund, phfContributors, majorDonors,
     serviceProjects, beneficiaries, manHours,
-    citationScore, citationMax: 50,
+    citationScore, citationMax: 1000,
     reportsSubmitted, reportsTotal: 12,
     avgAttendance,
     memberRoster: makeRoster(seed, rosterCount),

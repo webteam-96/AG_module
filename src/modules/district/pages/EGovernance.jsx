@@ -386,7 +386,7 @@ function CitationTab() {
 
   const sorted    = [...CLUB_CITATIONS].sort((a, b) => b.total - a.total)
   const distAvg   = Math.round(CLUB_CITATIONS.reduce((s, c) => s + c.total, 0) / CLUB_CITATIONS.length)
-  const qualified = CLUB_CITATIONS.filter(c => c.total >= 40).length
+  const qualified = CLUB_CITATIONS.filter(c => c.total >= 800).length
 
   const filtered   = sorted.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
   const totalPages = Math.ceil(filtered.length / CIT_PER_PAGE)
@@ -399,9 +399,9 @@ function CitationTab() {
     <div className="space-y-4">
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Total Clubs"      value={CLUB_CITATIONS.length} sub="Participating"       subColor="muted" accent="#003DA5" />
-        <StatCard label="District Average" value={`${distAvg}/50`}       sub="Citation score"      subColor={distAvg >= 40 ? 'up' : 'down'} accent="#9333ea" />
-        <StatCard label="Qualified"        value={qualified}             sub="≥ 40 pts (citation)" subColor="up"    accent="#16a34a" />
-        <StatCard label="Max Score"        value="50"                    sub="Points possible"     subColor="muted" accent="#0891b2" />
+        <StatCard label="District Average" value={`${distAvg}/1000`}      sub="Citation score"       subColor={distAvg >= 800 ? 'up' : 'down'} accent="#9333ea" />
+        <StatCard label="Qualified"        value={qualified}             sub="≥ 800 pts (citation)" subColor="up"    accent="#16a34a" />
+        <StatCard label="Max Score"        value="1000"                  sub="Points possible"      subColor="muted" accent="#0891b2" />
       </div>
 
       <Card>
@@ -601,7 +601,7 @@ export default function DistrictEGovernance() {
       <div className="grid grid-cols-2 xl:grid-cols-3 gap-3">
         <StatCard label="Monthly Reports"    value={totalSubmitted}         sub="Submitted on time" subColor="up"    accent="#003DA5" />
         <StatCard label="PPH Camps"          value={totalCamps}             sub="District-wide"     subColor="muted" accent="#16a34a" />
-        <StatCard label="Avg Citation Score" value={`${distAvgCitation}/50`} sub="All clubs"        subColor={distAvgCitation >= 40 ? 'up' : 'down'} accent="#9333ea" />
+        <StatCard label="Avg Citation Score" value={`${distAvgCitation}/1000`} sub="All clubs"      subColor={distAvgCitation >= 800 ? 'up' : 'down'} accent="#9333ea" />
       </div>
 
       <Card>
