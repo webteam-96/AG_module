@@ -23,12 +23,14 @@ const SearchIcon = () => (
 
 /* ── Projects tab ────────────────────────────────────────────────── */
 function ProjectsTab() {
-  const [search, setSearch]     = useState('')
-  const [clubFilter, setClub]   = useState('All Clubs')
+  const [search, setSearch]       = useState('')
+  const [clubFilter, setClub]     = useState('All Clubs')
   const [statusFilter, setStatus] = useState('All')
   const [avenueFilter, setAvenue] = useState('All')
+  const [page, setPage]           = useState(0)
+  const PER_PAGE = 15
 
-  const avenues = ['All', ...Array.from(new Set(DISTRICT_PROJECTS.map(p => p.avenue)))]
+  const avenues  = ['All', ...Array.from(new Set(DISTRICT_PROJECTS.map(p => p.avenue)))]
   const statuses = ['All', 'Completed', 'In Progress', 'Upcoming']
 
   const filtered = DISTRICT_PROJECTS.filter(p => {
@@ -39,6 +41,10 @@ function ProjectsTab() {
     return matchSearch && matchClub && matchStatus && matchAvenue
   })
 
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const safePage   = Math.min(page, Math.max(0, totalPages - 1))
+  const pageRows   = filtered.slice(safePage * PER_PAGE, (safePage + 1) * PER_PAGE)
+
   const totalBeneficiaries = DISTRICT_PROJECTS.reduce((s, p) => s + p.beneficiaries, 0)
   const totalFunds         = DISTRICT_PROJECTS.reduce((s, p) => s + p.funds, 0)
   const totalManHours      = DISTRICT_PROJECTS.reduce((s, p) => s + p.manHours, 0)
@@ -48,10 +54,10 @@ function ProjectsTab() {
     <div className="space-y-4">
       {/* KPI strip */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <StatCard label="Total Projects"     value={DISTRICT_PROJECTS.length} sub="Across all clubs"  subColor="muted" accent="#003DA5" />
-        <StatCard label="Completed"          value={completedCount}            sub="This RY"           subColor="up"    accent="#16a34a" />
-        <StatCard label="Total Beneficiaries"value={totalBeneficiaries.toLocaleString()} sub="Lives touched" subColor="muted" accent="#9333ea" />
-        <StatCard label="Total Funds"        value={fmtINR(totalFunds)}        sub={`${totalManHours} man-hours`} subColor="muted" accent="#ca8a04" />
+        <StatCard label="Total Projects"      value={DISTRICT_PROJECTS.length}           sub="Across all clubs"  subColor="muted" accent="#003DA5" />
+        <StatCard label="Completed"           value={completedCount}                      sub="This RY"           subColor="up"    accent="#16a34a" />
+        <StatCard label="Total Beneficiaries" value={totalBeneficiaries.toLocaleString()} sub="Lives touched"     subColor="muted" accent="#9333ea" />
+        <StatCard label="Total Funds"         value={fmtINR(totalFunds)}                  sub={`${totalManHours} man-hours`} subColor="muted" accent="#ca8a04" />
       </div>
 
       <Card>
@@ -74,21 +80,21 @@ function ProjectsTab() {
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 flex-1 min-w-48">
               <SearchIcon />
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
                 placeholder="Search project or club..."
                 className="flex-1 bg-transparent text-sm outline-none text-slate-600 placeholder-slate-400" />
             </div>
-            <select value={clubFilter} onChange={e => setClub(e.target.value)}
+            <select value={clubFilter} onChange={e => { setClub(e.target.value); setPage(0) }}
               className="border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 bg-white outline-none">
               {CLUBS.map(c => <option key={c}>{c}</option>)}
             </select>
-            <select value={avenueFilter} onChange={e => setAvenue(e.target.value)}
+            <select value={avenueFilter} onChange={e => { setAvenue(e.target.value); setPage(0) }}
               className="border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 bg-white outline-none">
               {avenues.map(a => <option key={a}>{a}</option>)}
             </select>
             <div className="flex gap-1">
               {statuses.map(s => (
-                <button key={s} onClick={() => setStatus(s)}
+                <button key={s} onClick={() => { setStatus(s); setPage(0) }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     statusFilter === s ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
@@ -110,12 +116,12 @@ function ProjectsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((p, i) => {
+                {pageRows.map((p, i) => {
                   const aColor  = AVENUE_COLORS[p.avenue] ?? '#64748b'
                   const sStyle  = STATUS_COLORS[p.status] ?? STATUS_COLORS.Upcoming
                   return (
                     <tr key={p.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 text-xs text-slate-400 tabular-nums">{i + 1}</td>
+                      <td className="px-3 py-3 text-xs text-slate-400 tabular-nums">{safePage * PER_PAGE + i + 1}</td>
                       <td className="px-3 py-3">
                         <span className="text-xs font-semibold text-slate-700 whitespace-nowrap">{p.club}</span>
                       </td>
@@ -146,7 +152,20 @@ function ProjectsTab() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-400">{filtered.length} of {DISTRICT_PROJECTS.length} projects shown</p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-slate-400">{filtered.length} of {DISTRICT_PROJECTS.length} projects shown</p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Page {safePage + 1} of {totalPages}</span>
+                <div className="flex gap-1">
+                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0}
+                    className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">←</button>
+                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}
+                    className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">→</button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -158,6 +177,8 @@ function EventsTab() {
   const [search, setSearch]   = useState('')
   const [clubFilter, setClub] = useState('All Clubs')
   const [typeFilter, setType] = useState('All')
+  const [page, setPage]       = useState(0)
+  const PER_PAGE = 15
 
   const types = ['All', 'District', 'Meeting', 'Service', 'TRF', 'New Gen']
 
@@ -167,6 +188,10 @@ function EventsTab() {
     const matchType   = typeFilter  === 'All'       || e.type === typeFilter
     return matchSearch && matchClub && matchType
   })
+
+  const totalPages = Math.ceil(filtered.length / PER_PAGE)
+  const safePage   = Math.min(page, Math.max(0, totalPages - 1))
+  const pageRows   = filtered.slice(safePage * PER_PAGE, (safePage + 1) * PER_PAGE)
 
   const upcoming  = DISTRICT_EVENTS.filter(e => e.status === 'Upcoming').length
   const completed = DISTRICT_EVENTS.filter(e => e.status === 'Completed').length
@@ -201,17 +226,17 @@ function EventsTab() {
           <div className="flex flex-wrap gap-2">
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 flex-1 min-w-48">
               <SearchIcon />
-              <input value={search} onChange={e => setSearch(e.target.value)}
+              <input value={search} onChange={e => { setSearch(e.target.value); setPage(0) }}
                 placeholder="Search event, club or venue..."
                 className="flex-1 bg-transparent text-sm outline-none text-slate-600 placeholder-slate-400" />
             </div>
-            <select value={clubFilter} onChange={e => setClub(e.target.value)}
+            <select value={clubFilter} onChange={e => { setClub(e.target.value); setPage(0) }}
               className="border border-slate-200 rounded-lg px-3 py-2 text-xs text-slate-600 bg-white outline-none">
               {EVENT_CLUBS.map(c => <option key={c}>{c}</option>)}
             </select>
             <div className="flex gap-1 flex-wrap">
               {types.map(t => (
-                <button key={t} onClick={() => setType(t)}
+                <button key={t} onClick={() => { setType(t); setPage(0) }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                     typeFilter === t ? 'text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                   }`}
@@ -233,14 +258,14 @@ function EventsTab() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filtered.map((ev, i) => {
+                {pageRows.map((ev, i) => {
                   const tStyle = EVENT_TYPE_COLORS[ev.type] ?? EVENT_TYPE_COLORS.Meeting
                   const sStyle = STATUS_COLORS[ev.status]  ?? STATUS_COLORS.Upcoming
                   const d   = ev.date.split('-')[2]
                   const mon = new Date(ev.date).toLocaleString('default', { month: 'short' })
                   return (
                     <tr key={ev.id} className="hover:bg-slate-50">
-                      <td className="px-3 py-3 text-xs text-slate-400 tabular-nums">{i + 1}</td>
+                      <td className="px-3 py-3 text-xs text-slate-400 tabular-nums">{safePage * PER_PAGE + i + 1}</td>
                       <td className="px-3 py-3 text-xs font-semibold text-slate-700 whitespace-nowrap">{ev.club}</td>
                       <td className="px-3 py-3 font-semibold text-slate-800 whitespace-nowrap">{ev.name}</td>
                       <td className="px-3 py-3">
@@ -268,7 +293,20 @@ function EventsTab() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-slate-400">{filtered.length} of {DISTRICT_EVENTS.length} events shown</p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <p className="text-xs text-slate-400">{filtered.length} of {DISTRICT_EVENTS.length} events shown</p>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-400">Page {safePage + 1} of {totalPages}</span>
+                <div className="flex gap-1">
+                  <button onClick={() => setPage(p => Math.max(0, p - 1))} disabled={safePage === 0}
+                    className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">←</button>
+                  <button onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))} disabled={safePage >= totalPages - 1}
+                    className="px-2.5 py-1 text-xs rounded-md border border-slate-200 disabled:opacity-40 hover:bg-slate-50">→</button>
+                </div>
+              </div>
+            )}
+          </div>
         </CardContent>
       </Card>
     </div>
