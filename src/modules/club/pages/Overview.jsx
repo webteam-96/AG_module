@@ -197,7 +197,6 @@ function OverviewContent() {
                   { label:'Male',      value: 95,                                                 color:'#0891b2' },
                   { label:'Female',    value: 28,                                                 color:'#e11d48' },
                   { label:'Honorary',  value: CLUB_STATS.honoraryMembers,                         color:'#9333ea' },
-                  { label:'Associate', value: CLUB_STATS.associateMembers,                        color:'#0891b2' },
                   { label:'Inactive',  value: CLUB_STATS.totalMembers - CLUB_STATS.activeMembers, color:'#94a3b8' },
                 ].map(s => (
                   <div key={s.label}>
