@@ -4,6 +4,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import StatCard from '../../club/components/StatCard'
 import { CLUB_ANALYTICS } from '../data/analyticsData'
+import { DISTRICT_PROJECTS } from '../data/foundationData'
+import { CLUB_CITATIONS, CITATION_CRITERIA } from '../data/egovernanceData'
 
 // ── District-wide aggregates ─────────────────────────────────────
 const distTotalMembers    = CLUB_ANALYTICS.reduce((s, c) => s + c.members, 0)
@@ -51,6 +53,32 @@ const avgProjects   = avgOf('serviceProjects')
 
 const INR_TO_USD = 84
 const fmtUSD = v => v >= 1000000 ? `$${(v / 1000000).toFixed(1)}M` : v >= 1000 ? `$${(v / 1000).toFixed(1)}K` : `$${v}`
+
+// ── Avenue breakdown for Service Projects card ───────────────────
+const AVENUE_COLOR_MAP = {
+  'Community Service':     '#003DA5',
+  'Vocational Service':    '#16a34a',
+  'New Generation':        '#9333ea',
+  'International Service': '#0891b2',
+  'Public Image':          '#ca8a04',
+  'Club Service':          '#e11d48',
+}
+const avenueCountMap = {}
+DISTRICT_PROJECTS.forEach(p => {
+  avenueCountMap[p.avenue] = (avenueCountMap[p.avenue] || 0) + 1
+})
+const AVENUE_BREAKDOWN = Object.entries(avenueCountMap)
+  .map(([name, completed]) => ({ name, completed, color: AVENUE_COLOR_MAP[name] ?? '#64748b' }))
+  .sort((a, b) => b.completed - a.completed)
+const avenueMax = Math.max(...AVENUE_BREAKDOWN.map(a => a.completed))
+
+// ── Per-criterion averages for Citation card ─────────────────────
+const CRITERION_AVGS = CITATION_CRITERIA.map((crit, i) => {
+  const avg    = Math.round(CLUB_CITATIONS.reduce((s, c) => s + c.criteria[i], 0) / CLUB_CITATIONS.length)
+  const pct    = Math.round((avg / crit.points) * 100)
+  const status = pct === 100 ? 'done' : pct >= 60 ? 'partial' : 'none'
+  return { criterion: crit.criterion, points: crit.points, earned: avg, pct, status }
+})
 
 // ── Pagination ───────────────────────────────────────────────────
 function Pagination({ page, total, perPage, setPage }) {
@@ -104,11 +132,11 @@ export default function DistrictOverview() {
 
       {/* KPI Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
-        <StatCard label="Total Clubs"       value={CLUB_ANALYTICS.length} sub="District 5656"      subColor="muted" accent="#003DA5" />
-        <StatCard label="Total Members"     value={distTotalMembers}       sub="Across all clubs"   subColor="muted" accent="#16a34a" />
-        <StatCard label="Avg Citation"      value={`${avgCitation}%`}      sub="District average"   subColor={avgCitation   > 75 ? 'up' : 'down'} accent="#9333ea" />
-        <StatCard label="Report Compliance" value={`${avgCompliance}%`}    sub="Monthly reports"    subColor={avgCompliance > 75 ? 'up' : 'down'} accent="#0891b2" />
-        <StatCard label="Avg Attendance"    value={`${avgAttendance}%`}    sub="Meeting attendance" subColor={avgAttendance > 75 ? 'up' : 'down'} accent="#f59e0b" />
+        <StatCard label="Total Clubs"       value={CLUB_ANALYTICS.length}              sub="District 5656"        subColor="muted" accent="#003DA5" />
+        <StatCard label="Total Members"     value={distTotalMembers}                   sub="Across all clubs"     subColor="muted" accent="#16a34a" />
+        <StatCard label="Avg Attendance"    value={`${avgAttendance}%`}                sub="Meeting attendance"   subColor={avgAttendance > 75 ? 'up' : 'down'} accent="#f59e0b" />
+        <StatCard label="TRF Contribution"  value={fmtUSD(distTrfRaised / INR_TO_USD)} sub={`${distTrfPct}% of goal`} subColor="muted" accent="#ca8a04" />
+        <StatCard label="District Citation" value={`${distCitationAvg} pts`}           sub={`${distQualified} clubs qualified`} subColor={distCitationAvg >= 40 ? 'up' : 'down'} accent="#e11d48" />
       </div>
 
       {/* Row 1: 4 analytical cards */}
@@ -212,25 +240,27 @@ export default function DistrictOverview() {
         <CardWrapper id="projects" activeCard={activeCard} setActiveCard={setActiveCard}>
           <Card className="h-full flex flex-col">
             <CardHeader className="pb-1">
-              <CardTitle className="text-sm">Service Projects</CardTitle>
-              <CardDescription className="text-xs">District-wide · RY 2025–26</CardDescription>
+              <CardTitle className="text-sm">Service Projects & Public Image</CardTitle>
+              <CardDescription className="text-xs">Project completion this RY</CardDescription>
             </CardHeader>
             <CardContent className="pt-2 flex-1 flex flex-col justify-between">
-              <div className="flex flex-col items-center py-4 gap-1">
-                <span className="text-5xl font-extrabold text-slate-900 tabular-nums leading-none">{distServiceProjects}</span>
-                <span className="text-xs text-slate-400">total projects</span>
-              </div>
-              <div className="space-y-2.5">
-                {[
-                  { label:'Total Beneficiaries',    value: distBeneficiaries.toLocaleString(),                             color:'#16a34a' },
-                  { label:'Clubs with ≥10 Projects', value: CLUB_ANALYTICS.filter(c => c.serviceProjects >= 10).length,   color:'#003DA5' },
-                  { label:'Avg per Club',            value: avgProjects,                                                   color:'#9333ea' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-1.5 border-b border-slate-50">
-                    <span className="text-xs text-slate-500">{s.label}</span>
-                    <span className="text-xs font-bold tabular-nums" style={{ color: s.color }}>{s.value}</span>
+              <div className="space-y-3">
+                {AVENUE_BREAKDOWN.map(a => (
+                  <div key={a.name}>
+                    <div className="flex justify-between mb-1">
+                      <span className="text-xs font-medium text-slate-700 truncate">{a.name}</span>
+                      <span className="text-xs font-semibold tabular-nums ml-1" style={{ color: a.color }}>{a.completed}</span>
+                    </div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all"
+                        style={{ width:`${(a.completed / avenueMax) * 100}%`, background: a.color }} />
+                    </div>
                   </div>
                 ))}
+              </div>
+              <div className="mt-3 pt-3 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500">Total projects</span>
+                <span className="text-sm font-extrabold text-slate-800 tabular-nums">{distServiceProjects}</span>
               </div>
             </CardContent>
           </Card>
@@ -258,17 +288,29 @@ export default function DistrictOverview() {
                   </div>
                 </div>
               </div>
-              <div className="space-y-2">
-                {[
-                  { label:'Qualified (≥40 pts)',     value: distQualified,                                                    color:'#16a34a' },
-                  { label:'Needs Improvement (<25)',  value: CLUB_ANALYTICS.filter(c => c.citationScore < 25).length,         color:'#ef4444' },
-                  { label:'In Progress (25–39)',      value: CLUB_ANALYTICS.filter(c => c.citationScore >= 25 && c.citationScore < 40).length, color:'#f59e0b' },
-                ].map(s => (
-                  <div key={s.label} className="flex items-center justify-between py-1.5 border-b border-slate-50">
-                    <span className="text-xs text-slate-500">{s.label}</span>
-                    <span className="text-xs font-bold tabular-nums" style={{ color: s.color }}>{s.value}</span>
-                  </div>
-                ))}
+              <div className="flex-1 space-y-2.5">
+                {CRITERION_AVGS.map(c => {
+                  const color = c.status === 'done' ? '#16a34a' : c.status === 'partial' ? '#f59e0b' : '#ef4444'
+                  return (
+                    <div key={c.criterion}>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-xs text-slate-600 truncate">{c.criterion}</span>
+                        </div>
+                        <span className="text-xs font-bold tabular-nums ml-2 flex-shrink-0" style={{ color }}>{c.earned}</span>
+                      </div>
+                      <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div className="h-full rounded-full transition-all" style={{ width:`${c.pct}%`, backgroundColor: color }} />
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="flex gap-3 pt-3 mt-2 border-t border-slate-100">
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-green-500" /><span className="text-[11px] text-slate-500">Complete</span></div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-amber-400" /><span className="text-[11px] text-slate-500">Partial</span></div>
+                <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500" /><span className="text-[11px] text-slate-500">Incomplete</span></div>
               </div>
             </CardContent>
           </Card>
