@@ -131,10 +131,9 @@ export default function DistrictOverview() {
     <div className="space-y-4">
 
       {/* KPI Strip */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Total Clubs"       value={CLUB_ANALYTICS.length}              sub="District 5656"        subColor="muted" accent="#003DA5" />
         <StatCard label="Total Members"     value={distTotalMembers}                   sub="Across all clubs"     subColor="muted" accent="#16a34a" />
-        <StatCard label="Avg Attendance"    value={`${avgAttendance}%`}                sub="Meeting attendance"   subColor={avgAttendance > 75 ? 'up' : 'down'} accent="#f59e0b" />
         <StatCard label="TRF Contribution"  value={fmtUSD(distTrfRaised / INR_TO_USD)} sub={`${distTrfPct}% of goal`} subColor="muted" accent="#ca8a04" />
         <StatCard label="District Citation" value={`${distCitationAvg} pts`}           sub={`${distQualified} clubs qualified`} subColor={distCitationAvg >= 40 ? 'up' : 'down'} accent="#e11d48" />
       </div>
