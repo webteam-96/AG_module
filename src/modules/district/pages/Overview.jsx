@@ -338,7 +338,7 @@ export default function DistrictOverview() {
           </CardHeader>
           <CardContent className="pt-0">
             {activeCard === 'membership' && (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={top20('members', 'Members')} margin={{ left:0, right:16 }}>
                   <CartesianGrid vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
@@ -349,7 +349,7 @@ export default function DistrictOverview() {
               </ResponsiveContainer>
             )}
             {activeCard === 'trf' && (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={top20('trfPct', 'TRF %')} margin={{ left:0, right:16 }}>
                   <CartesianGrid vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
@@ -364,7 +364,7 @@ export default function DistrictOverview() {
               </ResponsiveContainer>
             )}
             {activeCard === 'projects' && (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={top20('serviceProjects', 'Projects')} margin={{ left:0, right:16 }}>
                   <CartesianGrid vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
@@ -375,7 +375,7 @@ export default function DistrictOverview() {
               </ResponsiveContainer>
             )}
             {activeCard === 'citation' && (
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={320}>
                 <BarChart data={top20('citationScore', 'Score')} margin={{ left:0, right:16 }}>
                   <CartesianGrid vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" tick={{ fontSize:10, fill:'#94a3b8' }} axisLine={false} tickLine={false} />
