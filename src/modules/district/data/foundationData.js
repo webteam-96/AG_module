@@ -1,94 +1,129 @@
 // src/modules/district/data/foundationData.js
+import { CLUB_ANALYTICS } from './analyticsData'
 
-export const DISTRICT_PROJECTS = [
-  // Thane City View
-  { id:1,  club:'Thane City View',    name:'Blood Donation Drive',         avenue:'Community Service',     date:'Mar 15, 2026', beneficiaries:320,  funds:0,      manHours:48,  rotarians:28, status:'Completed'   },
-  { id:2,  club:'Thane City View',    name:'Scholarship Distribution',     avenue:'New Generation',        date:'Mar 10, 2026', beneficiaries:45,   funds:180000, manHours:24,  rotarians:12, status:'Completed'   },
-  { id:3,  club:'Thane City View',    name:'Tree Plantation Drive',        avenue:'Community Service',     date:'Feb 22, 2026', beneficiaries:600,  funds:45000,  manHours:120, rotarians:35, status:'Completed'   },
-  { id:4,  club:'Thane City View',    name:'Vocational Training Camp',     avenue:'Vocational Service',    date:'Apr 18, 2026', beneficiaries:80,   funds:72000,  manHours:72,  rotarians:15, status:'In Progress' },
-  { id:5,  club:'Thane City View',    name:'Rotaract Charter Ceremony',    avenue:'New Generation',        date:'Apr 25, 2026', beneficiaries:200,  funds:35000,  manHours:60,  rotarians:20, status:'Upcoming'    },
-  { id:6,  club:'Thane City View',    name:'Medical Camp',                 avenue:'Community Service',     date:'Jan 18, 2026', beneficiaries:450,  funds:95000,  manHours:96,  rotarians:30, status:'Completed'   },
-  // Lake Shore Club
-  { id:7,  club:'Lake Shore Club',    name:'Literacy Drive',               avenue:'Vocational Service',    date:'Dec 5, 2025',  beneficiaries:120,  funds:30000,  manHours:48,  rotarians:12, status:'Completed'   },
-  { id:8,  club:'Lake Shore Club',    name:'Water Conservation Project',   avenue:'Community Service',     date:'Feb 10, 2026', beneficiaries:800,  funds:60000,  manHours:80,  rotarians:20, status:'Completed'   },
-  { id:9,  club:'Lake Shore Club',    name:'Youth Leadership Camp',        avenue:'New Generation',        date:'Mar 20, 2026', beneficiaries:50,   funds:25000,  manHours:40,  rotarians:8,  status:'Completed'   },
-  { id:10, club:'Lake Shore Club',    name:'Eye Check-up Camp',            avenue:'Community Service',     date:'Apr 10, 2026', beneficiaries:300,  funds:40000,  manHours:32,  rotarians:15, status:'Upcoming'    },
-  // Owala
-  { id:11, club:'Owala',              name:'Digital Literacy Workshop',    avenue:'Vocational Service',    date:'Jan 25, 2026', beneficiaries:90,   funds:18000,  manHours:36,  rotarians:10, status:'Completed'   },
-  { id:12, club:'Owala',              name:'Clean Village Drive',          avenue:'Community Service',     date:'Feb 28, 2026', beneficiaries:500,  funds:22000,  manHours:60,  rotarians:18, status:'Completed'   },
-  { id:13, club:'Owala',              name:'Career Guidance Seminar',      avenue:'Vocational Service',    date:'Mar 28, 2026', beneficiaries:75,   funds:8000,   manHours:16,  rotarians:6,  status:'Completed'   },
-  { id:14, club:'Owala',              name:'Interact Club Installation',   avenue:'New Generation',        date:'Apr 20, 2026', beneficiaries:60,   funds:12000,  manHours:20,  rotarians:8,  status:'Upcoming'    },
-  // Rotary Club Leo
-  { id:15, club:'Rotary Club of Leo', name:'Senior Citizen Health Camp',   avenue:'Community Service',     date:'Dec 18, 2025', beneficiaries:180,  funds:35000,  manHours:40,  rotarians:10, status:'Completed'   },
-  { id:16, club:'Rotary Club of Leo', name:'School Kit Distribution',      avenue:'New Generation',        date:'Jan 10, 2026', beneficiaries:250,  funds:50000,  manHours:30,  rotarians:12, status:'Completed'   },
-  { id:17, club:'Rotary Club of Leo', name:'Skill Training Program',       avenue:'Vocational Service',    date:'Apr 5, 2026',  beneficiaries:45,   funds:20000,  manHours:48,  rotarians:8,  status:'In Progress' },
-  // New Club
-  { id:18, club:'New Club Test Entry',name:'Community Clean-up Drive',     avenue:'Community Service',     date:'Mar 5, 2026',  beneficiaries:200,  funds:10000,  manHours:24,  rotarians:10, status:'Completed'   },
-  { id:19, club:'New Club Test Entry',name:'Awareness Walk',               avenue:'Public Image',          date:'Apr 12, 2026', beneficiaries:500,  funds:5000,   manHours:12,  rotarians:8,  status:'Upcoming'    },
-  // Tikujiniwadi
-  { id:20, club:'Tikujiniwadi',       name:'Mega Blood Donation Camp',     avenue:'Community Service',     date:'Jan 30, 2026', beneficiaries:650,  funds:0,      manHours:96,  rotarians:40, status:'Completed'   },
-  { id:21, club:'Tikujiniwadi',       name:'Women Empowerment Workshop',   avenue:'Vocational Service',    date:'Feb 15, 2026', beneficiaries:120,  funds:28000,  manHours:48,  rotarians:15, status:'Completed'   },
-  { id:22, club:'Tikujiniwadi',       name:'RYLA District',                avenue:'New Generation',        date:'Mar 22, 2026', beneficiaries:40,   funds:45000,  manHours:72,  rotarians:12, status:'Completed'   },
-  { id:23, club:'Tikujiniwadi',       name:'Solar Light Distribution',     avenue:'International Service', date:'Apr 28, 2026', beneficiaries:100,  funds:85000,  manHours:30,  rotarians:10, status:'Upcoming'    },
-]
-
-export const DISTRICT_EVENTS = [
-  // District-level events
-  { id:1,  club:'District 5656',      name:'District Assembly',              type:'District',  date:'2026-05-03', time:'9:00 AM',  venue:'Hotel Vivanta, Thane',         status:'Upcoming'  },
-  { id:2,  club:'District 5656',      name:'District Conference',            type:'District',  date:'2026-06-14', time:'10:00 AM', venue:'Grand Hyatt, Mumbai',          status:'Upcoming'  },
-  { id:3,  club:'District 5656',      name:'District Citation Review',       type:'District',  date:'2026-04-28', time:'6:00 PM',  venue:'Online / Zoom',                status:'Upcoming'  },
-  { id:4,  club:'District 5656',      name:'DG Installation Ceremony',       type:'District',  date:'2026-07-01', time:'6:00 PM',  venue:'Hotel Regency, Thane',         status:'Upcoming'  },
-  // Thane City View
-  { id:5,  club:'Thane City View',    name:'Weekly Meeting',                 type:'Meeting',   date:'2026-04-05', time:'7:00 PM',  venue:'Hotel Regency, Thane',         status:'Completed' },
-  { id:6,  club:'Thane City View',    name:'TRF Fundraiser Dinner',          type:'TRF',       date:'2026-04-20', time:'7:30 PM',  venue:'Vivanta Hotel',                status:'Upcoming'  },
-  { id:7,  club:'Thane City View',    name:'Blood Donation Camp',            type:'Service',   date:'2026-04-12', time:'9:00 AM',  venue:'Thane Civil Hospital',         status:'Upcoming'  },
-  { id:8,  club:'Thane City View',    name:'Rotaract Charter Ceremony',      type:'New Gen',   date:'2026-04-25', time:'5:00 PM',  venue:'Thane Club',                   status:'Upcoming'  },
-  // Lake Shore Club
-  { id:9,  club:'Lake Shore Club',    name:'Monthly Meeting',                type:'Meeting',   date:'2026-04-08', time:'7:30 PM',  venue:'Lake View Banquet, Thane',     status:'Completed' },
-  { id:10, club:'Lake Shore Club',    name:'Eye Check-up Camp',              type:'Service',   date:'2026-04-10', time:'10:00 AM', venue:'Thane Municipal Hospital',     status:'Upcoming'  },
-  { id:11, club:'Lake Shore Club',    name:'Foundation Awareness Night',     type:'TRF',       date:'2026-05-02', time:'7:00 PM',  venue:'Hotel Solitaire, Thane',       status:'Upcoming'  },
-  // Owala
-  { id:12, club:'Owala',              name:'Weekly Meeting',                 type:'Meeting',   date:'2026-04-06', time:'8:00 PM',  venue:'Owala Club House',             status:'Completed' },
-  { id:13, club:'Owala',              name:'Interact Club Installation',     type:'New Gen',   date:'2026-04-20', time:'5:30 PM',  venue:'St. Xavier School, Owala',    status:'Upcoming'  },
-  { id:14, club:'Owala',              name:'Career Fair',                    type:'Service',   date:'2026-05-10', time:'10:00 AM', venue:'Community Hall, Owala',        status:'Upcoming'  },
-  // Rotary Club Leo
-  { id:15, club:'Rotary Club of Leo', name:'Fortnightly Meeting',            type:'Meeting',   date:'2026-04-09', time:'7:00 PM',  venue:'Leo Hall, Thane West',         status:'Completed' },
-  { id:16, club:'Rotary Club of Leo', name:'Skill Training Program',         type:'Service',   date:'2026-04-05', time:'9:00 AM',  venue:'Polytechnic, Thane',           status:'In Progress'},
-  // New Club
-  { id:17, club:'New Club Test Entry',name:'Monthly Meeting',                type:'Meeting',   date:'2026-04-07', time:'7:00 PM',  venue:'New Club Hall',                status:'Completed' },
-  { id:18, club:'New Club Test Entry',name:'Awareness Walk',                 type:'Service',   date:'2026-04-12', time:'7:00 AM',  venue:'Thane Railway Station',        status:'Upcoming'  },
-  // Tikujiniwadi
-  { id:19, club:'Tikujiniwadi',       name:'Weekly Meeting',                 type:'Meeting',   date:'2026-04-04', time:'7:30 PM',  venue:'Tikujiniwadi Club',            status:'Completed' },
-  { id:20, club:'Tikujiniwadi',       name:'Solar Light Distribution',       type:'Service',   date:'2026-04-28', time:'10:00 AM', venue:'Murbad, Thane District',       status:'Upcoming'  },
-  { id:21, club:'Tikujiniwadi',       name:'RYLA Follow-up Session',         type:'New Gen',   date:'2026-05-05', time:'4:00 PM',  venue:'Tikujiniwadi Community Hall',  status:'Upcoming'  },
-]
+export const fmtINR = v =>
+  v >= 100000 ? `₹${(v / 100000).toFixed(1)}L` : `₹${v.toLocaleString()}`
 
 export const AVENUE_COLORS = {
-  'Community Service':     '#16a34a',
-  'Vocational Service':    '#0891b2',
-  'New Generation':        '#f59e0b',
-  'International Service': '#9333ea',
-  'Public Image':          '#e11d48',
-  'Club Service':          '#003DA5',
+  'Community Service':     '#003DA5',
+  'Vocational Service':    '#16a34a',
+  'New Generation':        '#9333ea',
+  'International Service': '#0891b2',
+  'Public Image':          '#ca8a04',
+  'Club Service':          '#e11d48',
 }
 
 export const EVENT_TYPE_COLORS = {
-  District:  { bg: 'bg-blue-50',   text: 'text-blue-700'   },
-  Meeting:   { bg: 'bg-slate-100', text: 'text-slate-600'  },
-  Service:   { bg: 'bg-green-50',  text: 'text-green-700'  },
-  TRF:       { bg: 'bg-amber-50',  text: 'text-amber-700'  },
-  'New Gen': { bg: 'bg-purple-50', text: 'text-purple-700' },
+  District:  { bg:'bg-blue-50',   text:'text-blue-700'   },
+  TRF:       { bg:'bg-amber-50',  text:'text-amber-700'  },
+  'New Gen': { bg:'bg-purple-50', text:'text-purple-700' },
+  Service:   { bg:'bg-green-50',  text:'text-green-700'  },
+  Meeting:   { bg:'bg-slate-100', text:'text-slate-600'  },
 }
 
 export const STATUS_COLORS = {
-  Completed:    { bg: 'bg-green-50',  text: 'text-green-700'  },
-  'In Progress':{ bg: 'bg-amber-50',  text: 'text-amber-700'  },
-  Upcoming:     { bg: 'bg-blue-50',   text: 'text-blue-700'   },
+  Completed:    { bg:'bg-green-50',  text:'text-green-700'  },
+  'In Progress':{ bg:'bg-amber-50',  text:'text-amber-700'  },
+  Upcoming:     { bg:'bg-blue-50',   text:'text-blue-700'   },
 }
 
-export const fmtINR = (n) => {
-  if (!n) return '—'
-  if (n >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L'
-  if (n >= 1000)   return '₹' + (n / 1000).toFixed(0) + 'K'
-  return '₹' + n.toLocaleString('en-IN')
+const PROJECT_TEMPLATES = [
+  { name:'Blood Donation Drive',         avenue:'Community Service',     fundsFactor:0,      hoursFactor:48, beneFactor:300  },
+  { name:'Medical Camp',                 avenue:'Community Service',     fundsFactor:90000,  hoursFactor:96, beneFactor:400  },
+  { name:'Tree Plantation Drive',        avenue:'Community Service',     fundsFactor:20000,  hoursFactor:60, beneFactor:500  },
+  { name:'Eye Check-up Camp',            avenue:'Community Service',     fundsFactor:40000,  hoursFactor:32, beneFactor:280  },
+  { name:'Senior Citizen Health Camp',   avenue:'Community Service',     fundsFactor:35000,  hoursFactor:40, beneFactor:180  },
+  { name:'Clean Village Drive',          avenue:'Community Service',     fundsFactor:18000,  hoursFactor:60, beneFactor:450  },
+  { name:'Digital Literacy Workshop',    avenue:'Vocational Service',    fundsFactor:18000,  hoursFactor:36, beneFactor:90   },
+  { name:'Vocational Training Camp',     avenue:'Vocational Service',    fundsFactor:70000,  hoursFactor:72, beneFactor:75   },
+  { name:'Women Empowerment Workshop',   avenue:'Vocational Service',    fundsFactor:28000,  hoursFactor:48, beneFactor:120  },
+  { name:'Career Guidance Seminar',      avenue:'Vocational Service',    fundsFactor:8000,   hoursFactor:16, beneFactor:75   },
+  { name:'Scholarship Distribution',     avenue:'New Generation',        fundsFactor:180000, hoursFactor:24, beneFactor:45   },
+  { name:'Youth Leadership Camp',        avenue:'New Generation',        fundsFactor:25000,  hoursFactor:40, beneFactor:50   },
+  { name:'Interact Club Installation',   avenue:'New Generation',        fundsFactor:12000,  hoursFactor:20, beneFactor:60   },
+  { name:'RYLA District',                avenue:'New Generation',        fundsFactor:45000,  hoursFactor:72, beneFactor:40   },
+  { name:'Solar Light Distribution',     avenue:'International Service', fundsFactor:85000,  hoursFactor:30, beneFactor:100  },
+  { name:'Awareness Walk',               avenue:'Public Image',          fundsFactor:5000,   hoursFactor:12, beneFactor:500  },
+  { name:'Mega Blood Donation Camp',     avenue:'Community Service',     fundsFactor:0,      hoursFactor:96, beneFactor:650  },
+  { name:'Water Conservation Project',   avenue:'Community Service',     fundsFactor:60000,  hoursFactor:80, beneFactor:800  },
+]
+
+const PROJECT_DATES = [
+  'Jul 15, 2025','Aug 10, 2025','Sep 20, 2025','Oct 5, 2025','Nov 12, 2025',
+  'Dec 18, 2025','Jan 25, 2026','Feb 14, 2026','Mar 15, 2026','Apr 10, 2026','May 5, 2026','Jun 8, 2026',
+]
+const PROJECT_STATUSES = ['Completed','Completed','Completed','Completed','In Progress','Upcoming']
+
+let pid = 0
+function makeProjects(club, seed) {
+  const count = 2 + (seed % 4)
+  return Array.from({ length: count }, (_, i) => {
+    const t     = PROJECT_TEMPLATES[(seed * 3 + i * 7) % PROJECT_TEMPLATES.length]
+    const scale = 0.6 + (seed % 8) * 0.05
+    return {
+      id:           ++pid,
+      club,
+      name:         t.name,
+      avenue:       t.avenue,
+      date:         PROJECT_DATES[(seed * 2 + i * 5) % PROJECT_DATES.length],
+      beneficiaries:Math.round(t.beneFactor * scale),
+      funds:        Math.round(t.fundsFactor * scale),
+      manHours:     t.hoursFactor + (seed % 3) * 8,
+      status:       PROJECT_STATUSES[(seed + i * 3) % PROJECT_STATUSES.length],
+    }
+  })
 }
+
+const EVENT_TEMPLATES = [
+  { name:'Weekly Meeting',             type:'Meeting' },
+  { name:'Monthly Meeting',            type:'Meeting' },
+  { name:'Fortnightly Meeting',        type:'Meeting' },
+  { name:'Blood Donation Camp',        type:'Service' },
+  { name:'Medical Camp',               type:'Service' },
+  { name:'TRF Fundraiser Dinner',      type:'TRF'     },
+  { name:'Foundation Awareness Night', type:'TRF'     },
+  { name:'Youth Leadership Event',     type:'New Gen' },
+  { name:'Interact Meeting',           type:'New Gen' },
+  { name:'Career Fair',                type:'Service' },
+]
+const VENUES = [
+  'Club Hall','Hotel Regency, Thane','Community Centre','Municipal Hall',
+  'School Auditorium','Hotel Solitaire','Banquet Hall','Online / Zoom',
+]
+const EVENT_DATES = [
+  '2025-10-05','2025-11-08','2025-12-12','2026-01-09','2026-02-06',
+  '2026-03-06','2026-04-05','2026-04-20','2026-05-08','2026-06-05',
+]
+const EVENT_TIMES    = ['7:00 AM','7:30 PM','6:30 PM','9:00 AM','10:00 AM','5:30 PM','7:00 PM']
+const EVENT_STATUSES = ['Completed','Completed','Upcoming','Upcoming']
+
+let eid = 4
+function makeEvents(club, seed) {
+  const count = 1 + (seed % 3)
+  return Array.from({ length: count }, (_, i) => {
+    const t = EVENT_TEMPLATES[(seed * 2 + i * 5) % EVENT_TEMPLATES.length]
+    return {
+      id:     ++eid,
+      club,
+      name:   t.name,
+      type:   t.type,
+      date:   EVENT_DATES[(seed + i * 3) % EVENT_DATES.length],
+      time:   EVENT_TIMES[(seed * 3 + i) % EVENT_TIMES.length],
+      venue:  VENUES[(seed + i * 7) % VENUES.length],
+      status: EVENT_STATUSES[(seed + i) % EVENT_STATUSES.length],
+    }
+  })
+}
+
+const DISTRICT_EVENTS_PREFIX = [
+  { id:1, club:'District 5656', name:'District Assembly',        type:'District', date:'2026-05-03', time:'9:00 AM',  venue:'Hotel Vivanta, Thane', status:'Upcoming' },
+  { id:2, club:'District 5656', name:'District Conference',      type:'District', date:'2026-06-14', time:'10:00 AM', venue:'Grand Hyatt, Mumbai',  status:'Upcoming' },
+  { id:3, club:'District 5656', name:'DG Installation Ceremony', type:'District', date:'2026-07-01', time:'6:00 PM',  venue:'Hotel Regency, Thane', status:'Upcoming' },
+  { id:4, club:'District 5656', name:'District Citation Review', type:'District', date:'2026-04-28', time:'6:00 PM',  venue:'Online / Zoom',        status:'Upcoming' },
+]
+
+export const DISTRICT_PROJECTS = CLUB_ANALYTICS.flatMap((c, i) => makeProjects(c.name, i))
+export const DISTRICT_EVENTS   = [
+  ...DISTRICT_EVENTS_PREFIX,
+  ...CLUB_ANALYTICS.flatMap((c, i) => makeEvents(c.name, i)),
+]
