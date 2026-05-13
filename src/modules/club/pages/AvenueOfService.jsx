@@ -77,6 +77,219 @@ const MEETING_TYPE_STYLE = {
   BOD:        { bg: 'bg-amber-50',  text: 'text-amber-700'  },
 }
 
+/* Flat catalog of every project across all avenues (used by goal-setter search) */
+const PROJECT_CATALOG = Object.entries(AVENUE_PROJECTS).flatMap(([key, av]) => {
+  const items = av.projects ?? av.camps ?? av.meetings ?? []
+  return items.map(p => ({
+    title:        p.title || p.location || 'Untitled',
+    avenueKey:    key,
+    avenueLabel:  av.label,
+    avenueColor:  av.color,
+  }))
+})
+
+/* Unique project titles for the search dropdown */
+const PROJECT_OPTIONS = (() => {
+  const seen = new Map()
+  for (const p of PROJECT_CATALOG) {
+    if (!seen.has(p.title)) seen.set(p.title, p)
+  }
+  return Array.from(seen.values())
+})()
+
+const completedCountFor = (title) =>
+  PROJECT_CATALOG.filter(p => p.title === title).length
+
+function ProjectsGoalCard() {
+  const [entries, setEntries] = useState([])   // { title, target, avenueLabel, avenueColor }
+  const [query, setQuery]     = useState('')
+  const [picked, setPicked]   = useState(null) // selected option from dropdown
+  const [count, setCount]     = useState('')
+  const [open, setOpen]       = useState(false)
+
+  const q = query.trim().toLowerCase()
+  const suggestions = q
+    ? PROJECT_OPTIONS.filter(o =>
+        o.title.toLowerCase().includes(q) &&
+        !entries.some(e => e.title === o.title)
+      ).slice(0, 8)
+    : PROJECT_OPTIONS
+        .filter(o => !entries.some(e => e.title === o.title))
+        .slice(0, 8)
+
+  const pick = (o) => {
+    setPicked(o)
+    setQuery(o.title)
+    setOpen(false)
+  }
+
+  const addEntry = (e) => {
+    e?.preventDefault?.()
+    if (!picked) return
+    const t = Number(count)
+    if (!t || t <= 0) return
+    setEntries([...entries, {
+      title:       picked.title,
+      target:      t,
+      avenueLabel: picked.avenueLabel,
+      avenueColor: picked.avenueColor,
+    }])
+    setPicked(null); setQuery(''); setCount('')
+  }
+
+  const remove = (title) => setEntries(entries.filter(e => e.title !== title))
+
+  const totalTarget    = entries.reduce((s, e) => s + e.target, 0)
+  const totalCompleted = entries.reduce((s, e) => s + Math.min(completedCountFor(e.title), e.target), 0)
+  const totalPct       = totalTarget ? Math.min(Math.round((totalCompleted / totalTarget) * 100), 100) : 0
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#9333ea' }} />
+
+      {/* Header */}
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p className="text-sm font-bold text-slate-800">Service Projects Goal — RY 2026–27</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Search a project, pick a count, then add — repeat for multiple projects
+          </p>
+        </div>
+        {entries.length > 0 && (
+          <div className="text-right">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider">Combined Progress</p>
+            <p className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
+              {totalCompleted} / {totalTarget} · {totalPct}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Search + count + add */}
+      <form onSubmit={addEntry} className="flex flex-wrap items-end gap-2 mb-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">
+            Search Project
+          </label>
+          <input
+            type="text"
+            placeholder="Type to search projects…"
+            value={query}
+            onFocus={() => setOpen(true)}
+            onChange={e => { setQuery(e.target.value); setPicked(null); setOpen(true) }}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-purple-400"
+          />
+          {open && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+              {suggestions.map(s => (
+                <button
+                  key={s.title}
+                  type="button"
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => pick(s)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-slate-50 border-b border-slate-50 last:border-b-0"
+                >
+                  <span className="text-sm text-slate-800 truncate">{s.title}</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: s.avenueColor + '15', color: s.avenueColor }}>
+                    {s.avenueLabel}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {open && q && suggestions.length === 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs text-slate-400">
+              No matching projects
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Target Count
+          </label>
+          <input
+            type="number"
+            placeholder="0"
+            value={count}
+            onChange={e => setCount(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:border-purple-400"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={!picked || !count}
+          className="text-xs font-bold text-white px-4 py-1.5 rounded-lg h-[34px] disabled:opacity-40"
+          style={{ background: '#9333ea' }}
+        >
+          + Add Goal
+        </button>
+      </form>
+
+      {/* Entries list */}
+      {entries.length === 0 ? (
+        <p className="text-xs text-slate-400 italic">
+          No projects added yet. Search and add a project to build your goal.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {entries.map(e => {
+            const done = Math.min(completedCountFor(e.title), e.target)
+            const pct  = Math.min(Math.round((done / e.target) * 100), 100)
+            return (
+              <div key={e.title} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/50">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.avenueColor }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-semibold text-slate-800 truncate">{e.title}</span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: e.avenueColor + '15', color: e.avenueColor }}>
+                        {e.avenueLabel}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold tabular-nums flex-shrink-0" style={{ color: e.avenueColor }}>
+                      {done}/{e.target}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: e.avenueColor }} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => remove(e.title)}
+                  className="text-slate-400 hover:text-red-600 p-1 flex-shrink-0"
+                  title="Remove from goal"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )
+          })}
+
+          {/* Grand total */}
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg mt-2"
+            style={{ background: '#9333ea10', border: '1px solid #9333ea30' }}>
+            <span className="text-sm font-bold text-slate-800">
+              Total — {entries.length} {entries.length === 1 ? 'project type' : 'project types'}
+            </span>
+            <span className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
+              {totalCompleted} of {totalTarget} completed · {totalPct}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function AvenueOfService() {
   const [active, setActive]   = useState('ALL')
   const [year, setYear]       = useState('2026–27')
@@ -142,6 +355,9 @@ export default function AvenueOfService() {
           </button>
         </div>
       </div>
+
+      {/* Goal setter */}
+      <ProjectsGoalCard />
 
       {/* Avenue tab bar — top of page */}
       <div className="flex gap-1 flex-wrap bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">

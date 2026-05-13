@@ -92,16 +92,16 @@ const EVENT_COLORS = {
 
 const citationPct = Math.round((CLUB_STATS.districtCitationScore / CLUB_STATS.districtCitationMax) * 100)
 
+const SERVICE_GOAL = 20
+
 function OverviewContent() {
   const navigate = useNavigate()
-  const [trfGoal, setTrfGoal] = useState(CLUB_STATS.trfGoal)
-  const [trfInput, setTrfInput] = useState('')
-  const [serviceGoal, setServiceGoal] = useState(null)
-  const [serviceInput, setServiceInput] = useState('')
+  const trfGoal = CLUB_STATS.trfGoal
+  const serviceGoal = SERVICE_GOAL
   const [memberFilter, setMemberFilter] = useState('all')
   const [activeCard, setActiveCard]     = useState('membership')
 
-  const trfPct = trfGoal ? Math.round((CLUB_STATS.trfRaised / trfGoal) * 100) : 0
+  const trfPct = Math.round((CLUB_STATS.trfRaised / trfGoal) * 100)
 
   /* ── Card click wrapper ─────────────────────────────────────────── */
   function CardWrapper({ id, children }) {
@@ -142,32 +142,8 @@ function OverviewContent() {
       <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
         <StatCard label="Total Members"     value={CLUB_STATS.totalMembers}          sub="▲ 8 new this year"        subColor="up"    accent="#003DA5" />
         <StatCard label="Avg Attendance"    value={`${CLUB_STATS.avgAttendance}%`}   sub="▲ 4% vs last month"       subColor="up"    accent="#16a34a" />
-        {trfGoal === null ? (
-          <div className="bg-white rounded-xl border border-dashed border-amber-300 px-4 py-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#ca8a04' }} />
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">TRF Contribution</p>
-            <p className="text-sm text-amber-600 font-medium">Goal not set</p>
-            <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }} className="flex gap-1.5 mt-2">
-              <input type="number" placeholder="$ amount" value={trfInput} onChange={e => setTrfInput(e.target.value)} className="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400" />
-              <button type="submit" className="text-xs font-bold text-white px-2 py-1 rounded flex-shrink-0" style={{ background: '#ca8a04' }}>Set</button>
-            </form>
-          </div>
-        ) : (
-          <StatCard label="TRF Contribution" value={fmtUSD(CLUB_STATS.trfRaised)} sub={`${trfPct}% of ${fmtUSD(trfGoal)}`} subColor="muted" accent="#ca8a04" />
-        )}
-        {serviceGoal === null ? (
-          <div className="bg-white rounded-xl border border-dashed border-purple-300 px-4 py-4 relative overflow-hidden">
-            <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#9333ea' }} />
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Service Projects</p>
-            <p className="text-sm text-purple-600 font-medium">Goal not set</p>
-            <form onSubmit={e => { e.preventDefault(); if (Number(serviceInput) > 0) { setServiceGoal(Number(serviceInput)); setServiceInput('') } }} className="flex gap-1.5 mt-2">
-              <input type="number" placeholder="No. of projects" value={serviceInput} onChange={e => setServiceInput(e.target.value)} className="flex-1 min-w-0 border border-slate-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-purple-400" />
-              <button type="submit" className="text-xs font-bold text-white px-2 py-1 rounded flex-shrink-0" style={{ background: '#9333ea' }}>Set</button>
-            </form>
-          </div>
-        ) : (
-          <StatCard label="Service Projects" value={`${CLUB_STATS.serviceProjects}/${serviceGoal}`} sub="▲ 3 this quarter" subColor="up" accent="#9333ea" />
-        )}
+        <StatCard label="TRF Contribution" value={fmtUSD(CLUB_STATS.trfRaised)} sub={`${trfPct}% of ${fmtUSD(trfGoal)}`} subColor="muted" accent="#ca8a04" />
+        <StatCard label="Service Projects" value={`${CLUB_STATS.serviceProjects}/${serviceGoal}`} sub="▲ 3 this quarter" subColor="up" accent="#9333ea" />
         <StatCard label="District Citation" value={`${CLUB_STATS.districtCitationScore} pts`} accent="#e11d48" />
       </div>
 
@@ -220,31 +196,13 @@ function OverviewContent() {
 
         {/* 2 — TRF Goal */}
         <CardWrapper id="trf"><Card className="h-full flex flex-col">
-          <CardHeader className="pb-0 flex flex-row items-start justify-between">
-            <div>
-              <CardTitle className="text-sm">TRF Goal</CardTitle>
-              <CardDescription className="text-xs mt-0.5">
-                {trfGoal ? `${fmtUSD(trfGoal)} target this year` : 'Set your contribution target'}
-              </CardDescription>
-            </div>
-            {trfGoal && (
-              <button onClick={e => { e.stopPropagation(); setTrfGoal(null); setTrfInput('') }}
-                className="text-[11px] text-slate-400 hover:text-slate-600 font-medium mt-0.5 flex-shrink-0">Edit</button>
-            )}
+          <CardHeader className="pb-0">
+            <CardTitle className="text-sm">TRF Goal</CardTitle>
+            <CardDescription className="text-xs mt-0.5">
+              {fmtUSD(trfGoal)} target this year
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-3 flex-1 flex flex-col justify-between">
-            {trfGoal === null ? (
-              <form onSubmit={e => { e.preventDefault(); if (Number(trfInput) > 0) { setTrfGoal(Number(trfInput)); setTrfInput('') } }}
-                className="flex-1 flex flex-col justify-center space-y-3">
-                <input type="number" placeholder="Enter goal amount ($)" value={trfInput}
-                  onChange={e => setTrfInput(e.target.value)}
-                  className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-400" />
-                <button type="submit" className="w-full text-sm font-bold text-white py-2.5 rounded-lg" style={{ background:'#ca8a04' }}>
-                  Set TRF Goal
-                </button>
-              </form>
-            ) : (
-              <>
                 <div className="flex flex-col items-center mb-4">
                   <div className="relative">
                     <svg width="110" height="110" viewBox="0 0 110 110">
@@ -284,8 +242,6 @@ function OverviewContent() {
                   <span className="text-slate-500">Remaining to goal</span>
                   <span className="font-bold text-red-600 tabular-nums">{fmtUSD(trfGoal - CLUB_STATS.trfRaised)}</span>
                 </div>
-              </>
-            )}
           </CardContent>
         </Card></CardWrapper>
 

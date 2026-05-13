@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   BarChart, Bar, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -46,6 +47,105 @@ const fmtVal = (m) => m.unit === '$' ? fmtUSD(m.value) : m.value.toLocaleString(
 const fmtAvg = (m) => m.unit === '$' ? fmtUSD(m.avg)  : m.avg.toString()
 const fmtMax = (m) => m.unit === '$' ? fmtUSD(m.max)  : m.max.toString()
 
+function TrfGoalCard() {
+  const [goals, setGoals] = useState(null)
+  const [inputs, setInputs] = useState({ af: '', pf: '', ef: '', md: '', csr: '' })
+
+  const submit = (e) => {
+    e.preventDefault()
+    const next = {}
+    let any = false
+    for (const m of METRICS) {
+      const n = Number(inputs[m.id]) || 0
+      next[m.id] = n
+      if (n > 0) any = true
+    }
+    if (any) {
+      setGoals(next)
+      setInputs({ af: '', pf: '', ef: '', md: '', csr: '' })
+    }
+  }
+
+  if (goals === null) {
+    return (
+      <div className="bg-white rounded-xl border border-dashed border-amber-300 px-5 py-4 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#ca8a04' }} />
+        <div className="mb-3">
+          <p className="text-sm font-bold text-slate-800">Set Foundation Collection Goals</p>
+          <p className="text-xs text-slate-500 mt-0.5">Define how much you aim to collect across each Foundation category this RY</p>
+        </div>
+        <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+          {METRICS.map(m => (
+            <div key={m.id} className="flex flex-col">
+              <label className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: m.color }}>
+                {m.name} {m.unit === '$' ? '($)' : ''}
+              </label>
+              <input
+                type="number"
+                placeholder={m.unit === '$' ? 'Amount' : 'Count'}
+                value={inputs[m.id]}
+                onChange={e => setInputs({ ...inputs, [m.id]: e.target.value })}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none"
+                style={{ borderColor: '#e2e8f0' }}
+              />
+            </div>
+          ))}
+          <button type="submit" className="text-xs font-bold text-white px-4 py-1.5 rounded-lg h-[34px]" style={{ background: '#ca8a04' }}>
+            Set Goals
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  const fmt    = (m, v) => m.unit === '$' ? fmtUSD(v) : v.toString()
+  const totalCollectedUSD = METRICS.filter(m => m.unit === '$').reduce((s, m) => s + m.value, 0)
+  const totalGoalUSD      = METRICS.filter(m => m.unit === '$').reduce((s, m) => s + (goals[m.id] || 0), 0)
+  const totalPct          = totalGoalUSD ? Math.min(Math.round((totalCollectedUSD / totalGoalUSD) * 100), 100) : 0
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#ca8a04' }} />
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p className="text-sm font-bold text-slate-800">Foundation Collection Goals — RY 2026–27</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Funds raised so far: {fmtUSD(totalCollectedUSD)} of {fmtUSD(totalGoalUSD)} · {totalPct}% (₹/$ categories)
+          </p>
+        </div>
+        <button
+          onClick={() => setGoals(null)}
+          className="text-[11px] text-slate-400 hover:text-slate-600 font-semibold"
+        >
+          Edit Goals
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+        {METRICS.map(m => {
+          const goalVal = goals[m.id] || 0
+          const pct = goalVal ? Math.min(Math.round((m.value / goalVal) * 100), 100) : 0
+          return (
+            <div key={m.id} className="rounded-lg px-3 py-2.5 border" style={{ borderColor: m.color + '30', background: m.color + '08' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-semibold text-slate-600">{m.name}</span>
+                <span className="text-[10px] font-bold tabular-nums" style={{ color: m.color }}>{pct}%</span>
+              </div>
+              <p className="text-xs text-slate-500 tabular-nums mb-1.5">
+                <span className="font-bold" style={{ color: m.color }}>{fmt(m, m.value)}</span>
+                <span className="text-slate-400"> / {goalVal ? fmt(m, goalVal) : '—'}</span>
+              </p>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 /* ── Main component ──────────────────────────────────────────────── */
 export default function Foundation() {
   const topMetrics = METRICS.filter(m => m.rank <= 5).sort((a, b) => a.rank - b.rank)
@@ -63,6 +163,9 @@ export default function Foundation() {
           Live Excel Data
         </span>
       </div>
+
+      {/* Goal setter */}
+      <TrfGoalCard />
 
       {/* Achievement banner */}
       <div className="flex items-center gap-4 flex-wrap p-4 rounded-xl text-white"

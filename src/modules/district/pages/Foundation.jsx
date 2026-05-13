@@ -5,11 +5,328 @@ import {
   DISTRICT_PROJECTS, DISTRICT_EVENTS,
   AVENUE_COLORS, EVENT_TYPE_COLORS, STATUS_COLORS, fmtINR,
 } from '../data/foundationData'
+import { CLUB_ANALYTICS } from '../data/analyticsData'
 
 const TABS = [
   { id: 'projects', label: 'District Projects' },
   { id: 'events',   label: 'District Events'   },
 ]
+
+/* ── District-wide aggregates for fund categories ────────────────── */
+const distAnnualFund      = CLUB_ANALYTICS.reduce((s, c) => s + c.annualFund, 0)
+const distTrfRaised       = CLUB_ANALYTICS.reduce((s, c) => s + c.trfRaised, 0)
+const distPhfContributors = CLUB_ANALYTICS.reduce((s, c) => s + c.phfContributors, 0)
+const distMajorDonors     = CLUB_ANALYTICS.reduce((s, c) => s + c.majorDonors, 0)
+const distPolioFund       = Math.round(distTrfRaised * 0.18)
+const distEndowment       = Math.round(distTrfRaised * 0.05)
+const distCSR             = Math.round(distTrfRaised * 0.12)
+
+const FUND_CATEGORIES = [
+  { id:'af',  name:'Annual Fund',   value: distAnnualFund,      color:'#003DA5', unit:'₹' },
+  { id:'pf',  name:'Polio Fund',    value: distPolioFund,       color:'#9333ea', unit:'₹' },
+  { id:'ef',  name:'Endowment',     value: distEndowment,       color:'#e11d48', unit:'₹' },
+  { id:'md',  name:'Major Donors',  value: distMajorDonors,     color:'#ca8a04', unit:''  },
+  { id:'csr', name:'CSR',           value: distCSR,             color:'#16a34a', unit:'₹' },
+]
+
+function FoundationGoalCard() {
+  const [goals, setGoals] = useState(null)
+  const [inputs, setInputs] = useState({ af: '', pf: '', ef: '', md: '', csr: '' })
+
+  const submit = (e) => {
+    e.preventDefault()
+    const next = {}
+    let any = false
+    for (const m of FUND_CATEGORIES) {
+      const n = Number(inputs[m.id]) || 0
+      next[m.id] = n
+      if (n > 0) any = true
+    }
+    if (any) {
+      setGoals(next)
+      setInputs({ af: '', pf: '', ef: '', md: '', csr: '' })
+    }
+  }
+
+  const fmt = (m, v) => m.unit === '₹' ? fmtINR(v) : v.toString()
+
+  if (goals === null) {
+    return (
+      <div className="bg-white rounded-xl border border-dashed border-amber-300 px-5 py-4 relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#ca8a04' }} />
+        <div className="mb-3">
+          <p className="text-sm font-bold text-slate-800">Set District Foundation Collection Goals</p>
+          <p className="text-xs text-slate-500 mt-0.5">Define how much the district aims to collect across each Foundation category this RY</p>
+        </div>
+        <form onSubmit={submit} className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-3 items-end">
+          {FUND_CATEGORIES.map(m => (
+            <div key={m.id} className="flex flex-col">
+              <label className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: m.color }}>
+                {m.name} {m.unit === '₹' ? '(₹)' : ''}
+              </label>
+              <input
+                type="number"
+                placeholder={m.unit === '₹' ? 'Amount' : 'Count'}
+                value={inputs[m.id]}
+                onChange={e => setInputs({ ...inputs, [m.id]: e.target.value })}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none"
+              />
+            </div>
+          ))}
+          <button type="submit" className="text-xs font-bold text-white px-4 py-1.5 rounded-lg h-[34px]" style={{ background: '#ca8a04' }}>
+            Set Goals
+          </button>
+        </form>
+      </div>
+    )
+  }
+
+  const totalCollectedINR = FUND_CATEGORIES.filter(m => m.unit === '₹').reduce((s, m) => s + m.value, 0)
+  const totalGoalINR      = FUND_CATEGORIES.filter(m => m.unit === '₹').reduce((s, m) => s + (goals[m.id] || 0), 0)
+  const totalPct          = totalGoalINR ? Math.min(Math.round((totalCollectedINR / totalGoalINR) * 100), 100) : 0
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#ca8a04' }} />
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p className="text-sm font-bold text-slate-800">District Foundation Collection Goals — RY 2025–26</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Funds raised so far: {fmtINR(totalCollectedINR)} of {fmtINR(totalGoalINR)} · {totalPct}% (₹ categories)
+          </p>
+        </div>
+        <button
+          onClick={() => setGoals(null)}
+          className="text-[11px] text-slate-400 hover:text-slate-600 font-semibold"
+        >
+          Edit Goals
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-3">
+        {FUND_CATEGORIES.map(m => {
+          const goalVal = goals[m.id] || 0
+          const pct = goalVal ? Math.min(Math.round((m.value / goalVal) * 100), 100) : 0
+          return (
+            <div key={m.id} className="rounded-lg px-3 py-2.5 border" style={{ borderColor: m.color + '30', background: m.color + '08' }}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[11px] font-semibold text-slate-600">{m.name}</span>
+                <span className="text-[10px] font-bold tabular-nums" style={{ color: m.color }}>{pct}%</span>
+              </div>
+              <p className="text-xs text-slate-500 tabular-nums mb-1.5">
+                <span className="font-bold" style={{ color: m.color }}>{fmt(m, m.value)}</span>
+                <span className="text-slate-400"> / {goalVal ? fmt(m, goalVal) : '—'}</span>
+              </p>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: m.color }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ── Smart-search projects goal-setter (Projects tab) ────────────── */
+const DIST_PROJECT_OPTIONS = (() => {
+  const seen = new Map()
+  for (const p of DISTRICT_PROJECTS) {
+    if (!seen.has(p.name)) {
+      seen.set(p.name, {
+        title:       p.name,
+        avenueLabel: p.avenue,
+        avenueColor: AVENUE_COLORS[p.avenue] ?? '#64748b',
+      })
+    }
+  }
+  return Array.from(seen.values())
+})()
+
+const distCompletedCountFor = (title) =>
+  DISTRICT_PROJECTS.filter(p => p.name === title && p.status === 'Completed').length
+
+function ProjectsGoalCard() {
+  const [entries, setEntries] = useState([])
+  const [query, setQuery]     = useState('')
+  const [picked, setPicked]   = useState(null)
+  const [count, setCount]     = useState('')
+  const [open, setOpen]       = useState(false)
+
+  const q = query.trim().toLowerCase()
+  const suggestions = q
+    ? DIST_PROJECT_OPTIONS.filter(o =>
+        o.title.toLowerCase().includes(q) &&
+        !entries.some(e => e.title === o.title)
+      ).slice(0, 8)
+    : DIST_PROJECT_OPTIONS
+        .filter(o => !entries.some(e => e.title === o.title))
+        .slice(0, 8)
+
+  const pick = (o) => { setPicked(o); setQuery(o.title); setOpen(false) }
+
+  const addEntry = (e) => {
+    e?.preventDefault?.()
+    if (!picked) return
+    const t = Number(count)
+    if (!t || t <= 0) return
+    setEntries([...entries, {
+      title:       picked.title,
+      target:      t,
+      avenueLabel: picked.avenueLabel,
+      avenueColor: picked.avenueColor,
+    }])
+    setPicked(null); setQuery(''); setCount('')
+  }
+
+  const remove = (title) => setEntries(entries.filter(e => e.title !== title))
+
+  const totalTarget    = entries.reduce((s, e) => s + e.target, 0)
+  const totalCompleted = entries.reduce((s, e) => s + Math.min(distCompletedCountFor(e.title), e.target), 0)
+  const totalPct       = totalTarget ? Math.min(Math.round((totalCompleted / totalTarget) * 100), 100) : 0
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#9333ea' }} />
+
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
+        <div>
+          <p className="text-sm font-bold text-slate-800">District Projects Goal — RY 2025–26</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Search a project, pick a count, then add — repeat for multiple projects
+          </p>
+        </div>
+        {entries.length > 0 && (
+          <div className="text-right">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider">Combined Progress</p>
+            <p className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
+              {totalCompleted} / {totalTarget} · {totalPct}%
+            </p>
+          </div>
+        )}
+      </div>
+
+      <form onSubmit={addEntry} className="flex flex-wrap items-end gap-2 mb-3">
+        <div className="relative flex-1 min-w-[220px]">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1 block">
+            Search Project
+          </label>
+          <input
+            type="text"
+            placeholder="Type to search projects…"
+            value={query}
+            onFocus={() => setOpen(true)}
+            onChange={e => { setQuery(e.target.value); setPicked(null); setOpen(true) }}
+            onBlur={() => setTimeout(() => setOpen(false), 150)}
+            className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-purple-400"
+          />
+          {open && suggestions.length > 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+              {suggestions.map(s => (
+                <button
+                  key={s.title}
+                  type="button"
+                  onMouseDown={(ev) => ev.preventDefault()}
+                  onClick={() => pick(s)}
+                  className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left hover:bg-slate-50 border-b border-slate-50 last:border-b-0"
+                >
+                  <span className="text-sm text-slate-800 truncate">{s.title}</span>
+                  <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: s.avenueColor + '15', color: s.avenueColor }}>
+                    {s.avenueLabel}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+          {open && q && suggestions.length === 0 && (
+            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs text-slate-400">
+              No matching projects
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-col">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+            Target Count
+          </label>
+          <input
+            type="number"
+            placeholder="0"
+            value={count}
+            onChange={e => setCount(e.target.value)}
+            className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:border-purple-400"
+          />
+        </div>
+
+        <button
+          type="submit"
+          disabled={!picked || !count}
+          className="text-xs font-bold text-white px-4 py-1.5 rounded-lg h-[34px] disabled:opacity-40"
+          style={{ background: '#9333ea' }}
+        >
+          + Add Goal
+        </button>
+      </form>
+
+      {entries.length === 0 ? (
+        <p className="text-xs text-slate-400 italic">
+          No projects added yet. Search and add a project to build your goal.
+        </p>
+      ) : (
+        <div className="space-y-2">
+          {entries.map(e => {
+            const done = Math.min(distCompletedCountFor(e.title), e.target)
+            const pct  = Math.min(Math.round((done / e.target) * 100), 100)
+            return (
+              <div key={e.title} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/50">
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.avenueColor }} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-sm font-semibold text-slate-800 truncate">{e.title}</span>
+                      <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0"
+                        style={{ backgroundColor: e.avenueColor + '15', color: e.avenueColor }}>
+                        {e.avenueLabel}
+                      </span>
+                    </div>
+                    <span className="text-xs font-bold tabular-nums flex-shrink-0" style={{ color: e.avenueColor }}>
+                      {done}/{e.target}
+                    </span>
+                  </div>
+                  <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: e.avenueColor }} />
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => remove(e.title)}
+                  className="text-slate-400 hover:text-red-600 p-1 flex-shrink-0"
+                  title="Remove from goal"
+                >
+                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
+            )
+          })}
+
+          <div className="flex items-center justify-between px-3 py-2.5 rounded-lg mt-2"
+            style={{ background: '#9333ea10', border: '1px solid #9333ea30' }}>
+            <span className="text-sm font-bold text-slate-800">
+              Total — {entries.length} {entries.length === 1 ? 'project type' : 'project types'}
+            </span>
+            <span className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
+              {totalCompleted} of {totalTarget} completed · {totalPct}%
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 const CLUBS = ['All Clubs', ...Array.from(new Set(DISTRICT_PROJECTS.map(p => p.club)))]
 const EVENT_CLUBS = ['All Clubs', ...Array.from(new Set(DISTRICT_EVENTS.map(e => e.club)))]
@@ -52,6 +369,9 @@ function ProjectsTab() {
 
   return (
     <div className="space-y-4">
+      {/* Smart-search projects goal */}
+      <ProjectsGoalCard />
+
       {/* KPI strip */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
         <StatCard label="Total Projects"      value={DISTRICT_PROJECTS.length}           sub="Across all clubs"  subColor="muted" accent="#003DA5" />
@@ -319,6 +639,9 @@ export default function DistrictFoundation() {
 
   return (
     <div className="space-y-4">
+      {/* Foundation funds goal-setter */}
+      <FoundationGoalCard />
+
       {/* Tab bar */}
       <div className="flex gap-1 flex-wrap bg-white border border-slate-200 rounded-xl p-1.5 shadow-sm">
         {TABS.map(t => (
