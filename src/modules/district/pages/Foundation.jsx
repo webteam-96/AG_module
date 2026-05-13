@@ -186,8 +186,8 @@ function ProjectsGoalCard() {
   const totalPct       = totalTarget ? Math.min(Math.round((totalCompleted / totalTarget) * 100), 100) : 0
 
   return (
-    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
-      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl" style={{ background: '#9333ea' }} />
+    <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative">
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl pointer-events-none" style={{ background: '#9333ea' }} />
 
       <div className="flex items-start justify-between flex-wrap gap-3 mb-3">
         <div>
@@ -221,7 +221,7 @@ function ProjectsGoalCard() {
             className="w-full border border-slate-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-purple-400"
           />
           {open && suggestions.length > 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg max-h-56 overflow-y-auto">
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl max-h-72 overflow-y-auto">
               {suggestions.map(s => (
                 <button
                   key={s.title}
@@ -240,7 +240,7 @@ function ProjectsGoalCard() {
             </div>
           )}
           {open && q && suggestions.length === 0 && (
-            <div className="absolute left-0 right-0 top-full mt-1 z-30 bg-white border border-slate-200 rounded-lg shadow-lg px-3 py-2 text-xs text-slate-400">
+            <div className="absolute left-0 right-0 top-full mt-1 z-50 bg-white border border-slate-200 rounded-lg shadow-xl px-3 py-2 text-xs text-slate-400">
               No matching projects
             </div>
           )}
