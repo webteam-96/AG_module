@@ -113,9 +113,7 @@ function ProjectsGoalCard() {
         o.title.toLowerCase().includes(q) &&
         !entries.some(e => e.title === o.title)
       ).slice(0, 8)
-    : PROJECT_OPTIONS
-        .filter(o => !entries.some(e => e.title === o.title))
-        .slice(0, 8)
+    : []
 
   const pick = (o) => {
     setPicked(o)
