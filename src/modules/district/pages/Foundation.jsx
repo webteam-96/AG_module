@@ -147,11 +147,13 @@ const distCompletedCountFor = (title) =>
   DISTRICT_PROJECTS.filter(p => p.name === title && p.status === 'Completed').length
 
 function ProjectsGoalCard() {
-  const [entries, setEntries] = useState([])
-  const [query, setQuery]     = useState('')
-  const [picked, setPicked]   = useState(null)
-  const [count, setCount]     = useState('')
-  const [open, setOpen]       = useState(false)
+  const [entries, setEntries]       = useState([])
+  const [query, setQuery]           = useState('')
+  const [picked, setPicked]         = useState(null)
+  const [count, setCount]           = useState('')
+  const [open, setOpen]             = useState(false)
+  const [editTitle, setEditTitle]   = useState(null)
+  const [editValue, setEditValue]   = useState('')
 
   const q = query.trim().toLowerCase()
   const suggestions = q
@@ -179,8 +181,35 @@ function ProjectsGoalCard() {
 
   const remove = (title) => setEntries(entries.filter(e => e.title !== title))
 
-  const totalTarget    = entries.reduce((s, e) => s + e.target, 0)
-  const totalCompleted = entries.reduce((s, e) => s + Math.min(distCompletedCountFor(e.title), e.target), 0)
+  const startEdit = (entry) => { setEditTitle(entry.title); setEditValue(String(entry.target)) }
+  const cancelEdit = () => { setEditTitle(null); setEditValue('') }
+  const saveEdit = () => {
+    const n = Number(editValue)
+    if (n > 0) {
+      setEntries(entries.map(e => e.title === editTitle ? { ...e, target: n } : e))
+    }
+    setEditTitle(null); setEditValue('')
+  }
+
+  // Auto-include completed projects not yet on the goal
+  const userTitles = new Set(entries.map(e => e.title))
+  const autoEntries = DIST_PROJECT_OPTIONS
+    .filter(o => distCompletedCountFor(o.title) > 0 && !userTitles.has(o.title))
+    .map(o => {
+      const cnt = distCompletedCountFor(o.title)
+      return {
+        title:       o.title,
+        target:      cnt,
+        avenueLabel: o.avenueLabel,
+        avenueColor: o.avenueColor,
+        auto:        true,
+      }
+    })
+
+  const displayEntries = [...entries, ...autoEntries]
+
+  const totalTarget    = displayEntries.reduce((s, e) => s + e.target, 0)
+  const totalCompleted = displayEntries.reduce((s, e) => s + Math.min(distCompletedCountFor(e.title), e.target), 0)
   const totalPct       = totalTarget ? Math.min(Math.round((totalCompleted / totalTarget) * 100), 100) : 0
 
   return (
@@ -194,7 +223,7 @@ function ProjectsGoalCard() {
             Search a project, pick a count, then add — repeat for multiple projects
           </p>
         </div>
-        {entries.length > 0 && (
+        {displayEntries.length > 0 && (
           <div className="text-right">
             <p className="text-[11px] text-slate-500 uppercase tracking-wider">Combined Progress</p>
             <p className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
@@ -267,17 +296,21 @@ function ProjectsGoalCard() {
         </button>
       </form>
 
-      {entries.length === 0 ? (
+      {displayEntries.length === 0 ? (
         <p className="text-xs text-slate-400 italic">
           No projects added yet. Search and add a project to build your goal.
         </p>
       ) : (
         <div className="space-y-2">
-          {entries.map(e => {
-            const done = Math.min(distCompletedCountFor(e.title), e.target)
-            const pct  = Math.min(Math.round((done / e.target) * 100), 100)
+          {displayEntries.map(e => {
+            const done      = Math.min(distCompletedCountFor(e.title), e.target)
+            const pct       = Math.min(Math.round((done / e.target) * 100), 100)
+            const isEditing = editTitle === e.title
             return (
-              <div key={e.title} className="flex items-center gap-3 px-3 py-2 rounded-lg border border-slate-100 bg-slate-50/50">
+              <div key={e.title}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg border ${
+                  e.auto ? 'border-dashed border-slate-200 bg-slate-50/30' : 'border-slate-100 bg-slate-50/50'
+                }`}>
                 <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: e.avenueColor }} />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
@@ -287,26 +320,63 @@ function ProjectsGoalCard() {
                         style={{ backgroundColor: e.avenueColor + '15', color: e.avenueColor }}>
                         {e.avenueLabel}
                       </span>
+                      {e.auto && (
+                        <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-700 flex-shrink-0">
+                          Auto
+                        </span>
+                      )}
                     </div>
-                    <span className="text-xs font-bold tabular-nums flex-shrink-0" style={{ color: e.avenueColor }}>
-                      {done}/{e.target}
-                    </span>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <input
+                          type="number"
+                          value={editValue}
+                          onChange={ev => setEditValue(ev.target.value)}
+                          className="w-16 border border-slate-200 rounded px-2 py-0.5 text-xs focus:outline-none focus:border-purple-400"
+                          autoFocus
+                        />
+                        <button type="button" onClick={saveEdit}
+                          className="text-[11px] font-bold text-white px-2 py-0.5 rounded"
+                          style={{ background: '#9333ea' }}>Save</button>
+                        <button type="button" onClick={cancelEdit}
+                          className="text-[11px] text-slate-500 hover:text-slate-700 px-1">Cancel</button>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-bold tabular-nums flex-shrink-0" style={{ color: e.avenueColor }}>
+                        {done}/{e.target}
+                      </span>
+                    )}
                   </div>
                   <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: e.avenueColor }} />
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => remove(e.title)}
-                  className="text-slate-400 hover:text-red-600 p-1 flex-shrink-0"
-                  title="Remove from goal"
-                >
-                  <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
+                {!e.auto && !isEditing && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => startEdit(e)}
+                      className="text-slate-400 hover:text-blue-600 p-1 flex-shrink-0"
+                      title="Edit goal"
+                    >
+                      <svg width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => remove(e.title)}
+                      className="text-slate-400 hover:text-red-600 p-1 flex-shrink-0"
+                      title="Remove from goal"
+                    >
+                      <svg width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </>
+                )}
               </div>
             )
           })}
@@ -314,7 +384,12 @@ function ProjectsGoalCard() {
           <div className="flex items-center justify-between px-3 py-2.5 rounded-lg mt-2"
             style={{ background: '#9333ea10', border: '1px solid #9333ea30' }}>
             <span className="text-sm font-bold text-slate-800">
-              Total — {entries.length} {entries.length === 1 ? 'project type' : 'project types'}
+              Total — {displayEntries.length} {displayEntries.length === 1 ? 'project type' : 'project types'}
+              {autoEntries.length > 0 && (
+                <span className="text-[11px] font-normal text-slate-500 ml-1">
+                  ({entries.length} set · {autoEntries.length} auto)
+                </span>
+              )}
             </span>
             <span className="text-sm font-bold tabular-nums" style={{ color: '#9333ea' }}>
               {totalCompleted} of {totalTarget} completed · {totalPct}%
@@ -322,6 +397,63 @@ function ProjectsGoalCard() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+/* ── Project Completion Frequency card (district) ──────────────── */
+function ProjectFrequencyCard() {
+  const map = new Map()
+  DISTRICT_PROJECTS.forEach(p => {
+    if (p.status !== 'Completed') return
+    const cur = map.get(p.name) || {
+      title:       p.name,
+      avenueLabel: p.avenue,
+      avenueColor: AVENUE_COLORS[p.avenue] ?? '#64748b',
+      count:       0,
+    }
+    cur.count++
+    map.set(p.name, cur)
+  })
+  const rows = Array.from(map.values()).sort((a, b) => b.count - a.count)
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200">
+      <div className="px-5 py-3 border-b border-slate-100">
+        <p className="text-sm font-bold text-slate-800">Project Completion Frequency</p>
+        <p className="text-xs text-slate-500 mt-0.5">How many times each project has been completed across the district</p>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-slate-50 border-b border-slate-200">
+              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5 w-10">#</th>
+              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Project</th>
+              <th className="text-left text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Avenue</th>
+              <th className="text-right text-xs font-semibold text-slate-500 uppercase tracking-wider px-4 py-2.5">Times Done</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {rows.map((r, i) => (
+              <tr key={r.title} className="hover:bg-slate-50">
+                <td className="px-4 py-2.5 text-xs text-slate-400 tabular-nums">{i + 1}</td>
+                <td className="px-4 py-2.5 font-medium text-slate-800">{r.title}</td>
+                <td className="px-4 py-2.5">
+                  <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                    style={{ backgroundColor: r.avenueColor + '15', color: r.avenueColor }}>
+                    {r.avenueLabel}
+                  </span>
+                </td>
+                <td className="px-4 py-2.5 text-right">
+                  <span className="text-sm font-bold tabular-nums" style={{ color: r.avenueColor }}>
+                    {r.count}×
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   )
 }
@@ -369,6 +501,9 @@ function ProjectsTab() {
     <div className="space-y-4">
       {/* Smart-search projects goal */}
       <ProjectsGoalCard />
+
+      {/* Project completion frequency */}
+      <ProjectFrequencyCard />
 
       {/* KPI strip */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
