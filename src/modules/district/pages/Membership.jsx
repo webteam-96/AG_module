@@ -23,20 +23,23 @@ const terminated    = CLUB_ANALYTICS.reduce((s, c) => s + c.terminated, 0)
 
 function MembershipGoalCard() {
   const [goal, setGoal] = useState(null)
+  const [totalInput, setTotalInput]   = useState('')
   const [maleInput, setMaleInput]     = useState('')
   const [femaleInput, setFemaleInput] = useState('')
 
   // Dummy district-level current progress
   const addedMale   = Math.round(newThisYear * 0.62)
-  const addedFemale = newThisYear - addedMale
+  const addedFemale = Math.round(newThisYear * 0.32)
+  const addedTotal  = newThisYear
 
   const submit = (e) => {
     e.preventDefault()
-    const m = Number(maleInput) || 0
+    const t = Number(totalInput)  || 0
+    const m = Number(maleInput)   || 0
     const f = Number(femaleInput) || 0
-    if (m + f > 0) {
-      setGoal({ male: m, female: f })
-      setMaleInput(''); setFemaleInput('')
+    if (t + m + f > 0) {
+      setGoal({ total: t, male: m, female: f })
+      setTotalInput(''); setMaleInput(''); setFemaleInput('')
     }
   }
 
@@ -51,7 +54,17 @@ function MembershipGoalCard() {
           </div>
           <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
             <div className="flex flex-col">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Male</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#003DA5' }}>Total</label>
+              <input
+                type="number"
+                placeholder="0"
+                value={totalInput}
+                onChange={e => setTotalInput(e.target.value)}
+                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm w-24 focus:outline-none focus:border-blue-400"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#0891b2' }}>Male</label>
               <input
                 type="number"
                 placeholder="0"
@@ -61,7 +74,7 @@ function MembershipGoalCard() {
               />
             </div>
             <div className="flex flex-col">
-              <label className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1">Female</label>
+              <label className="text-[10px] font-semibold uppercase tracking-wider mb-1" style={{ color: '#e11d48' }}>Female</label>
               <input
                 type="number"
                 placeholder="0"
@@ -79,11 +92,9 @@ function MembershipGoalCard() {
     )
   }
 
-  const totalGoal  = goal.male + goal.female
-  const totalAdded = addedMale + addedFemale
+  const totalPct   = goal.total  ? Math.min(Math.round((addedTotal  / goal.total)  * 100), 100) : 0
   const malePct    = goal.male   ? Math.min(Math.round((addedMale   / goal.male)   * 100), 100) : 0
   const femalePct  = goal.female ? Math.min(Math.round((addedFemale / goal.female) * 100), 100) : 0
-  const totalPct   = totalGoal   ? Math.min(Math.round((totalAdded  / totalGoal)   * 100), 100) : 0
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 px-5 py-4 relative overflow-hidden">
@@ -92,7 +103,9 @@ function MembershipGoalCard() {
         <div>
           <p className="text-sm font-bold text-slate-800">District Membership Goal — RY 2025–26</p>
           <p className="text-xs text-slate-500 mt-0.5">
-            {totalAdded} of {totalGoal} new members added · {totalPct}% achieved
+            {goal.total
+              ? `${addedTotal} of ${goal.total} new members added · ${totalPct}% achieved`
+              : 'Progress against Male + Female targets shown below'}
           </p>
         </div>
         <button
@@ -104,41 +117,47 @@ function MembershipGoalCard() {
       </div>
 
       <div className="space-y-2.5">
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-xs text-slate-500">Male</span>
-            <span className="text-xs font-semibold tabular-nums" style={{ color: '#0891b2' }}>
-              {addedMale} / {goal.male} ({malePct}%)
-            </span>
+        {goal.total > 0 && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs font-semibold text-slate-700">Total new members</span>
+              <span className="text-xs font-bold tabular-nums" style={{ color: '#003DA5' }}>
+                {addedTotal} / {goal.total} ({totalPct}%)
+              </span>
+            </div>
+            <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${totalPct}%`, background: '#003DA5' }} />
+            </div>
           </div>
-          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${malePct}%`, background: '#0891b2' }} />
-          </div>
-        </div>
+        )}
 
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-xs text-slate-500">Female</span>
-            <span className="text-xs font-semibold tabular-nums" style={{ color: '#e11d48' }}>
-              {addedFemale} / {goal.female} ({femalePct}%)
-            </span>
+        {goal.male > 0 && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-slate-500">Male</span>
+              <span className="text-xs font-semibold tabular-nums" style={{ color: '#0891b2' }}>
+                {addedMale} / {goal.male} ({malePct}%)
+              </span>
+            </div>
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${malePct}%`, background: '#0891b2' }} />
+            </div>
           </div>
-          <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${femalePct}%`, background: '#e11d48' }} />
-          </div>
-        </div>
+        )}
 
-        <div className="pt-2 border-t border-slate-100">
-          <div className="flex justify-between mb-1">
-            <span className="text-xs font-semibold text-slate-700">Total new members</span>
-            <span className="text-xs font-bold tabular-nums" style={{ color: '#003DA5' }}>
-              {totalAdded} / {totalGoal}
-            </span>
+        {goal.female > 0 && (
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-xs text-slate-500">Female</span>
+              <span className="text-xs font-semibold tabular-nums" style={{ color: '#e11d48' }}>
+                {addedFemale} / {goal.female} ({femalePct}%)
+              </span>
+            </div>
+            <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full rounded-full transition-all" style={{ width: `${femalePct}%`, background: '#e11d48' }} />
+            </div>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-            <div className="h-full rounded-full transition-all" style={{ width: `${totalPct}%`, background: '#003DA5' }} />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   )

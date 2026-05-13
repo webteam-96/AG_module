@@ -248,7 +248,7 @@ function ProjectsGoalCard() {
 
         <div className="flex flex-col">
           <label className="text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
-            Target Count
+            No of Projects
           </label>
           <input
             type="number"
